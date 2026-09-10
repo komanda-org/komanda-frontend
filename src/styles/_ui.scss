@@ -1,0 +1,372 @@
+@use 'mixins' as m;
+
+/**
+ * PRIMITIVOS DE INTERFACE — o vocabulario visual do prototipo.
+ *
+ * Estas classes vivem no global (e nao no SCSS de cada componente) porque sao
+ * usadas pelas tres telas de cadastro e pelo login. Escrever uma vez aqui evita
+ * quatro copias que saem de sincronia na primeira mudanca de cor.
+ */
+
+/* ---------------------------------------------------------------- Estrutura */
+
+/* O "aparelho": no celular ocupa a tela toda; no desktop vira um cartao
+   centralizado com a mesma largura de um celular. Mobile-first de verdade —
+   o layout base e o pequeno, e o grande e a excecao. */
+.tela {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--k-fundo);
+
+  @include m.desktop {
+    max-width: var(--k-largura);
+    min-height: auto;
+    margin: var(--k-s-6) auto;
+    overflow: hidden;
+    border: 1px solid var(--k-linha);
+    border-radius: var(--k-raio-lg);
+  }
+}
+
+.tela__corpo {
+  flex: 1;
+  padding: var(--k-s-5) var(--k-s-4) var(--k-s-6);
+}
+
+/* Barra fixa no rodape do celular, onde o polegar alcanca. */
+.tela__rodape {
+  position: sticky;
+  bottom: 0;
+  padding: var(--k-s-4);
+  background: var(--k-fundo);
+  border-top: 1px solid var(--k-linha);
+}
+
+/* --------------------------------------------------------------- Cabecalho */
+
+.topo {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: center;
+  padding: var(--k-s-4);
+  border-bottom: 1px solid var(--k-linha);
+}
+
+.topo__voltar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: calc(var(--k-s-2) * -1);
+  color: var(--k-texto);
+  border-radius: var(--k-raio);
+
+  &:hover {
+    background: var(--k-superficie-2);
+  }
+}
+
+/* O titulo serifado dourado do topo — a assinatura da marca no prototipo. */
+.topo__titulo {
+  flex: 1;
+  overflow: hidden;
+  font-family: var(--k-serif);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--k-ouro);
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Contador de etapas: "1 de 3" */
+.topo__etapa {
+  @include m.rotulo;
+
+  min-width: 2.25rem;
+  font-size: var(--k-t-2xs);
+  color: var(--k-texto-fraco);
+  text-align: right;
+}
+
+.topo__etapa--pilula {
+  padding: var(--k-s-1) var(--k-s-2);
+  color: var(--k-ouro);
+  background: var(--k-ouro-fosco);
+  border-radius: var(--k-raio-pilula);
+}
+
+/* Barra de progresso: preenche em dourado conforme as etapas avancam. */
+.progresso {
+  height: 2px;
+  background: var(--k-linha);
+}
+
+.progresso__preenchido {
+  height: 100%;
+  background: var(--k-ouro);
+  transition: width 320ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------ Titulos */
+
+.titulo {
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+
+  /* Um h1 com tabindex="-1" recebe foco por codigo ao trocar de etapa, para o
+     leitor de tela anunciar a etapa nova. Sem isto ele continuaria lendo o
+     ponto antigo da pagina. O contorno so aparece via :focus-visible. */
+  &:focus {
+    outline: none;
+  }
+}
+
+.subtitulo {
+  margin-top: var(--k-s-2);
+  font-size: var(--k-t-sm);
+  color: var(--k-texto-fraco);
+}
+
+/* -------------------------------------------------------------------- Campo */
+
+.campo {
+  display: block;
+  margin-bottom: var(--k-s-4);
+}
+
+.campo__rotulo {
+  @include m.rotulo;
+
+  display: flex;
+  gap: var(--k-s-2);
+  align-items: baseline;
+  margin-bottom: var(--k-s-2);
+  color: var(--k-texto-fraco);
+}
+
+.campo__opcional {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--k-texto-placeholder);
+}
+
+.entrada {
+  display: block;
+  width: 100%;
+  padding: var(--k-s-3) var(--k-s-4);
+  color: var(--k-texto);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  transition: border-color 140ms ease, background-color 140ms ease;
+
+  &::placeholder {
+    color: var(--k-texto-placeholder);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #3d3d3d;
+  }
+
+  &:focus {
+    background: var(--k-superficie);
+    border-color: var(--k-ouro);
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--invalido {
+    border-color: var(--k-erro);
+  }
+}
+
+textarea.entrada {
+  min-height: 7rem;
+  line-height: 1.5;
+}
+
+/* O <select> nativo com a setinha desenhada por nos, ja que a do sistema
+   nao acompanha a paleta. `appearance: none` remove a original. */
+select.entrada {
+  padding-right: var(--k-s-7);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%239c9c9c' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--k-s-4) center;
+  cursor: pointer;
+}
+
+/* Enquanto nada foi escolhido, o select precisa PARECER placeholder.
+   Nao da para usar `:invalid` aqui: validador do Angular vive no FormControl e
+   nao escreve o atributo `required` no elemento, entao o browser considera o
+   select valido. A classe abaixo e ligada no template ao valor estar vazio. */
+select.entrada--vazio {
+  color: var(--k-texto-placeholder);
+}
+
+select.entrada option {
+  color: var(--k-texto);
+  background: var(--k-superficie-2);
+}
+
+.campo__rodape {
+  display: flex;
+  gap: var(--k-s-3);
+  justify-content: space-between;
+  margin-top: var(--k-s-2);
+  font-size: var(--k-t-sm);
+}
+
+.campo__erro {
+  font-weight: 500;
+  color: var(--k-erro);
+}
+
+.campo__dica {
+  color: var(--k-texto-placeholder);
+}
+
+.campo__contador {
+  margin-left: auto;
+  font-size: var(--k-t-xs);
+  color: var(--k-texto-placeholder);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Campo com icone a direita (CEP, senha) */
+.campo-icone {
+  position: relative;
+}
+
+.campo-icone .entrada {
+  padding-right: 3rem;
+}
+
+.campo-icone__acao {
+  position: absolute;
+  top: 50%;
+  right: var(--k-s-2);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--k-texto-fraco);
+  border-radius: var(--k-raio);
+  transform: translateY(-50%);
+
+  &:hover {
+    color: var(--k-texto);
+  }
+}
+
+/* ------------------------------------------------------------------- Botoes */
+
+.botao {
+  display: inline-flex;
+  gap: var(--k-s-2);
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--k-s-4);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #1a1a1a;
+  text-transform: uppercase;
+  background: var(--k-ouro);
+  border-radius: var(--k-raio);
+  transition: background-color 140ms ease, transform 100ms ease;
+
+  &:hover:not(:disabled) {
+    background: var(--k-ouro-claro);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.55;
+  }
+
+  &--fantasma {
+    color: var(--k-texto);
+    background: transparent;
+    border: 1px solid var(--k-linha-forte);
+
+    &:hover:not(:disabled) {
+      background: var(--k-superficie-2);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ Avisos */
+
+.aviso {
+  padding: var(--k-s-3) var(--k-s-4);
+  margin-bottom: var(--k-s-4);
+  font-size: var(--k-t-sm);
+  border-left: 3px solid;
+  border-radius: 0 var(--k-raio) var(--k-raio) 0;
+
+  &--erro {
+    color: var(--k-erro);
+    background: var(--k-erro-fundo);
+    border-color: var(--k-erro);
+  }
+
+  &--ok {
+    color: var(--k-ok);
+    background: var(--k-ok-fundo);
+    border-color: var(--k-ok);
+  }
+}
+
+.aviso__lista {
+  padding-left: var(--k-s-4);
+  margin: var(--k-s-1) 0 0;
+}
+
+/* ------------------------------------------------------------------ Secoes */
+
+.secao {
+  margin-top: var(--k-s-6);
+}
+
+.secao__rotulo {
+  @include m.rotulo;
+
+  margin-bottom: var(--k-s-4);
+  color: var(--k-ouro);
+}
+
+/* Animacao de troca de etapa: o conteudo entra deslizando de leve.
+   Um unico momento de movimento na tela inteira. */
+.etapa {
+  display: block;
+  animation: etapa-entra 280ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes etapa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}

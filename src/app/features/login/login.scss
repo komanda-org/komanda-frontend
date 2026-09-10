@@ -1,0 +1,12 @@
+.login__mensagem {
+  margin-top: var(--k-s-5);
+}
+
+.login__nota {
+  margin-top: var(--k-s-5);
+}
+
+/* O botão vira link nesta tela: mesmo visual, semântica de navegação. */
+a.botao {
+  text-decoration: none;
+}

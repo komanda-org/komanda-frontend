@@ -1,0 +1,72 @@
+/**
+ * DESIGN TOKENS — extraidos do prototipo do Figma.
+ *
+ * Sao CSS custom properties (nao variaveis SCSS) de proposito: existem em
+ * runtime, entao um componente consegue sobrescrever uma cor no seu escopo.
+ * Variavel SCSS some na compilacao e nao permite isso.
+ *
+ * A interface e escura com um unico acento dourado. Toda hierarquia nasce de
+ * tres coisas: o nivel de cinza da superficie, o peso do texto e o dourado —
+ * que aparece pouco, e por isso pesa.
+ */
+
+:root {
+  /* --- Superficies: do fundo para a frente --- */
+  --k-fundo: #121212;
+  --k-superficie: #1a1a1a;
+  --k-superficie-2: #1e1e1e; /* cartoes */
+  --k-campo: #212121; /* fundo dos inputs */
+  --k-linha: #2a2a2a; /* divisorias e bordas discretas */
+  --k-linha-forte: #333;
+
+  /* --- Dourado: o unico acento --- */
+  --k-ouro: #e9a825;
+  --k-ouro-claro: #f5b94a;
+  --k-ouro-fosco: #4a3a14; /* fundo de pilulas e estados selecionados */
+
+  /* --- Texto ---
+     Cada tom abaixo foi conferido contra --k-fundo para passar em 4.5:1,
+     o minimo da WCAG AA. Cinza bonito e ilegivel continua ilegivel. */
+  --k-texto: #f0efed;
+  --k-texto-fraco: #9c9c9c; /* 6.9:1 */
+  --k-texto-placeholder: #7e7e7e; /* 4.7:1 */
+
+  /* --- Estados --- */
+  --k-erro: #e5533d; /* 5.1:1 sobre o fundo */
+  --k-erro-fundo: #2a1512;
+  --k-ok: #4caf7d;
+  --k-ok-fundo: #14251d;
+
+  /* --- Tipografia ---
+     Serifada de alto contraste nos titulos (o ar de casa boa que o prototipo
+     tem) e uma grotesca neutra em tudo que se le ou se digita. */
+  --k-serif: 'Bodoni Moda', 'Times New Roman', serif;
+  --k-sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Escala tipografica ancorada em 16px */
+  --k-t-2xs: 0.625rem; /* 10px — badge de etapa */
+  --k-t-xs: 0.6875rem; /* 11px — rotulos em caixa alta */
+  --k-t-sm: 0.8125rem; /* 13px — apoio e mensagens */
+  --k-t-base: 1rem; /* 16px — corpo e inputs; abaixo disso o iOS da zoom */
+  --k-t-lg: 1.375rem;
+  --k-t-xl: 1.75rem; /* titulo da etapa no celular */
+  --k-t-2xl: 2.125rem;
+
+  /* --- Espacamento — escala de 4px --- */
+  --k-s-1: 0.25rem;
+  --k-s-2: 0.5rem;
+  --k-s-3: 0.75rem;
+  --k-s-4: 1rem;
+  --k-s-5: 1.5rem;
+  --k-s-6: 2rem;
+  --k-s-7: 3rem;
+
+  /* --- Forma --- */
+  --k-raio: 8px;
+  --k-raio-lg: 12px;
+  --k-raio-pilula: 999px;
+
+  /* Largura util. O layout e mobile-first: no celular ocupa tudo, no desktop
+     para de crescer aqui para nao virar uma linha de texto larga demais. */
+  --k-largura: 27rem;
+}

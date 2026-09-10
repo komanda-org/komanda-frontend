@@ -1,0 +1,17 @@
+/* O <fieldset> que envolve as etapas não pode ter caixa própria: ele existe
+   só para desligar todos os campos de uma vez enquanto a requisição corre. */
+fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.etapa__conteudo {
+  margin-top: var(--k-s-6);
+}
+
+/* O ícone do CEP é decorativo, não um botão: não existe busca por
+   geolocalização nesta task. Então ele não recebe hover nem cursor. */
+.campo-icone__acao--estatico {
+  pointer-events: none;
+}
