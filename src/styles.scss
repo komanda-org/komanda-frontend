@@ -1,1 +1,24 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --komanda-bg: #131313;
+  --komanda-surface: #18181b;
+  --komanda-header: rgb(9 9 11 / 70%);
+  --komanda-gold: #fbbf24;
+  --komanda-text: #e5e2e1;
+  --komanda-secondary: #d0c5af;
+  --komanda-muted: #71717a;
+  --komanda-nav-icon: rgb(255 255 255 / 50%);
+  --header-h: 64px;
+  --sidebar-w: 256px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--komanda-bg);
+  color: var(--komanda-text);
+  font-family: 'Manrope', -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
