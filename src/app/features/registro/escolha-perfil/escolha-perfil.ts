@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TipoConta } from '../../../core/models/registro.model';
+import { Moldura } from '../../../shared/ui/moldura';
 import { TopoEtapa } from '../../../shared/ui/topo-etapa';
 
 /**
@@ -12,7 +13,7 @@ import { TopoEtapa } from '../../../shared/ui/topo-etapa';
  */
 @Component({
   selector: 'app-escolha-perfil',
-  imports: [TopoEtapa],
+  imports: [Moldura, TopoEtapa],
   templateUrl: './escolha-perfil.html',
   styleUrl: './escolha-perfil.scss',
 })

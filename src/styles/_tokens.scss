@@ -43,14 +43,26 @@
   --k-serif: 'Bodoni Moda', 'Times New Roman', serif;
   --k-sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
 
-  /* Escala tipografica ancorada em 16px */
+  /* Escala tipografica ancorada em 16px.
+     Os tamanhos pequenos sao FIXOS de proposito: rotulo e mensagem de erro nao
+     ganham nada em crescer junto com a tela, e um <input> abaixo de 16px faz o
+     iOS dar zoom sozinho ao receber foco.
+
+     Ja os titulos usam clamp(minimo, preferido, maximo) — a fonte cresce junto
+     com a largura da janela, mas presa entre dois limites. Le-se assim:
+       clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem)
+       ├─ nunca menor que 28px (celular)
+       ├─ no meio do caminho acompanha a viewport (1vw = 1% da largura)
+       └─ nunca maior que 40px (monitor grande)
+     Isso substitui tres media queries por uma linha, e cobre TODA largura —
+     inclusive as que voce nao pensou em testar. */
   --k-t-2xs: 0.625rem; /* 10px — badge de etapa */
   --k-t-xs: 0.6875rem; /* 11px — rotulos em caixa alta */
   --k-t-sm: 0.8125rem; /* 13px — apoio e mensagens */
   --k-t-base: 1rem; /* 16px — corpo e inputs; abaixo disso o iOS da zoom */
-  --k-t-lg: 1.375rem;
-  --k-t-xl: 1.75rem; /* titulo da etapa no celular */
-  --k-t-2xl: 2.125rem;
+  --k-t-lg: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --k-t-xl: clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem); /* titulo da etapa */
+  --k-t-2xl: clamp(2.125rem, 1.6rem + 2.6vw, 3.25rem); /* frase da vitrine */
 
   /* --- Espacamento — escala de 4px --- */
   --k-s-1: 0.25rem;
@@ -66,7 +78,16 @@
   --k-raio-lg: 12px;
   --k-raio-pilula: 999px;
 
-  /* Largura util. O layout e mobile-first: no celular ocupa tudo, no desktop
-     para de crescer aqui para nao virar uma linha de texto larga demais. */
-  --k-largura: 27rem;
+  /* --- Larguras ---
+     O formulario NAO deve crescer com a tela. Um <input> de 900px e horrivel de
+     usar e uma linha de texto larga demais faz o olho perder o comeco da linha
+     seguinte. Entao a coluna do formulario tem teto, e o espaco que sobra no
+     desktop vai para a vitrine ao lado — nao para dentro do formulario. */
+  --k-largura-painel: 30rem; /* o cartao/coluna do formulario */
+  --k-largura-vitrine: 32rem; /* o texto da vitrine, centrado na coluna dela */
+  --k-largura: var(--k-largura-painel); /* nome antigo, mantido por compatibilidade */
+
+  /* Respiro lateral que acompanha a tela: 1rem no celular, ate 2.5rem no
+     desktop. Uma variavel so, em vez de tres media queries espalhadas. */
+  --k-gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
 }

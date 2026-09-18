@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Moldura } from '../../shared/ui/moldura';
 import { TopoEtapa } from '../../shared/ui/topo-etapa';
 
 /**
@@ -15,7 +16,7 @@ import { TopoEtapa } from '../../shared/ui/topo-etapa';
  */
 @Component({
   selector: 'app-login',
-  imports: [RouterLink, TopoEtapa],
+  imports: [RouterLink, TopoEtapa, Moldura],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

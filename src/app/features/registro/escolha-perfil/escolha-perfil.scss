@@ -6,6 +6,10 @@
   padding: 0;
   margin: var(--k-s-6) 0 0;
   border: 0;
+
+  @include m.medio {
+    gap: var(--k-s-4);
+  }
 }
 
 .perfis__legenda {
@@ -38,6 +42,14 @@
   &--ativo {
     background: var(--k-superficie);
     border-color: var(--k-ouro);
+  }
+
+  /* Os cartoes continuam EMPILHADOS no desktop, de proposito. Lado a lado eles
+     caberiam, mas o resumo quebraria em tres linhas e a comparacao entre as
+     duas opcoes ficaria mais dificil, nao mais facil. O que muda no desktop e
+     o respiro: mais ar dentro do cartao, ja que ha altura sobrando. */
+  @include m.medio {
+    padding: var(--k-s-5);
   }
 }
 

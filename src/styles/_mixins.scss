@@ -27,9 +27,39 @@
   text-transform: uppercase;
 }
 
-/* Mobile-first: a base e o celular, e este mixin abre o layout no desktop. */
-@mixin desktop {
+/**
+ * AS TRES FAIXAS DE LAYOUT.
+ *
+ * Mobile-first: o CSS base e sempre o do celular, e os mixins abaixo ADICIONAM
+ * regras conforme a tela cresce. Nunca o contrario — comecar pelo desktop e ir
+ * desfazendo gera o dobro de codigo e o dobro de bugs.
+ *
+ * Cada breakpoint marca uma mudanca de INTENCAO, nao um aparelho especifico:
+ *
+ *   base    ate 47.99rem  celular: a tela inteira e o app, rodape no polegar
+ *   medio   48rem  (768)  tablet: o app vira um cartao centrado na tela
+ *   amplo   64rem  (1024) desktop: duas colunas — vitrine + painel
+ *
+ * As medidas estao em rem (e nao px) porque rem acompanha a fonte-base do
+ * usuario: quem aumenta a fonte do sistema recebe o layout simples mais cedo,
+ * que e exatamente o que essa pessoa precisa.
+ */
+@mixin medio {
   @media (width >= 48rem) {
+    @content;
+  }
+}
+
+@mixin amplo {
+  @media (width >= 64rem) {
+    @content;
+  }
+}
+
+/* Telas baixas (notebook de 768px de altura, celular deitado): o respiro
+   vertical generoso vira desperdicio quando sobra pouca altura. */
+@mixin altura-curta {
+  @media (height < 44rem) {
     @content;
   }
 }

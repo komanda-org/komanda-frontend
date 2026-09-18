@@ -37,10 +37,10 @@ export class RegistroService {
     return this.http.post<RegistroResposta>(`${this.base}/professionals`, payload);
   }
 
-  /** POST /restaurantes/cadastro */
+  /** POST /restaurants */
   registrarRestaurante(
     payload: RegistrarRestaurantePayload,
   ): Observable<RegistroResposta> {
-    return this.http.post<RegistroResposta>(`${this.base}/restaurantes/cadastro`, payload);
+    return this.http.post<RegistroResposta>(`${this.base}/restaurants`, payload);
   }
 }

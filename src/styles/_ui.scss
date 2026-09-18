@@ -10,37 +10,90 @@
 
 /* ---------------------------------------------------------------- Estrutura */
 
-/* O "aparelho": no celular ocupa a tela toda; no desktop vira um cartao
-   centralizado com a mesma largura de um celular. Mobile-first de verdade —
-   o layout base e o pequeno, e o grande e a excecao. */
+/* Os componentes de rota entram no DOM como IRMAOS do <router-outlet>, e um
+   elemento customizado nasce inline por padrao. Inline nao aceita altura e nao
+   ocupa a largura da pagina — a moldura de tela cheia morreria ali dentro. */
+router-outlet ~ * {
+  display: block;
+}
+
+/* A "tela": o cartao onde o app acontece.
+   Tres estados, um por faixa de largura (ver os mixins em _mixins.scss):
+
+     celular  ocupa 100% da altura, sem borda — o app E a tela
+     medio    vira um cartao com borda, centrado pela .moldura
+     amplo    vira a COLUNA DIREITA do grid de duas colunas, altura cheia
+
+   Note que a base (celular) nao tem nenhuma media query. Isso e mobile-first:
+   o layout mais simples e o padrao, e os maiores sao a excecao declarada. */
 .tela {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
   background: var(--k-fundo);
 
-  @include m.desktop {
-    max-width: var(--k-largura);
+  @include m.medio {
+    width: 100%;
+    max-width: var(--k-largura-painel);
     min-height: auto;
-    margin: var(--k-s-6) auto;
     overflow: hidden;
     border: 1px solid var(--k-linha);
     border-radius: var(--k-raio-lg);
+
+    /* Sombra de elevacao: no fundo escuro ela e sutil, mas separa o cartao do
+       plano de tras o suficiente para o olho entender que sao camadas. */
+    box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
+  }
+
+  @include m.amplo {
+    /* Aqui o cartao deixa de ser cartao: vira uma coluna de altura cheia,
+       colada na vitrine. Por isso desfazemos borda, raio e sombra. */
+    max-width: none;
+    height: 100dvh;
+    overflow: hidden;
+    border: 0;
+    border-left: 1px solid var(--k-linha);
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 
 .tela__corpo {
   flex: 1;
-  padding: var(--k-s-5) var(--k-s-4) var(--k-s-6);
+  padding: var(--k-s-5) var(--k-gutter) var(--k-s-6);
+
+  @include m.medio {
+    padding: var(--k-s-6) var(--k-gutter);
+  }
+
+  @include m.amplo {
+    /* `min-height: 0` parece inofensivo e e a linha mais importante daqui.
+       Um item de flex tem `min-height: auto` por padrao, o que significa "nunca
+       fique menor que meu conteudo" — e um filho que nunca encolhe NUNCA rola:
+       ele empurra o rodape para fora da tela. Zerando isso, o corpo aceita ser
+       espremido ate a altura disponivel e o overflow-y abaixo passa a valer. */
+    min-height: 0;
+    padding: var(--k-s-7) var(--k-gutter) var(--k-s-6);
+    overflow-y: auto;
+
+    /* Reserva o espaco da barra de rolagem sempre, mesmo quando ela nao existe.
+       Sem isto o conteudo pula alguns pixels para o lado ao trocar de etapa. */
+    scrollbar-gutter: stable;
+  }
 }
 
-/* Barra fixa no rodape do celular, onde o polegar alcanca. */
+/* Barra de acao. No celular ela e sticky no rodape, onde o polegar alcanca;
+   no desktop ela e o ultimo item do flex column e ja fica fixa por natureza. */
 .tela__rodape {
   position: sticky;
   bottom: 0;
-  padding: var(--k-s-4);
+  padding: var(--k-s-4) var(--k-gutter);
   background: var(--k-fundo);
   border-top: 1px solid var(--k-linha);
+
+  @include m.amplo {
+    padding: var(--k-s-4) var(--k-gutter) var(--k-s-5);
+  }
 }
 
 /* --------------------------------------------------------------- Cabecalho */
@@ -49,8 +102,14 @@
   display: flex;
   gap: var(--k-s-3);
   align-items: center;
-  padding: var(--k-s-4);
+  padding: var(--k-s-4) var(--k-gutter);
   border-bottom: 1px solid var(--k-linha);
+
+  /* No desktop o topo nao rola junto com o formulario: ele fica ancorado no
+     alto da coluna enquanto o conteudo passa por baixo. */
+  @include m.amplo {
+    flex-shrink: 0;
+  }
 }
 
 .topo__voltar {
@@ -101,6 +160,7 @@
 
 /* Barra de progresso: preenche em dourado conforme as etapas avancam. */
 .progresso {
+  flex-shrink: 0;
   height: 2px;
   background: var(--k-linha);
 }
@@ -128,6 +188,7 @@
 }
 
 .subtitulo {
+  max-width: 42ch; /* linha de apoio curta: mais que isso cansa de ler */
   margin-top: var(--k-s-2);
   font-size: var(--k-t-sm);
   color: var(--k-texto-fraco);
@@ -283,6 +344,11 @@ select.entrada option {
   align-items: center;
   justify-content: center;
   width: 100%;
+
+  /* 44px e o alvo de toque minimo recomendado (WCAG 2.5.8 / iOS HIG). O padding
+     ja passa disso, mas o min-height garante que continue passando se um dia a
+     fonte do botao encolher. */
+  min-height: 3rem;
   padding: var(--k-s-4);
   font-size: var(--k-t-sm);
   font-weight: 700;

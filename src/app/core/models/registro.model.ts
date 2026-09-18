@@ -1,9 +1,6 @@
 /**
- * O CONTRATO das duas rotas de registro.
- *
- * ATENCAO: no back-end atual (NestJS em ../src) estas rotas AINDA NAO EXISTEM —
- * hoje existe apenas POST /portaria/porteiros. Os tipos abaixo espelham a
- * especificacao da task. Quando o back-end for implementado, nada aqui muda.
+ * O CONTRATO das duas rotas de registro, conforme o Swagger:
+ * POST /api/professionals e POST /api/restaurants.
  *
  * Os nomes dos campos estao em ingles porque e assim que o payload viaja na
  * especificacao. O resto do front fala portugues; a fronteira e aqui.
@@ -26,7 +23,7 @@ export interface RegistrarProfissionalPayload {
   zipCode?: string;
 }
 
-/** POST /restaurantes/cadastro */
+/** POST /restaurants */
 export interface RegistrarRestaurantePayload {
   email: string;
   password: string;

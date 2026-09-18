@@ -26,6 +26,7 @@ import {
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
+import { Moldura } from '../../../shared/ui/moldura';
 import { PreviaImagem } from '../../../shared/ui/previa-imagem';
 import { Tags } from '../../../shared/ui/tags';
 import { TopoEtapa } from '../../../shared/ui/topo-etapa';
@@ -59,6 +60,7 @@ type CampoProfissional =
   imports: [
     ReactiveFormsModule,
     TopoEtapa,
+    Moldura,
     Campo,
     EstadoCampoDirective,
     Tags,

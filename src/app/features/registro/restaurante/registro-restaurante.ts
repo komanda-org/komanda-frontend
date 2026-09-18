@@ -21,6 +21,7 @@ import { cepValido, cnpjValido, urlValida } from '../../../core/validators/valid
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
+import { Moldura } from '../../../shared/ui/moldura';
 import { PreviaImagem } from '../../../shared/ui/previa-imagem';
 import { TopoEtapa } from '../../../shared/ui/topo-etapa';
 
@@ -51,6 +52,7 @@ type CampoRestaurante =
   imports: [
     ReactiveFormsModule,
     TopoEtapa,
+    Moldura,
     Campo,
     EstadoCampoDirective,
     PreviaImagem,
@@ -79,7 +81,7 @@ export class RegistroRestaurante {
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
-  /** Espelha a especificacao de POST /restaurantes/cadastro. */
+  /** Espelha a especificacao de POST /restaurants. */
   protected readonly form = this.fb.group({
     email: this.fb.control('', [
       Validators.required,
