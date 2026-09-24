@@ -1,0 +1,49 @@
+import { ErroApi } from '../models/erro-api.model';
+import { traduzirConflito } from './traduzir-conflito';
+
+/**
+ * As mensagens abaixo NAO foram inventadas: sao as respostas reais do
+ * komanda-api, capturadas em POST /api/restaurants e /api/professionals.
+ */
+function conflito(mensagem: string): ErroApi {
+  return { status: 409, mensagens: [mensagem] };
+}
+
+describe('traduzirConflito', () => {
+  it('reconhece o conflito de CNPJ do POST /restaurants', () => {
+    expect(traduzirConflito(conflito('CNPJ already exists'))).toEqual({
+      campo: 'cnpj',
+      mensagem: 'CNPJ j\u00e1 existe',
+    });
+  });
+
+  it('reconhece o conflito de email do POST /restaurants (texto em ingles)', () => {
+    expect(traduzirConflito(conflito('User already exists'))).toEqual({
+      campo: 'email',
+      mensagem: 'Email j\u00e1 cadastrado',
+    });
+  });
+
+  it('reconhece o conflito de email do POST /professionals (texto em portugues)', () => {
+    expect(traduzirConflito(conflito('Email j\u00e1 cadastrado'))).toEqual({
+      campo: 'email',
+      mensagem: 'Email j\u00e1 cadastrado',
+    });
+  });
+
+  it('nao depende de maiusculas/minusculas', () => {
+    expect(traduzirConflito(conflito('cnpj ALREADY EXISTS')).campo).toBe('cnpj');
+  });
+
+  it('repassa a mensagem do servidor quando o conflito e desconhecido', () => {
+    expect(traduzirConflito(conflito('Something else conflicts'))).toEqual({
+      campo: null,
+      mensagem: 'Something else conflicts',
+    });
+  });
+
+  it('nao navega para lugar nenhum quando nao identifica o campo', () => {
+    // campo null e o sinal para o componente deixar o usuario onde esta.
+    expect(traduzirConflito({ status: 409, mensagens: [] }).campo).toBeNull();
+  });
+});

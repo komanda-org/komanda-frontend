@@ -2,6 +2,25 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.4.
 
+## Back end
+
+Este front consome o **komanda-api** (NestJS) real. Não existe mock, e não deve
+existir: a fonte da verdade das rotas são os controllers/DTOs do back e o Swagger
+em `http://localhost:3000/api/docs`.
+
+Suba o back end na porta 3000 **antes** do `ng serve`. Sem ele, o cadastro falha
+com "Não foi possível falar com o servidor" (status 0 no interceptor).
+
+A ligação é feita pelo proxy do dev-server (`proxy.conf.json`):
+
+```
+browser → localhost:4200/api/...  →  NestJS localhost:3000/api/...
+```
+
+Não há `pathRewrite`: o Nest roda com `setGlobalPrefix('api')`, então o `/api`
+precisa chegar até ele. Em produção quem faz esse papel é o reverse proxy — por
+isso `apiUrl` é `/api` (caminho relativo) nos dois environments.
+
 ## Development server
 
 To start a local development server, run:

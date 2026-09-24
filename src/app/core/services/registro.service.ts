@@ -5,7 +5,8 @@ import { environment } from '../../../environments/environment';
 import {
   RegistrarProfissionalPayload,
   RegistrarRestaurantePayload,
-  RegistroResposta,
+  RegistroProfissionalResposta,
+  RegistroRestauranteResposta,
 } from '../models/registro.model';
 
 /**
@@ -33,14 +34,20 @@ export class RegistroService {
    */
   registrarProfissional(
     payload: RegistrarProfissionalPayload,
-  ): Observable<RegistroResposta> {
-    return this.http.post<RegistroResposta>(`${this.base}/professionals`, payload);
+  ): Observable<RegistroProfissionalResposta> {
+    return this.http.post<RegistroProfissionalResposta>(
+      `${this.base}/professionals`,
+      payload,
+    );
   }
 
   /** POST /restaurants */
   registrarRestaurante(
     payload: RegistrarRestaurantePayload,
-  ): Observable<RegistroResposta> {
-    return this.http.post<RegistroResposta>(`${this.base}/restaurants`, payload);
+  ): Observable<RegistroRestauranteResposta> {
+    return this.http.post<RegistroRestauranteResposta>(
+      `${this.base}/restaurants`,
+      payload,
+    );
   }
 }

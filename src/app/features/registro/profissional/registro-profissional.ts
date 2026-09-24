@@ -20,6 +20,7 @@ import { mascararCep } from '../../../core/utils/mascaras';
 import {
   cepValido,
   itensAteTamanho,
+  minimoAparado,
   naoApenasEspacos,
   urlValida,
 } from '../../../core/validators/validadores';
@@ -112,13 +113,18 @@ export class RegistroProfissional {
     ]),
     fullName: this.fb.control('', [
       Validators.required,
-      Validators.minLength(3),
+      // minimoAparado, nao Validators.minLength: o payload envia fullName.trim(),
+      // entao o minimo tem que ser medido no texto aparado (ver validadores.ts).
+      minimoAparado(3),
       Validators.maxLength(100),
       naoApenasEspacos(),
     ]),
     mainRole: this.fb.control('', [
       Validators.required,
-      Validators.minLength(1),
+      // Espelha o @Matches(/\S/) do CreateProfessionalDto: required sozinho
+      // deixaria passar "   ", que o trim do payload transforma em "" e o back
+      // recusa com "Cargo principal nao pode estar vazio".
+      naoApenasEspacos(),
       Validators.maxLength(100),
     ]),
     interestedRoles: this.fb.control<string[]>([], [itensAteTamanho(50)]),
@@ -224,7 +230,15 @@ export class RegistroProfissional {
     }
 
     if (erro.status === 409) {
-      this.erroGeral.set(traduzirConflito(erro));
+      const conflito = traduzirConflito(erro);
+      this.erroGeral.set(conflito.mensagem);
+
+      // O envio acontece na ultima etapa, mas o campo recusado (email) fica na
+      // etapa 1. Sem voltar, a pessoa le "Email ja cadastrado" olhando para os
+      // campos de CEP e bairro, sem ter como corrigir o que foi apontado.
+      if (conflito.campo) {
+        this.irParaEtapaDoCampo(conflito.campo);
+      }
       return;
     }
 
@@ -234,6 +248,29 @@ export class RegistroProfissional {
         ? 'Confira os campos abaixo:'
         : (erro.mensagens[0] ?? 'Não foi possível criar a conta.'),
     );
+  }
+
+  /**
+   * Leva o usuario ate a etapa que contem o campo recusado pelo servidor.
+   *
+   * O `as readonly string[]` alarga o tipo de propósito: `campo` pode ser
+   * 'cnpj', que nao existe neste formulario, e sem o alargamento o TypeScript
+   * recusaria a comparacao. Alargar (tipo estreito -> tipo largo) e seguro:
+   * nao estamos prometendo nada que o valor nao cumpra, ao contrario de `any`,
+   * que desligaria a checagem inteira. O findIndex devolvendo -1 ja e a
+   * resposta correta para "este formulario nao tem esse campo".
+   */
+  private irParaEtapaDoCampo(campo: string): void {
+    const indice = this.camposPorEtapa.findIndex((campos) =>
+      (campos as readonly string[]).includes(campo),
+    );
+
+    if (indice === -1) {
+      return;
+    }
+
+    this.etapa.set(indice + 1);
+    this.reposicionar();
   }
 
   private limparErro(): void {

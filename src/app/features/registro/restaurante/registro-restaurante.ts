@@ -17,7 +17,12 @@ import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep, mascararCnpj, mascararTelefone } from '../../../core/utils/mascaras';
-import { cepValido, cnpjValido, urlValida } from '../../../core/validators/validadores';
+import {
+  cepValido,
+  cnpjValido,
+  minimoAparado,
+  urlValida,
+} from '../../../core/validators/validadores';
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
@@ -94,25 +99,29 @@ export class RegistroRestaurante {
       Validators.maxLength(64),
     ]),
     phone: this.fb.control('', [Validators.required, Validators.maxLength(20)]),
+    // Nos quatro campos abaixo o minimo e `minimoAparado` e nao
+    // `Validators.minLength`: montarPayload envia todos com .trim(), e o
+    // minLength do Angular mede a string crua. Sem isso, "descricao de 18
+    // letras   " passaria na tela e voltaria como 400 do back.
     restaurantName: this.fb.control('', [
       Validators.required,
-      Validators.minLength(3),
+      minimoAparado(3),
       Validators.maxLength(255),
     ]),
     cnpj: this.fb.control('', [Validators.required, cnpjValido()]),
     cuisineType: this.fb.control('', [
       Validators.required,
-      Validators.minLength(3),
+      minimoAparado(3),
       Validators.maxLength(100),
     ]),
     description: this.fb.control('', [
       Validators.required,
-      Validators.minLength(20),
+      minimoAparado(20),
       Validators.maxLength(1024),
     ]),
     address: this.fb.control('', [
       Validators.required,
-      Validators.minLength(5),
+      minimoAparado(5),
       Validators.maxLength(255),
     ]),
     zipCode: this.fb.control('', [
@@ -219,7 +228,15 @@ export class RegistroRestaurante {
     }
 
     if (erro.status === 409) {
-      this.erroGeral.set(traduzirConflito(erro));
+      const conflito = traduzirConflito(erro);
+      this.erroGeral.set(conflito.mensagem);
+
+      // 'email' esta na etapa 1 e 'cnpj' na etapa 2. Como o envio acontece na
+      // etapa 2, o conflito de email exige voltar uma tela; o de CNPJ so rola
+      // a pagina ate o banner.
+      if (conflito.campo) {
+        this.irParaEtapaDoCampo(conflito.campo);
+      }
       return;
     }
 
@@ -229,6 +246,23 @@ export class RegistroRestaurante {
         ? 'Confira os campos abaixo:'
         : (erro.mensagens[0] ?? 'Não foi possível criar a conta.'),
     );
+  }
+
+  /**
+   * Leva o usuario ate a etapa que contem o campo recusado pelo servidor.
+   * (Mesma logica do cadastro de profissional — ver os comentarios de la.)
+   */
+  private irParaEtapaDoCampo(campo: string): void {
+    const indice = this.camposPorEtapa.findIndex((campos) =>
+      (campos as readonly string[]).includes(campo),
+    );
+
+    if (indice === -1) {
+      return;
+    }
+
+    this.etapa.set(indice + 1);
+    this.reposicionar();
   }
 
   private limparErro(): void {
