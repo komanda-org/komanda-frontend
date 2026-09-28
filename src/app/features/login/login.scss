@@ -1,0 +1,140 @@
+:host {
+  display: block;
+}
+
+.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  background: #12100e;
+}
+
+.login__card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 2.5rem 2rem;
+  border-radius: 1rem;
+  background: #1c1916;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 35%);
+}
+
+.login__brand {
+  margin: 0 0 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #e9a825;
+}
+
+.login__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f5f1ea;
+}
+
+.login__subtitle {
+  margin: 0.5rem 0 1.75rem;
+  font-size: 0.9rem;
+  color: #b8b0a4;
+}
+
+.login__error {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #ffb4a8;
+  background: rgb(255 82 82 / 12%);
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #d8d1c4;
+}
+
+.field__input {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  color: #f5f1ea;
+  background: #0f0d0b;
+  border: 1px solid #3a352d;
+  border-radius: 0.5rem;
+
+  &:focus {
+    outline: none;
+    border-color: #e9a825;
+  }
+
+  &--invalid {
+    border-color: #ff8a80;
+  }
+}
+
+.field__error {
+  font-size: 0.8rem;
+  color: #ffb4a8;
+}
+
+.login__forgot {
+  align-self: flex-end;
+  font-size: 0.85rem;
+  color: #e9a825;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.login__submit {
+  padding: 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #12100e;
+  background: #e9a825;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    background: #f2b74a;
+  }
+}
+
+.login__footer {
+  margin: 1.75rem 0 0;
+  font-size: 0.85rem;
+  text-align: center;
+  color: #b8b0a4;
+
+  a {
+    color: #e9a825;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
