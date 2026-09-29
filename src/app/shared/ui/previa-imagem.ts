@@ -1,77 +1,93 @@
-import { Component, computed, input, output, signal, viewChild, ElementRef } from '@angular/core';
+import { Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
 
 /**
  * Previa da foto de perfil / logo: clique abre o seletor de arquivo e mostra o
  * preview como data URL (base64) — a API ainda nao tem upload multipart. Com o
  * endpoint pronto, so este componente muda.
+ *
+ * O quadrado tracejado e o alvo inteiro: icone e legenda vivem DENTRO dele,
+ * como no prototipo. Uma legenda por fora criaria um texto que parece clicavel
+ * e nao e.
  */
 @Component({
   selector: 'app-previa-imagem',
   template: `
+    <!--
+      role="button" + tabindex + Enter/Espaco: e uma <div> porque um <button>
+      nativo nao aceita a moldura tracejada de 11rem sem brigar com os estilos
+      de .botao. O teclado continua funcionando igual.
+    -->
     <div
       class="previa"
-      [class.previa--quadrada]="formato() === 'quadrado'"
-      (click)="abrirSeletor()"
+      role="button"
       tabindex="0"
+      [attr.aria-label]="mostrarImagem() ? 'Trocar imagem' : legendaVazia()"
+      (click)="abrirSeletor()"
       (keydown.enter)="abrirSeletor()"
       (keydown.space)="$event.preventDefault(); abrirSeletor()"
-      role="button"
-      aria-label="Clique para escolher imagem"
     >
       @if (mostrarImagem()) {
         <img class="previa__img" [src]="previewUrl()" [alt]="alt()" />
+        <span class="previa__trocar">Trocar</span>
       } @else {
-        <span class="previa__vazio" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M3 8.5A1.5 1.5 0 014.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0121 8.5v9A1.5 1.5 0 0119.5 19h-15A1.5 1.5 0 013 17.5v-9z"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linejoin="round"
-            />
-            <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.6" />
-          </svg>
-        </span>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M3 8.5A1.5 1.5 0 014.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0121 8.5v9A1.5 1.5 0 0119.5 19h-15A1.5 1.5 0 013 17.5v-9z"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+
+        <span class="previa__legenda">{{ legendaVazia() }}</span>
       }
     </div>
 
-    <p class="previa__rotulo">{{ legenda() }}</p>
+    @if (falhou()) {
+      <p class="previa__erro" role="alert">
+        Escolha uma imagem de até 5 MB.
+      </p>
+    }
 
-    <!-- Input file oculto, so para abrir o seletor -->
+    <!-- Input file oculto: quem abre o seletor e a area tracejada acima. -->
     <input
       #fileInput
       type="file"
       accept="image/*"
-      class="previa__file-input"
-      (change)="arquivoSelecionado($event)"
+      class="previa__file"
+      tabindex="-1"
       aria-hidden="true"
+      (change)="arquivoSelecionado($event)"
     />
   `,
   styles: `
     :host {
-      display: flex;
-      flex-direction: column;
-      gap: var(--k-s-3);
-      align-items: center;
+      display: block;
     }
 
     .previa {
+      position: relative;
       display: grid;
+      gap: var(--k-s-2);
+      place-content: center;
       place-items: center;
-      width: 7.5rem;
-      height: 7.5rem;
+
+      /* Quadrado de verdade: a mesma medida nos dois eixos, elastica entre
+         112px e 176px conforme a coluna do painel cresce. */
+      width: clamp(7rem, 13vw, 11rem);
+      aspect-ratio: 1;
       overflow: hidden;
       color: var(--k-ouro);
-      background: #0e0e0e;
-      border: 1px dashed rgb(242 202 80 / 40%);
-      border-radius: 50%;
       cursor: pointer;
+      background: rgb(255 255 255 / 2%);
+      border: 1px dashed rgb(242 202 80 / 35%);
+      border-radius: var(--k-raio);
       transition: border-color 160ms ease, background-color 160ms ease;
-      position: relative;
 
       &:hover {
-        border-color: var(--k-ouro);
         background: rgb(242 202 80 / 5%);
+        border-color: var(--k-ouro);
       }
 
       &:focus-visible {
@@ -80,10 +96,11 @@ import { Component, computed, input, output, signal, viewChild, ElementRef } fro
       }
     }
 
-    .previa--quadrada {
-      width: 4.5rem;
-      height: 4.5rem;
-      border-radius: var(--k-raio);
+    .previa__legenda {
+      font-size: var(--k-t-xs);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     .previa__img {
@@ -92,28 +109,36 @@ import { Component, computed, input, output, signal, viewChild, ElementRef } fro
       object-fit: cover;
     }
 
-    .previa__vazio {
-      display: grid;
-      place-items: center;
-    }
-
-    .previa__rotulo {
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      color: rgb(242 202 80 / 80%);
+    /* Com imagem, a acao vira uma faixa sobre a base — o quadrado ja nao pode
+       explicar o que faz, porque a imagem ocupa o espaco todo. */
+    .previa__trocar {
+      position: absolute;
+      inset: auto 0 0;
+      padding: var(--k-s-2);
+      font-size: var(--k-t-xs);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--k-texto);
+      text-align: center;
       text-transform: uppercase;
+      background: rgb(0 0 0 / 65%);
     }
 
-    .previa__file-input {
+    .previa__erro {
+      max-width: clamp(7rem, 13vw, 11rem);
+      margin-top: var(--k-s-2);
+      font-size: var(--k-t-sm);
+      color: var(--k-erro);
+    }
+
+    .previa__file {
       display: none;
     }
   `,
 })
 export class PreviaImagem {
-  readonly formato = input<'circulo' | 'quadrado'>('circulo');
   readonly alt = input('Pré-visualização');
-  readonly legendaVazia = input('Adicionar foto');
+  readonly legendaVazia = input('Upload');
 
   /** Emite o data URL (base64) quando o usuario escolhe um arquivo. */
   readonly arquivoChange = output<string | null>();
@@ -125,12 +150,7 @@ export class PreviaImagem {
 
   protected readonly mostrarImagem = computed(() => !!this.previewUrl() && !this.falhou());
 
-  protected readonly legenda = computed(() =>
-    this.mostrarImagem() ? 'Pré-visualização' : this.legendaVazia(),
-  );
-
   protected abrirSeletor(): void {
-    // Abre o seletor de arquivos do navegador via input oculto
     this.fileInput()?.nativeElement.click();
   }
 
@@ -138,33 +158,34 @@ export class PreviaImagem {
     const input = evento.target as HTMLInputElement;
     const arquivo = input.files?.[0];
 
+    // Limpa o input desde ja: sem isto, escolher o MESMO arquivo de novo nao
+    // dispara `change` e a tela parece travada.
+    input.value = '';
+
     if (!arquivo) {
       return;
     }
 
-    // Validacao basica: so imagens, max 5MB
-    if (!arquivo.type.startsWith('image/')) {
+    if (!arquivo.type.startsWith('image/') || arquivo.size > 5 * 1024 * 1024) {
       this.falhou.set(true);
-      return;
-    }
-    if (arquivo.size > 5 * 1024 * 1024) {
-      this.falhou.set(true);
+      this.previewUrl.set(null);
+      this.arquivoChange.emit(null);
       return;
     }
 
     const leitor = new FileReader();
+
     leitor.onload = () => {
       this.previewUrl.set(leitor.result as string);
       this.falhou.set(false);
       this.arquivoChange.emit(leitor.result as string);
     };
+
     leitor.onerror = () => {
       this.falhou.set(true);
       this.arquivoChange.emit(null);
     };
-    leitor.readAsDataURL(arquivo);
 
-    // Limpa o input para permitir selecionar o mesmo arquivo de novo
-    input.value = '';
+    leitor.readAsDataURL(arquivo);
   }
 }

@@ -1,37 +1,62 @@
 @use '../../../../styles/mixins' as m;
 
-/* O <fieldset> que envolve as etapas não pode ter caixa própria: ele existe
-   só para desligar todos os campos de uma vez enquanto a requisição corre. */
+/* O <fieldset> que envolve as etapas nao pode ter caixa propria: ele existe
+   so para desligar todos os campos de uma vez enquanto a requisicao corre. */
 fieldset {
   padding: 0;
   margin: 0;
   border: 0;
 }
 
-/* O ícone do CEP é decorativo, não um botão: não existe busca por
-   geolocalização nesta task. Então ele não recebe hover nem cursor. */
+/* O icone do CEP e decorativo, nao um botao: nao existe busca por
+   geolocalizacao nesta task. Entao ele nao recebe hover nem cursor. */
 .campo-icone__acao--estatico {
   pointer-events: none;
 }
 
-/* --------------------------------------------------------------- Pills Contrato */
+/* ------------------------------------------------- Pilulas de contrato */
+
 .pills {
   display: flex;
-  gap: var(--k-s-2);
   flex-wrap: wrap;
+  gap: var(--k-s-2);
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
 
 .pill {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 13px 16px;
-  border-radius: var(--k-raio-lg); /* 12px */
-  border: 1px solid var(--k-linha);
-  background: var(--k-campo);
+
+  /* 44px de altura: o minimo de alvo de toque da WCAG 2.5.8. Uma pilula
+     bonita de 32px e uma pilula que o polegar erra. */
+  min-height: 2.75rem;
+  padding: 0 var(--k-s-5);
   cursor: pointer;
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  background: var(--k-campo);
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: var(--k-raio-lg);
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+
+  &:hover {
+    border-color: rgb(255 255 255 / 16%);
+  }
+
+  /* :has() le o estado do radio ESCONDIDO dentro do label e estiliza o label.
+     Sem ele, so o JS saberia que esta opcao recebeu foco pelo teclado. */
+  &:has(.pill__radio:focus-visible) {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+
+  /* Selecionada: contorno ouro e fundo fosco. A classe --ativo vem do template
+     porque o :has(:checked) sozinho nao cobriria o estado inicial do form. */
+  &--ativo {
+    background: var(--k-ouro-fosco);
+    border-color: var(--k-ouro);
+  }
 }
 
 .pill__radio {
@@ -39,47 +64,23 @@ fieldset {
 }
 
 .pill__texto {
-  font-family: var(--k-sans);
   font-size: 0.875rem; /* 14px */
   font-weight: 500;
   color: var(--k-texto-muted);
-  transition: color 160ms ease;
-
-  /* Garante que a cor não seja herdada de outro elemento */
-  color: var(--k-texto-muted) !important;
-}
-
-.pill:hover {
-  border-color: var(--k-linha-forte);
-}
-
-.pill:has(.pill__radio:focus-visible) {
-  outline: 2px solid var(--k-ouro);
-  outline-offset: 2px;
-}
-
-/* Selecionado: borda ouro + fundo rgba ouro 0.1 (--k-ouro-fosco) */
-.pill--ativo {
-  border-color: var(--k-ouro);
-  background: var(--k-ouro-fosco);
 }
 
 .pill--ativo .pill__texto {
-  color: var(--k-ouro);
   font-weight: 600;
+  color: var(--k-ouro);
 }
 
-/* ------------------------------------------------------------ Checkbox Termos */
-.termo {
-  margin-top: 0; /* o app-campo já tem margin-bottom, este vive sem o wrapper */
-}
+/* ------------------------------------------------ Checkbox (termos, atual) */
 
 .termo__label {
-  display: inline-flex;
-  gap: var(--k-s-2);
+  display: flex;
+  gap: var(--k-s-3);
   align-items: flex-start;
   cursor: pointer;
-  line-height: 1.5;
 }
 
 .termo__checkbox {
@@ -88,15 +89,15 @@ fieldset {
 
 .termo__check {
   display: grid;
+  flex-shrink: 0;
   place-items: center;
   width: 1.25rem; /* 20px */
   height: 1.25rem;
-  flex-shrink: 0;
-  margin-top: 0.125rem; /* alinhamento óptico com a primeira linha do texto */
+  margin-top: 0.125rem; /* alinhamento optico com a primeira linha do texto */
   color: var(--k-ouro);
-  border: 1px solid var(--k-linha-forte);
-  border-radius: 4px;
   background: var(--k-campo);
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 4px;
   transition: border-color 140ms ease, background-color 140ms ease;
 }
 
@@ -106,20 +107,23 @@ fieldset {
   transition: opacity 120ms ease, transform 120ms ease;
 }
 
-.termo__label:hover .termo__check {
+.termo__label:hover .termo__check,
+.periodo__atual:hover .termo__check {
   border-color: var(--k-ouro);
 }
 
-.termo__label:has(.termo__checkbox:focus-visible) .termo__check {
+.termo__checkbox:focus-visible + .termo__check {
   outline: 2px solid var(--k-ouro);
   outline-offset: 2px;
 }
 
-/* Checked: fundo ouro + check aparece */
+/* O irmao adjacente (+) so funciona porque o <input> vem IMEDIATAMENTE antes
+   do <span> no template. Trocar a ordem quebra o visual sem quebrar o form —
+   por isso o comentario fica aqui, e nao no HTML. */
 .termo__checkbox:checked + .termo__check {
+  color: #131313;
   background: var(--k-ouro);
   border-color: var(--k-ouro);
-  color: #131313; /* --k-fundo para o check ficar escuro sobre o ouro */
 }
 
 .termo__checkbox:checked + .termo__check svg {
@@ -128,10 +132,9 @@ fieldset {
 }
 
 .termo__texto {
-  font-family: var(--k-sans);
-  font-size: var(--k-t-sm); /* 13px */
+  font-size: var(--k-t-sm);
+  line-height: 1.55;
   color: var(--k-texto-fraco);
-  line-height: 1.5;
 }
 
 .termo__link {
@@ -146,33 +149,31 @@ fieldset {
 
 .termo__erro {
   display: block;
-  margin-top: var(--k-s-1);
+  margin-top: var(--k-s-2);
   font-size: var(--k-t-sm);
   font-weight: 500;
   color: var(--k-erro);
 }
 
-/* ---------------------------------------------------------- Etapa 2: Experiências */
+/* ---------------------------------------------- Etapa 2: experiencias */
 
-/* Experiências já adicionadas */
 .experiencias-adicionadas {
-  width: 100%;
-  max-width: 36rem;
-  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: var(--k-s-3);
-  margin-bottom: var(--k-s-6);
 }
 
 .experiencia-card {
-  position: relative;
   display: flex;
-  align-items: flex-start;
   gap: var(--k-s-3);
+  align-items: flex-start;
   padding: var(--k-s-4) var(--k-s-5);
   background: var(--k-superficie);
+
+  /* A barra dourada na lateral marca o item como "seu", nao como alerta.
+     Um cartao com borda inteira competiria com o painel de nova experiencia. */
   border: 1px solid var(--k-linha);
+  border-left: 2px solid var(--k-ouro);
   border-radius: var(--k-raio);
 }
 
@@ -181,140 +182,113 @@ fieldset {
   min-width: 0;
 }
 
+/* O periodo vem ANTES do nome no HTML: numa lista de experiencias, o eixo que
+   organiza a leitura e o tempo. Por isso ele e o eyebrow do cartao. */
+.experiencia-card__periodo {
+  @include m.rotulo;
+
+  margin-bottom: var(--k-s-1);
+  font-size: var(--k-t-2xs);
+  color: var(--k-ouro);
+  font-variant-numeric: tabular-nums;
+}
+
 .experiencia-card__local {
+  margin: 0;
   font-family: var(--k-serif);
   font-size: 1.125rem; /* 18px */
-  font-weight: 600;
-  color: var(--k-texto);
-  margin: 0 0 var(--k-s-1);
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .experiencia-card__cargo {
-  font-family: var(--k-sans);
-  font-size: var(--k-t-base); /* 16px */
+  margin: var(--k-s-1) 0 0;
+  font-size: var(--k-t-sm);
   color: var(--k-texto-fraco);
-  margin: 0 0 var(--k-s-1);
-}
-
-.experiencia-card__periodo {
-  font-family: var(--k-sans);
-  font-size: var(--k-t-sm); /* 13px */
-  font-weight: 600;
-  color: var(--k-ouro);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .experiencia-card__remover {
   display: grid;
+  flex-shrink: 0;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  flex-shrink: 0;
   color: var(--k-texto-fraco);
-  background: transparent;
-  border: none;
   border-radius: var(--k-raio);
   transition: color 160ms ease, background-color 160ms ease;
+
+  &:hover {
+    color: var(--k-erro);
+    background: var(--k-erro-fundo);
+  }
 }
 
-.experiencia-card__remover:hover {
-  color: var(--k-erro);
-  background: var(--k-erro-fundo);
-}
-
-/* Botão link para adicionar outra experiência */
 .btn-link {
   display: inline-flex;
-  align-items: center;
   gap: var(--k-s-2);
+  align-items: center;
+  align-self: flex-start;
+  min-height: 2.75rem;
   padding: var(--k-s-2) 0;
-  font-family: var(--k-sans);
   font-size: var(--k-t-sm);
   font-weight: 600;
   color: var(--k-ouro);
-  background: transparent;
-  border: none;
-  cursor: pointer;
   transition: color 160ms ease;
+
+  &:hover {
+    color: var(--k-ouro-claro);
+  }
 }
 
-.btn-link:hover {
-  color: var(--k-ouro-claro);
-}
-
-/* Botão para adicionar primeira experiência (estado vazio) */
+/* Estado vazio: um convite, nao um aviso. A borda tracejada diz "falta algo
+   aqui" sem usar a cor de erro. */
 .btn-adicionar-primeira {
-  display: inline-flex;
+  display: flex;
+  gap: var(--k-s-2);
   align-items: center;
   justify-content: center;
-  gap: var(--k-s-2);
   width: 100%;
-  padding: var(--k-s-5) var(--k-s-6);
-  font-family: var(--k-sans);
+  padding: var(--k-s-6);
   font-size: var(--k-t-base);
   font-weight: 500;
   color: var(--k-ouro);
   background: var(--k-superficie);
-  border: 1px dashed rgb(242 202 80 / 40%);
+  border: 1px dashed rgb(242 202 80 / 35%);
   border-radius: var(--k-raio-lg);
-  cursor: pointer;
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
+
+  &:hover {
+    background: rgb(242 202 80 / 5%);
+    border-color: var(--k-ouro);
+  }
 }
 
-.btn-adicionar-primeira:hover {
-  border-color: var(--k-ouro);
-  background: rgb(242 202 80 / 5%);
-  color: var(--k-ouro-claro);
-}
-
-/* Painel Nova Experiência */
 .nova-experiencia {
-  width: 100%;
-  max-width: 36rem;
-  margin-inline: auto;
   padding: var(--k-s-5);
   background: var(--k-superficie);
   border: 1px solid var(--k-linha);
   border-radius: var(--k-raio-lg);
-  animation: slideDown 240ms cubic-bezier(0.2, 0.8, 0.3, 1);
-
-  /* Garante centralização mesmo dentro de grid/flex pai */
-  justify-self: center;
+  animation: painel-abre 240ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
-/* A lista de experiências também centralizada */
-.experiencias-adicionadas {
-  justify-self: center;
-}
-
-@keyframes slideDown {
+@keyframes painel-abre {
   from {
     opacity: 0;
-    transform: translateY(-1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-0.75rem);
   }
 }
 
 .nova-experiencia__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--k-s-5);
   padding-bottom: var(--k-s-3);
+  margin-bottom: var(--k-s-5);
   border-bottom: 1px solid var(--k-linha);
 }
 
 .nova-experiencia__titulo {
-  font-family: var(--k-sans);
-  font-size: var(--k-t-lg);
-  font-weight: 600;
-  color: var(--k-texto);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  @include m.rotulo;
+
+  font-size: var(--k-t-sm);
+  color: var(--k-ouro);
 }
 
 .nova-experiencia__form {
@@ -328,157 +302,75 @@ fieldset {
   grid-template-columns: 1fr 1fr;
   gap: var(--k-s-4);
 
-  @media (width < 48rem) {
+  /* 32rem e a largura em que dois inputs lado a lado passam a ficar curtos
+     demais para um nome de restaurante. Nada a ver com "tablet". */
+  @media (width < 32rem) {
     grid-template-columns: 1fr;
   }
 }
 
-/* Período com dois inputs lado a lado + checkbox atual */
-.periodo-inputs {
+/* Periodo: inicio, fim e o "trabalho aqui hoje" na mesma linha quando cabe. */
+.periodo {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: var(--k-s-4);
-  align-items: end;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-s-3) var(--k-s-4);
 
-  @media (width < 48rem) {
+  @media (width < 26rem) {
     grid-template-columns: 1fr;
   }
 }
 
-.periodo-input {
+.periodo__campo {
   display: flex;
   flex-direction: column;
-  gap: var(--k-s-1);
-}
-
-.periodo-label {
-  @include m.rotulo;
-  font-size: var(--k-t-xs);
-}
-
-.periodo-input__wrapper {
-  position: relative;
-}
-
-.periodo-input__wrapper .entrada {
-  padding-right: 2.5rem;
-}
-
-.periodo-icone {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--k-texto-placeholder);
-  pointer-events: none;
-}
-
-.periodo-atual {
-  display: flex;
-  align-items: center;
   gap: var(--k-s-2);
-  white-space: nowrap;
-  padding-bottom: 0.25rem; /* alinhar com o input */
+  min-width: 0;
 }
 
-.periodo-atual__checkbox {
-  @include m.apenas-leitor-de-tela;
-}
+.periodo__rotulo {
+  @include m.rotulo;
 
-.periodo-atual__check {
-  display: grid;
-  place-items: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-  color: var(--k-ouro);
-  border: 1px solid var(--k-linha-forte);
-  border-radius: 4px;
-  background: var(--k-campo);
-  transition: border-color 140ms ease, background-color 140ms ease;
-}
-
-.periodo-atual__check svg {
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.periodo-atual input:checked + .periodo-atual__check {
-  background: var(--k-ouro);
-  border-color: var(--k-ouro);
-  color: #131313;
-}
-
-.periodo-atual input:checked + .periodo-atual__check svg {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.periodo-atual__texto {
-  font-family: var(--k-sans);
-  font-size: var(--k-t-sm);
+  font-size: var(--k-t-2xs);
   color: var(--k-texto-fraco);
 }
 
-/* Ações do formulário */
+.periodo__atual {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: center;
+  cursor: pointer;
+
+  /* Ocupa a linha inteira embaixo dos dois seletores: espremido numa terceira
+     coluna, "Trabalho aqui hoje" quebrava em tres linhas. */
+  grid-column: 1 / -1;
+}
+
 .nova-experiencia__acoes {
   display: flex;
-  justify-content: flex-end;
   gap: var(--k-s-3);
-  margin-top: var(--k-s-2);
+  justify-content: flex-end;
   padding-top: var(--k-s-4);
   border-top: 1px solid var(--k-linha);
 }
 
-.botao--secundario {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--k-s-2);
-  padding: var(--k-s-2) var(--k-s-4);
-  font-family: var(--k-sans);
+/* As acoes do painel sao locais: nao devem ter o peso do CTA da etapa, que e
+   o unico botao dourado de largura cheia da tela. */
+.nova-experiencia__acoes .botao {
+  width: auto;
+  min-height: 2.75rem;
+  padding-inline: var(--k-s-5);
   font-size: var(--k-t-sm);
-  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.botao--secundario {
   color: var(--k-texto);
-  background: var(--k-campo);
-  border: 1px solid var(--k-linha);
-  border-radius: var(--k-raio);
-  cursor: pointer;
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
-}
+  background: transparent;
+  border: 1px solid var(--k-linha-forte);
 
-.botao--secundario:hover {
-  border-color: var(--k-linha-forte);
-  background: var(--k-superficie);
-  color: var(--k-texto);
-}
-
-/* ============================================================
-   Correções de tipografia para alinhar com Figma
-   ============================================================ */
-
-/* Título etapa 2: 36px, Noto Serif, weight 400 (não 700) */
-.titulo--etapa2 {
-  font-family: var(--k-serif);
-  font-size: 2.25rem; /* 36px */
-  font-weight: 400;
-  line-height: 1.25;
-}
-
-/* Título etapa 3: 36px, Noto Serif, weight 400 (não 30px/700/Manrope) */
-.titulo--etapa3 {
-  font-family: var(--k-serif);
-  font-size: 2.25rem; /* 36px */
-  font-weight: 400;
-  line-height: 1.25;
-}
-
-/* Select vazio: placeholder com cor correta (--k-texto-placeholder = #7e7e7e) */
-.entrada--vazio {
-  color: var(--k-texto-placeholder);
-}
-
-.entrada--vazio::placeholder {
-  color: var(--k-texto-placeholder);
+  &:hover:not(:disabled) {
+    background: var(--k-superficie-2);
+    box-shadow: none;
+  }
 }

@@ -99,4 +99,17 @@
   --k-sidebar-w: 256px;
   --k-fundo-header: rgb(9 9 11 / 70%); /* translucido: o main aparece atras */
   --k-icone-nav: rgb(255 255 255 / 50%); /* icone mascarado fora do item ativo */
+
+  /* --- O PALCO DO CADASTRO (mockups 3 e 4) ---
+     As telas de cadastro sao dois ambientes, nao um fundo so: a esquerda e o
+     painel de contexto (onde voce esta) e a direita e a bancada de trabalho
+     (o que voce digita). Dois cinzas muito proximos, separados por uma
+     divisoria de 1px, bastam para o olho ler "dois lugares" sem barulho. */
+  --k-palco: #101010;         /* coluna da esquerda: o mais escuro da tela */
+  --k-bancada: #161616;       /* coluna da direita: um degrau acima */
+  --k-campo-bancada: #242424; /* inputs sobre a bancada, sem borda visivel */
+
+  /* Altura do input. Fica em token porque select, input e o seletor de
+     mes/ano precisam bater a mesma altura — tres arquivos, um numero. */
+  --k-altura-campo: 3.25rem; /* 52px */
 }

@@ -34,11 +34,10 @@ import {
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
-import { Moldura } from '../../../shared/ui/moldura';
 import { PreviaImagem } from '../../../shared/ui/previa-imagem';
 import { SeletorMesAno } from '../../../shared/ui/seletor-mes-ano';
 import { Tags } from '../../../shared/ui/tags';
-import { TopoEtapa } from '../../../shared/ui/topo-etapa';
+import { PainelCadastro } from '../../../shared/ui/painel-cadastro';
 
 /** Os nomes dos controls, para o TypeScript conferir a lista de etapas. */
 type CampoProfissional =
@@ -72,8 +71,7 @@ type CampoProfissional =
   selector: 'app-registro-profissional',
   imports: [
     ReactiveFormsModule,
-    TopoEtapa,
-    Moldura,
+    PainelCadastro,
     Campo,
     EstadoCampoDirective,
     Tags,
@@ -106,15 +104,6 @@ export class RegistroProfissional {
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
-  /** Frase da vitrine por etapa (aproximacao ao Figma). */
-  protected readonly fraseVitrine = computed(
-    () =>
-      ([
-        'A cozinha certa para o seu talento.',
-        'Mostre onde você já brilhou.',
-        'Vagas perto de você.',
-      ] as const)[this.etapa() - 1] ?? 'A cozinha certa para o seu talento.',
-  );
 
   /**
    * `NonNullableFormBuilder`: o tipo de cada control vira `string` (e nao

@@ -1,41 +1,70 @@
 @use '../../../../styles/mixins' as m;
 
-/* Voltar simples no topo (sem titulo nem progresso, como no Figma). */
+/* Voltar solto no topo: sem titulo, sem contador e sem barra de progresso.
+   Esta tela nao e uma etapa do cadastro — e a bifurcacao ANTES dele, e por
+   isso nao merece o chrome de etapa. */
 .voltar {
-  padding: var(--k-s-4) var(--k-gutter) 0;
+  padding: var(--k-s-5) var(--k-gutter) 0;
 }
 
 .voltar__botao {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+
+  /* O alvo de toque tem 44px, mas a seta desenhada tem 20: a area clicavel
+     cresce sem que apareca uma caixa em volta dela. */
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -0.75rem;
   color: var(--k-ouro);
-  background: rgb(28 27 27 / 50%);
-  border: 1px solid rgb(77 70 53 / 15%);
-  border-radius: var(--k-raio-lg);
+  border-radius: var(--k-raio);
+  transition: color 140ms ease, transform 160ms cubic-bezier(0.2, 0.8, 0.3, 1);
 
   &:hover {
-    border-color: rgb(77 70 53 / 40%);
+    color: var(--k-ouro-claro);
+    transform: translateX(-2px);
   }
 }
 
-.tela__corpo .subtitulo {
-  font-size: var(--k-t-base);
-  color: #d0c5af;
+/* A escolha e uma pergunta, nao um formulario: pergunta, cartoes e botao sao
+   UM bloco centrado na coluna.
+   Por que margem automatica nos dois, e nao `justify-content: center` na
+   `.tela`? Porque a `.tela` e compartilhada com a tela de entrar, e mexer nela
+   mudaria as duas. A margem automatica age so aqui. */
+.tela__corpo {
+  flex: 0 1 auto;
+  margin-top: auto;
+  padding-bottom: 0;
 }
 
-/* Grid de 2 colunas do Figma; empilha so em celular estreito. */
+.tela__rodape {
+  /* O respiro generoso e o que faz o botao parecer a conclusao da escolha, e
+     nao um terceiro cartao na mesma lista. */
+  padding-top: var(--k-s-7);
+  margin-bottom: auto;
+}
+
+/* A margem do <p> em relacao ao <h1> ja vem do .subtitulo global. */
+.escolha__intro {
+  margin-bottom: var(--k-s-6);
+}
+
+.tela__corpo .subtitulo {
+  color: var(--k-texto-muted);
+}
+
+/* Grid de 2 colunas; empilha so quando o cartao ficaria estreito demais para
+   caber "Publique vagas e contrate com agilidade" em duas linhas. */
 .perfis {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--k-s-4);
   padding: 0;
-
-  /* Só o topo: o `margin: X 0 0` do shorthand zerava as laterais e impedia o
-     `margin-inline: auto` global de centralizar o grid dentro dos 36rem. */
-  margin-block-start: var(--k-s-6);
   border: 0;
+
+  /* So o topo: o `margin: X 0 0` do shorthand zerava as laterais e impedia o
+     `margin-inline: auto` global de centralizar o grid dentro da coluna. */
+  margin-block-start: var(--k-s-6);
 
   @media (width < 30rem) {
     grid-template-columns: 1fr;
@@ -53,33 +82,36 @@
   flex-direction: column;
   gap: var(--k-s-2);
   align-items: center;
-  padding: var(--k-s-6) var(--k-s-5) var(--k-s-5);
+  padding: var(--k-s-6) var(--k-s-4) var(--k-s-5);
   text-align: center;
   cursor: pointer;
   background: var(--k-fundo);
   border: 1px solid rgb(77 70 53 / 40%);
-  border-radius: var(--k-raio);
+  border-radius: var(--k-raio-lg);
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 
   &:hover {
     border-color: rgb(77 70 53 / 70%);
   }
 
-  /* O selecionado: fundo #1C1B1B, contorno ouro e brilho interno. */
+  /* O selecionado: contorno ouro e um brilho interno muito fraco. O brilho faz
+     o cartao parecer aceso por dentro, em vez de apenas contornado. */
   &--ativo {
     background: #1c1b1b;
     border-color: var(--k-ouro);
-    box-shadow: inset 0 0 20px 1px rgb(242 202 80 / 5%);
+    box-shadow: inset 0 0 24px rgb(242 202 80 / 6%);
+  }
+
+  /* :has() le o estado do radio ESCONDIDO dentro do label e estiliza o label.
+     Sem ele, so o JS saberia que este cartao recebeu foco pelo teclado. */
+  &:has(.perfil__radio:focus-visible) {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
   }
 }
 
 .perfil__radio {
   @include m.apenas-leitor-de-tela;
-}
-
-.perfil:has(.perfil__radio:focus-visible) {
-  outline: 2px solid var(--k-ouro);
-  outline-offset: 2px;
 }
 
 .perfil__icone {
@@ -91,7 +123,6 @@
   color: var(--k-ouro);
   background: #1e1e1a;
   border-radius: var(--k-raio);
-  border: none; /* Remove herança de border-color do color: var(--k-ouro) no SVG */
   transition: background-color 160ms ease;
 }
 
@@ -102,7 +133,7 @@
 .perfil__nome {
   font-family: var(--k-serif);
   font-size: 1.125rem; /* 18px */
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .perfil--ativo .perfil__nome {
@@ -112,15 +143,17 @@
 .perfil__resumo {
   font-size: 0.75rem; /* 12px */
   line-height: 1.6;
-  color: #d0c5af;
+  color: var(--k-texto-muted);
   text-wrap: balance;
 }
 
-/* O visto dourado: absoluto no canto, so existe no cartao escolhido. */
+/* O visto dourado: absoluto no canto, so aparece no cartao escolhido. Fica
+   sempre no DOM para que ligar/desligar seja uma transicao de opacidade, e nao
+   um elemento pulando para dentro do layout. */
 .perfil__marca {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: var(--k-s-3);
+  right: var(--k-s-3);
   color: var(--k-ouro);
   opacity: 0;
   transition: opacity 160ms ease;

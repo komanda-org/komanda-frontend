@@ -29,9 +29,8 @@ import {
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
-import { Moldura } from '../../../shared/ui/moldura';
 import { PreviaImagem } from '../../../shared/ui/previa-imagem';
-import { TopoEtapa } from '../../../shared/ui/topo-etapa';
+import { PainelCadastro } from '../../../shared/ui/painel-cadastro';
 
 type CampoRestaurante =
   | 'email'
@@ -55,8 +54,7 @@ type CampoRestaurante =
   selector: 'app-registro-restaurante',
   imports: [
     ReactiveFormsModule,
-    TopoEtapa,
-    Moldura,
+    PainelCadastro,
     Campo,
     EstadoCampoDirective,
     PreviaImagem,
@@ -85,13 +83,6 @@ export class RegistroRestaurante {
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
-  /** Frase da vitrine por etapa (aproximacao — copy final pendente de UX). */
-  protected readonly fraseVitrine = computed(
-    () =>
-      (['A equipe ideal para a sua casa.', 'Mostre sua casa aos candidatos.'] as const)[
-        this.etapa() - 1
-      ] ?? 'A equipe ideal para a sua casa.',
-  );
 
   /** Espelha a especificacao de POST /restaurants. */
   protected readonly form = this.fb.group({
