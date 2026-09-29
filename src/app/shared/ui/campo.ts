@@ -3,15 +3,9 @@ import { AbstractControl } from '@angular/forms';
 import { mensagemDoErro } from '../../core/validators/mensagens-de-erro';
 
 /**
- * Moldura de um campo: rotulo em cima, o control no meio, erro/dica/contador embaixo.
- *
- * O input em si NAO vive aqui dentro — ele e projetado com <ng-content>. Foi uma
- * escolha deliberada: envolver o <input> nativo num ControlValueAccessor proprio
- * daria mais codigo e tiraria de graca coisas que o navegador ja faz bem
- * (autofill, type="email" abrindo o teclado certo no celular, autocomplete).
- *
- * Entao aqui a regra e: o componente cuida da MOLDURA, o HTML nativo cuida do
- * CONTROL. Cada um faz o que faz melhor.
+ * Moldura de um campo: rotulo em cima, erro/dica/contador embaixo. O input NAO
+ * vive aqui — chega por `<ng-content>`: cuidar da moldura e deixar o input nativo
+ * fazer o que ja faz bem (autofill, `type="email"`, teclado certo no celular).
  */
 @Component({
   selector: 'app-campo',
@@ -56,16 +50,13 @@ export class Campo {
   readonly maximo = input<number | null>(null);
 
   /**
-   * Metodo, e nao `computed()`. Motivo: `computed` so recalcula quando um SIGNAL
-   * do qual ele depende muda — e o estado de um FormControl (touched, errors)
-   * nao e signal. Um metodo e reavaliado a cada ciclo de deteccao de mudanca,
-   * que e exatamente quando o estado do formulario pode ter mudado.
+   * Metodo, e nao `computed()`: o estado de um FormControl (touched, errors)
+   * nao e signal, entao `computed` nao perceberia a mudanca.
    */
   protected erro(): string | null {
     const controle = this.controle();
 
-    // So mostramos erro depois que o usuario saiu do campo (touched). Acusar erro
-    // enquanto ele ainda esta digitando o e-mail e hostil.
+    // Erro so depois da saida do campo (touched): acusar enquanto digita e hostil.
     if (!controle.touched || controle.valid) {
       return null;
     }

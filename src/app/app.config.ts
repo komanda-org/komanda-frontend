@@ -14,19 +14,12 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
 
     /**
-     * HttpClient da aplicacao.
+     * `withFetch()`: o XHR nao existe no Node — sem o fetch, toda requisicao
+     * feita durante o SSR falharia.
      *
-     * `withFetch()` troca o XMLHttpRequest antigo pela API fetch. Nao e enfeite:
-     * o XHR nao existe no Node, entao sem isto toda requisicao feita durante o
-     * SSR falharia.
-     *
-     * `withInterceptors([...])` registra os pedagios UMA vez para o app inteiro.
-     * A ordem do array e a ordem de execucao NA IDA; na volta, o inverso.
-     *
-     * O log vem por ULTIMO de proposito: assim ele fica mais perto do backend e,
-     * na volta, e o primeiro a ver a resposta — inclusive o HttpErrorResponse
-     * cru, antes do erroApi transformar em ErroApi. Ele se desliga sozinho em
-     * build de producao.
+     * Ordem dos interceptors = ordem de execucao na ida (na volta, o inverso):
+     * o log por ultimo, para ver a resposta crua antes do `erroApi` normalizar
+     * (e mascarar o que nao deve ser impresso). Ele se desliga em producao.
      */
     provideHttpClient(
       withFetch(),

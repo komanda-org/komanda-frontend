@@ -1,13 +1,7 @@
 /**
- * O CONTRATO das duas rotas de registro, conforme o back-end real:
- * POST /api/professionals e POST /api/restaurants.
- *
- * Os nomes dos campos estao em ingles porque e assim que o payload viaja na
- * API. O resto do front fala portugues; a fronteira e aqui.
- *
- * Fonte da verdade (komanda-api):
- *   dto/create-professional.dto.ts  +  use-cases/register-professional.use-case.ts
- *   dto/create-restaurant.dto.ts    +  use-cases/register-restaurant.use-case.ts
+ * O CONTRATO das duas rotas de registro (POST /api/professionals e
+ * /api/restaurants), conforme o back-end real. Campos em ingles porque e
+ * assim que o payload viaja na API — o resto do front fala portugues.
  */
 
 /** O que o usuario escolhe na primeira decisao da pagina. */
@@ -43,21 +37,17 @@ export interface RegistrarRestaurantePayload {
 }
 
 /**
- * O papel do usuario. No back e o enum `Role` do Prisma; aqui viaja como
- * string literal. Usamos uma uniao de literais (`'A' | 'B'`) em vez de `string`
- * para que um typo como 'PROFISIONAL' seja erro de compilacao, nao bug de runtime.
+ * Papel do usuario (enum `Role` do Prisma). Uniao de literais em vez de
+ * `string` para que um typo seja erro de compilacao, nao bug de runtime.
  */
 export type PapelUsuario = 'PROFISSIONAL' | 'RESTAURANTE';
 
 /**
  * O nucleo que os DOIS cadastros devolvem.
  *
- * `createdAt` e string, nao Date — de proposito. O back declara Date, mas entre
- * o Nest e o browser existe JSON, e JSON nao tem tipo data: o Date e serializado
- * como string ISO ("2026-09-23T14:02:11.000Z") e o HttpClient entrega exatamente
- * isso. Tipar como Date permitiria `resposta.createdAt.getFullYear()`, que
- * compila e quebra em runtime. Se algum dia precisarmos da data de verdade:
- * `new Date(resposta.createdAt)`.
+ * `createdAt` e string, nao Date: JSON nao tem tipo data, o back serializa para
+ * ISO e o HttpClient entrega exatamente isso — tipar como Date deixaria
+ * `createdAt.getFullYear()` compilar e quebrar em runtime.
  */
 export interface RegistroRespostaBase {
   userId: string;
@@ -67,11 +57,8 @@ export interface RegistroRespostaBase {
 }
 
 /**
- * Resposta de POST /professionals.
- * `extends` = herda userId/email/role/createdAt e acrescenta o que e so daqui.
- *
- * Redeclarar `role` com o literal exato estreita o tipo herdado: dentro desta
- * interface, role nao e mais 'PROFISSIONAL' | 'RESTAURANTE', e so 'PROFISSIONAL'.
+ * Resposta de POST /professionals. Redeclarar `role` estreita o tipo herdado:
+ * aqui ele deixa de ser a uniao e vira so 'PROFISSIONAL'.
  */
 export interface RegistroProfissionalResposta extends RegistroRespostaBase {
   role: 'PROFISSIONAL';
@@ -82,9 +69,8 @@ export interface RegistroProfissionalResposta extends RegistroRespostaBase {
 /**
  * Resposta de POST /restaurants.
  *
- * ATENCAO ao `cnpj`: o use-case do back faz `dto.cnpj.replace(/\D/g, '')` antes
- * de gravar. Mandamos "11.222.333/0001-81" e recebemos de volta "11222333000181".
- * Se um dia alguem for exibir esse valor na tela, tem que mascarar de novo.
+ * `cnpj` volta SEM mascara: o use-case do back faz `.replace(/\D/g, '')` antes
+ * de gravar ("11.222.333/0001-81" -> "11222333000181"). Quem exibir, mascara.
  */
 export interface RegistroRestauranteResposta extends RegistroRespostaBase {
   role: 'RESTAURANTE';

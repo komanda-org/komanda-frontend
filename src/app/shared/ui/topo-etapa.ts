@@ -1,12 +1,9 @@
 import { Component, computed, input, output } from '@angular/core';
 
 /**
- * A barra de topo do cadastro: voltar, titulo da marca, contador de etapa
- * e a barra de progresso dourada logo abaixo.
- *
- * E um componente "burro": nao sabe em que etapa a aplicacao esta nem como
- * voltar. Recebe numeros e devolve um evento. Isso permite que as tres telas
- * de cadastro usem exatamente a mesma barra sem duplicar uma linha de CSS.
+ * Barra de topo do cadastro: voltar, titulo da marca, contador de etapa e
+ * progresso. Componente "burro": recebe numeros e devolve eventos, entao as
+ * tres telas usam a mesma barra sem duplicar CSS.
  */
 @Component({
   selector: 'app-topo-etapa',
@@ -61,10 +58,6 @@ export class TopoEtapa {
 
   readonly voltar = output<void>();
 
-  /**
-   * `computed` cria um signal derivado: recalcula sozinho quando `etapa` ou
-   * `total` mudam, e so entao. Nao e um metodo reavaliado a cada ciclo — e um
-   * valor com cache que sabe quando esta velho.
-   */
+  /** Signal derivado: recalcula so quando `etapa` ou `total` mudam. */
   protected readonly porcentagem = computed(() => (this.etapa() / this.total()) * 100);
 }

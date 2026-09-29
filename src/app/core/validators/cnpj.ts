@@ -1,18 +1,11 @@
 /**
  * Validacao de CNPJ pelo algoritmo oficial (digitos verificadores).
  *
- * Funcao pura: entra string, sai boolean. Nao depende de Angular, nao toca em
- * DOM, nao faz requisicao. Isso a torna trivial de testar (ver cnpj.spec.ts) e
- * reutilizavel em qualquer contexto — inclusive no servidor, durante o SSR.
+ * Funcao pura — nao depende de Angular nem de DOM, funciona ate no SSR.
  *
- * COMO O ALGORITMO FUNCIONA
- * Um CNPJ tem 14 digitos: 12 de base + 2 verificadores.
- * Cada verificador e calculado assim:
- *   1. multiplica cada digito da base por um peso de uma sequencia fixa;
- *   2. soma tudo;
- *   3. resto = soma % 11;
- *   4. digito = resto < 2 ? 0 : 11 - resto.
- * O segundo verificador repete o processo incluindo o primeiro no calculo.
+ * Um CNPJ tem 14 digitos: 12 de base + 2 verificadores. Cada verificador:
+ * multiplica a base por uma sequencia de pesos, soma, resto = soma % 11 e
+ * digito = resto < 2 ? 0 : 11 - resto. O segundo repete incluindo o primeiro.
  */
 
 const PESOS_PRIMEIRO_DIGITO = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
@@ -37,7 +30,6 @@ export function cnpjEhValido(valor: string): boolean {
   }
 
   // '11111111111111' passa na conta dos verificadores mas nao e CNPJ real.
-  // Sem esta linha, 10 sequencias invalidas seriam aceitas.
   if (/^(\d)\1{13}$/.test(digitos)) {
     return false;
   }
