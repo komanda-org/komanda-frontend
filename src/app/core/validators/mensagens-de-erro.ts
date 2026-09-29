@@ -63,11 +63,11 @@ export function mensagemDoErro(erros: ValidationErrors | null, rotulo: string): 
   }
 
   if (erros['confirmacao']) {
-    return 'As senhas nao conferem';
+    return 'As senhas não coincidem';
   }
 
   if (erros['obrigatorioTrue']) {
-    return 'Voce deve aceitar os termos para continuar';
+    return 'Aceite os termos para continuar';
   }
 
   return `${rotulo} e invalido`;

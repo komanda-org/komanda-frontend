@@ -74,85 +74,11 @@ fieldset {
   color: var(--k-ouro);
 }
 
-/* ------------------------------------------------ Checkbox (termos, atual) */
-
-.termo__label {
-  display: flex;
-  gap: var(--k-s-3);
-  align-items: flex-start;
-  cursor: pointer;
-}
-
-.termo__checkbox {
-  @include m.apenas-leitor-de-tela;
-}
-
-.termo__check {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 1.25rem; /* 20px */
-  height: 1.25rem;
-  margin-top: 0.125rem; /* alinhamento optico com a primeira linha do texto */
-  color: var(--k-ouro);
-  background: var(--k-campo);
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 4px;
-  transition: border-color 140ms ease, background-color 140ms ease;
-}
-
-.termo__check svg {
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.termo__label:hover .termo__check,
+/* O bloco `.termo*` mudou-se para styles/_ui.scss quando o cadastro do
+   restaurante passou a ter o mesmo checkbox. Aqui fica so o que e desta tela:
+   o "Trabalho aqui hoje" reaproveita a caixinha, entao precisa do hover dele. */
 .periodo__atual:hover .termo__check {
   border-color: var(--k-ouro);
-}
-
-.termo__checkbox:focus-visible + .termo__check {
-  outline: 2px solid var(--k-ouro);
-  outline-offset: 2px;
-}
-
-/* O irmao adjacente (+) so funciona porque o <input> vem IMEDIATAMENTE antes
-   do <span> no template. Trocar a ordem quebra o visual sem quebrar o form —
-   por isso o comentario fica aqui, e nao no HTML. */
-.termo__checkbox:checked + .termo__check {
-  color: #131313;
-  background: var(--k-ouro);
-  border-color: var(--k-ouro);
-}
-
-.termo__checkbox:checked + .termo__check svg {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.termo__texto {
-  font-size: var(--k-t-sm);
-  line-height: 1.55;
-  color: var(--k-texto-fraco);
-}
-
-.termo__link {
-  color: var(--k-ouro);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-
-  &:hover {
-    color: var(--k-ouro-claro);
-  }
-}
-
-.termo__erro {
-  display: block;
-  margin-top: var(--k-s-2);
-  font-size: var(--k-t-sm);
-  font-weight: 500;
-  color: var(--k-erro);
 }
 
 /* ---------------------------------------------- Etapa 2: experiencias */
