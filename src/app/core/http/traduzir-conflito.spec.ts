@@ -42,6 +42,27 @@ describe('traduzirConflito', () => {
     });
   });
 
+  it('reconhece o mojibake que o back ja mandou ("Email j� cadastrado")', () => {
+    // Compatibilidade com a resposta corrompida: o que importa e a palavra email.
+    expect(traduzirConflito(conflito('Email j� cadastrado'))).toEqual({
+      campo: 'email',
+      mensagem: 'Email já cadastrado',
+    });
+  });
+
+  it('reconhece acentos, hifen e caixa alta', () => {
+    expect(traduzirConflito(conflito('EMAIL JÁ CADASTRADO')).campo).toBe('email');
+    expect(traduzirConflito(conflito('E-mail em uso')).campo).toBe('email');
+    expect(traduzirConflito(conflito('CNPJ já cadastrado')).campo).toBe('cnpj');
+  });
+
+  it('varre todas as mensagens do array, nao so a primeira', () => {
+    expect(
+      traduzirConflito({ status: 409, mensagens: ['Algo estranho', 'User already exists'] })
+        .campo,
+    ).toBe('email');
+  });
+
   it('nao navega para lugar nenhum quando nao identifica o campo', () => {
     // campo null e o sinal para o componente deixar o usuario onde esta.
     expect(traduzirConflito({ status: 409, mensagens: [] }).campo).toBeNull();
