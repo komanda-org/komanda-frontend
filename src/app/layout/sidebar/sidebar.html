@@ -1,0 +1,23 @@
+<aside class="sidebar" data-testid="sidebar">
+  <div class="user">
+    <div class="avatar" data-testid="user-avatar">
+      <img src="/avatar-56586a.png" alt="Foto de {{ user.name }}" width="80" height="80">
+    </div>
+    <p class="name" data-testid="user-name">{{ user.name }}</p>
+    <p class="role" data-testid="user-role">{{ user.role }}</p>
+  </div>
+  <nav class="nav" aria-label="Navegação principal">
+    @for (item of nav; track item.path) {
+      <a
+        class="nav-link"
+        [attr.data-testid]="item.testid"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <span class="nav-icon" [style.--icon-url]="'url(' + item.icon + ')'" aria-hidden="true"></span>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+</aside>

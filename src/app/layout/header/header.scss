@@ -1,0 +1,40 @@
+.header {
+  height: var(--k-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: var(--k-fundo-header);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 0 rgb(24 24 27 / 100%);
+}
+
+.logo {
+  font-family: var(--k-serif);
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--k-ouro);
+}
+
+.bell {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 0;
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  width: 9.5px;
+  height: 9.5px;
+  border-radius: 50%;
+  background: #ffb4ab;
+  border: 2px solid #09090b;
+  box-shadow: 0 0 8px 0 rgb(255 180 171 / 50%);
+}
