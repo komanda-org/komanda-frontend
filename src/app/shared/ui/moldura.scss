@@ -35,10 +35,9 @@
   }
 
   @include m.amplo {
-    /* 45/55 do Figma: a vitrine contextual ocupa 45%, o formulario 55%.
-       O `0` como minimo evita o classico bug de grid em que um filho com texto
-       longo se recusa a encolher e estoura a largura da pagina. */
-    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+    /* 50/50: nestas telas o formulario e curto, entao a marca pode ocupar
+       metade da tela sem roubar espaco de ninguem. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-content: normal;
     justify-items: stretch;
     height: 100dvh;
@@ -62,101 +61,51 @@
   @include m.amplo {
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: space-between;
     gap: var(--k-s-6);
     padding: var(--k-s-7) clamp(2.5rem, 5vw, 5rem);
     overflow: hidden;
+    text-align: center;
 
-    /* Um brilho dourado muito fraco no alto, sobre o fundo quase preto da
-       vitrine (#0E0E0E no Figma). E o unico lugar do produto onde o ouro
-       aparece em area grande — e mesmo aqui ele fica em 8% de opacidade, para
-       nao competir com o botao. */
+    /* Um brilho dourado muito fraco no alto, sobre o fundo quase preto. E o
+       unico lugar do produto onde o ouro aparece em area grande — e mesmo aqui
+       fica em 8% de opacidade, para nao competir com o botao. */
     background:
       radial-gradient(120% 80% at 15% 0%, rgb(242 202 80 / 8%) 0%, transparent 60%),
       #0e0e0e;
   }
 }
 
-/* Em telas enormes o texto para de crescer e fica centrado na coluna, em vez de
-   se espalhar por 900px de largura. */
-.vitrine__conteudo {
+/* `margin-block: auto` empurra o lockup para o centro da altura que sobra
+   entre o topo e o rodape — sem precisar saber a altura de nenhum dos dois. */
+.vitrine__lockup {
   max-width: var(--k-largura-vitrine);
   margin-block: auto;
 }
 
-.vitrine__marca {
-  @include m.rotulo;
-
-  margin-bottom: var(--k-s-5);
-  font-family: var(--k-serif);
-  font-size: var(--k-t-sm);
-  letter-spacing: 0.32em;
-  color: var(--k-ouro);
-}
-
-.vitrine__frase {
-  font-family: var(--k-serif);
-  font-size: var(--k-t-2xl);
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
-}
-
-.vitrine__lista {
-  display: grid;
-  gap: var(--k-s-3);
-  padding: 0;
-  margin: var(--k-s-6) 0 0;
-  list-style: none; /* a marcacao semantica de lista fica; o bullet feio sai */
-}
-
-.vitrine__item {
-  position: relative;
-  padding-left: var(--k-s-5);
-  font-size: var(--k-t-base);
-  color: var(--k-texto-fraco);
-
-  /* Bullet desenhado no ::before: um tracinho dourado no lugar do disco. */
-  &::before {
-    position: absolute;
-    top: 0.7em;
-    left: 0;
-    width: var(--k-s-3);
-    height: 1px;
-    content: '';
-    background: var(--k-ouro);
-  }
-}
-
-.vitrine__rodape {
-  font-size: var(--k-t-xs);
-  letter-spacing: 0.04em;
-  color: var(--k-texto-placeholder);
-}
-
-/* Variante logo centralizado: a vitrine vira o lockup da marca
-   (escolha de perfil no Figma). So faz sentido em desktop, onde a
-   vitrine existe — no celular ela continua escondida. */
-.vitrine--logo {
-  align-items: center;
-  text-align: center;
-}
-
-.vitrine__logo-wrap {
-  margin-block: auto;
-}
-
+/* A marca e o unico texto do produto que usa a Playfair Display. Ela aparece
+   uma vez por tela, em corpo grande: e o que separa "uma marca" de "uma fonte
+   de titulo". */
 .vitrine__logo {
   font-family: var(--k-display);
-  font-size: clamp(3.5rem, 3rem + 3vw, 6rem); /* ate 96px, como no Figma */
+  font-size: clamp(3.5rem, 3rem + 3vw, 6rem); /* ate 96px */
   line-height: 1;
+  letter-spacing: -0.01em;
   color: var(--k-ouro);
 }
 
 .vitrine__tagline {
   margin-top: var(--k-s-4);
   font-size: var(--k-t-lg);
-  color: #d0c5af;
+  color: var(--k-texto-muted);
   text-wrap: balance;
+}
+
+.vitrine__rodape {
+  font-size: var(--k-t-2xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--k-texto-placeholder);
+  text-transform: uppercase;
 }

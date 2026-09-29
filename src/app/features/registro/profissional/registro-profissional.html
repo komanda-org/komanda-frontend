@@ -1,445 +1,513 @@
-<app-moldura [frase]="fraseVitrine()">
-  <div class="tela">
-    <app-topo-etapa
-      titulo="Criar conta"
-      [etapa]="etapa()"
-      [total]="totalDeEtapas"
-      (voltar)="voltar()"
-    />
+<div class="cadastro">
+  <!--
+    Coluna da esquerda: o contexto da etapa. Ela existe fora do <form> de
+    proposito — nada aqui e um campo. A excecao e a foto, que grava direto no
+    FormControl e por isso dispensa o formControlName.
+  -->
+  <app-painel-cadastro
+    marca="Criar conta"
+    [etapa]="etapa()"
+    [total]="totalDeEtapas"
+    rotuloVoltar="Voltar"
+    (voltar)="voltar()"
+  >
+    @switch (etapa()) {
+      @case (1) {
+        <div class="etapa">
+          <p class="eyebrow">Leva menos de 2 minutos</p>
+          <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
+            Sobre
+            <span class="titulo__realce">você</span>
+          </h1>
+        </div>
 
-    <!--
-      `novalidate` desliga os balões de validação do próprio browser. Eles não
-      seguem o design da página, não são traduzíveis e apareceriam junto com as
-      nossas mensagens — duas vozes dizendo a mesma coisa.
-    -->
-    <form class="tela__corpo" [formGroup]="form" novalidate (ngSubmit)="avancar()">
-      <!-- fieldset[disabled] desativa todos os campos de dentro de uma vez, sem
-           tocar no estado do FormControl (que é o que [disabled] faria). -->
-      <fieldset [disabled]="enviando()">
-        @if (erroGeral(); as mensagem) {
-          <div class="aviso aviso--erro" role="alert">
-            <strong>{{ mensagem }}</strong>
-            @if (errosDetalhados().length > 1) {
-              <ul class="aviso__lista">
-                @for (item of errosDetalhados(); track item) {
-                  <li>{{ item }}</li>
+        <div class="painel__midia">
+          <!--
+            <span> e nao <label>: o alvo de clique e o proprio circulo do
+            app-previa-imagem, que ja e um role="button" com teclado. Um
+            <label for> aqui criaria um segundo alvo apontando para nada.
+          -->
+          <span class="painel__midia-rotulo">Foto de perfil (opcional)</span>
+          <app-previa-imagem
+            alt="Sua foto de perfil"
+            legendaVazia="Upload"
+            (arquivoChange)="form.controls.profilePhoto.setValue($event ?? '')"
+          />
+        </div>
+      }
+
+      @case (2) {
+        <div class="etapa">
+          <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
+            Sua
+            <span class="titulo__realce">experiência</span>
+          </h1>
+          <p class="subtitulo">Conte-nos sobre sua trajetória na cozinha e no salão.</p>
+        </div>
+      }
+
+      @case (3) {
+        <div class="etapa">
+          <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
+            Onde
+            <span class="titulo__realce">você está?</span>
+          </h1>
+          <p class="subtitulo">Isso ajuda a encontrar vagas perto de você.</p>
+        </div>
+      }
+    }
+  </app-painel-cadastro>
+
+  <!--
+    Coluna da direita: so os campos. `novalidate` desliga os baloes de validacao
+    do proprio browser. Eles nao seguem o design da pagina, nao sao traduziveis
+    e apareceriam junto com as nossas mensagens — duas vozes dizendo a mesma
+    coisa.
+  -->
+  <form class="cadastro__campos" [formGroup]="form" novalidate (ngSubmit)="avancar()">
+    <!-- fieldset[disabled] desativa todos os campos de dentro de uma vez, sem
+         tocar no estado do FormControl (que é o que [disabled] faria). -->
+    <fieldset [disabled]="enviando()">
+      @if (erroGeral(); as mensagem) {
+        <div class="aviso aviso--erro" role="alert">
+          <strong>{{ mensagem }}</strong>
+          @if (errosDetalhados().length > 1) {
+            <ul class="aviso__lista">
+              @for (item of errosDetalhados(); track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @switch (etapa()) {
+        @case (1) {
+          <section class="etapa">
+            <div class="etapa__conteudo">
+            <app-campo rotulo="Nome completo" para="fullName" [controle]="form.controls.fullName">
+              <input
+                id="fullName"
+                class="entrada"
+                type="text"
+                autocomplete="name"
+                placeholder="Seu nome"
+                formControlName="fullName"
+              />
+            </app-campo>
+
+            <app-campo rotulo="E-mail profissional" para="email" [controle]="form.controls.email">
+              <input
+                id="email"
+                class="entrada"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                placeholder="chef@restaurante.com"
+                formControlName="email"
+              />
+            </app-campo>
+
+            <app-campo rotulo="Cargo principal" para="mainRole" [controle]="form.controls.mainRole">
+              <select
+                id="mainRole"
+                class="entrada"
+                [class.entrada--vazio]="!form.controls.mainRole.value"
+                formControlName="mainRole"
+              >
+                <option value="" disabled>Selecione sua especialidade</option>
+                @for (cargo of cargos; track cargo) {
+                  <option [value]="cargo">{{ cargo }}</option>
                 }
-              </ul>
-            }
-          </div>
+              </select>
+            </app-campo>
+
+            <!--
+              Pilulas de contrato. Sao <input type="radio"> escondidos sob os
+              rotulos: as setas do teclado navegam entre as opcoes de graca e o
+              leitor de tela anuncia "1 de 3" sem nenhum ARIA extra.
+            -->
+            <app-campo
+              rotulo="Preferências de contrato"
+              para="contractType"
+              [controle]="form.controls.contractType"
+            >
+              <fieldset class="pills" aria-label="Preferências de contrato">
+                @for (tipo of contractTypes; track tipo) {
+                  <label
+                    class="pill"
+                    [class.pill--ativo]="form.controls.contractType.value === tipo"
+                  >
+                    <input
+                      type="radio"
+                      name="contractType"
+                      [value]="tipo"
+                      class="pill__radio"
+                      formControlName="contractType"
+                    />
+                    <span class="pill__texto">{{ tipo }}</span>
+                  </label>
+                }
+              </fieldset>
+            </app-campo>
+
+            <app-campo
+              rotulo="Senha"
+              para="password"
+              [controle]="form.controls.password"
+              dica="Mínimo de 8 caracteres"
+            >
+              <div class="campo-icone">
+                <input
+                  id="password"
+                  class="entrada"
+                  [type]="mostrarSenha() ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  placeholder="Crie uma senha"
+                  formControlName="password"
+                />
+                <button
+                  type="button"
+                  class="campo-icone__acao"
+                  [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                  [attr.aria-pressed]="mostrarSenha()"
+                  (click)="mostrarSenha.set(!mostrarSenha())"
+                >
+                  @if (mostrarSenha()) {
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4.5 9 7a11 11 0 01-2.6 3.6M6.2 6.7C3.9 8.2 3 10.4 3 12c0 2.5 4 7 9 7 1.3 0 2.4-.3 3.5-.7"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  } @else {
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+                      <circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7" />
+                    </svg>
+                  }
+                </button>
+              </div>
+
+              <app-forca-senha [senha]="form.controls.password.value" />
+            </app-campo>
+
+            <app-campo
+              rotulo="Confirmar senha"
+              para="confirmPassword"
+              [controle]="form.controls.confirmPassword"
+            >
+              <input
+                id="confirmPassword"
+                class="entrada"
+                [type]="mostrarSenha() ? 'text' : 'password'"
+                autocomplete="new-password"
+                placeholder="Repita a senha"
+                formControlName="confirmPassword"
+              />
+            </app-campo>
+
+            <div class="termo">
+              <label class="termo__label" for="acceptedTerms">
+                <input
+                  id="acceptedTerms"
+                  type="checkbox"
+                  class="termo__checkbox"
+                  formControlName="acceptedTerms"
+                />
+                <span class="termo__check" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12l4 4 9-9"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span class="termo__texto">
+                  Concordo com os
+                  <a
+                    href="https://komandaatelier.com/termos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="termo__link"
+                    >Termos de Serviço</a
+                  >
+                  e
+                  <a
+                    href="https://komandaatelier.com/privacidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="termo__link"
+                    >Política de Privacidade</a
+                  >
+                  do Komanda.
+                </span>
+              </label>
+              @if (form.controls.acceptedTerms.touched && form.controls.acceptedTerms.invalid) {
+                <span class="termo__erro" role="alert">
+                  Aceite os termos para continuar.
+                </span>
+              }
+            </div>
+            </div>
+          </section>
         }
 
-        @switch (etapa()) {
-          @case (1) {
-            <section class="etapa">
-              <p class="eyebrow">Leva menos de 2 minutos</p>
-              <h1 class="titulo titulo--etapa1" tabindex="-1" #tituloEtapa>Sobre você</h1>
-
-              <div class="etapa__conteudo">
-                <app-campo rotulo="Nome completo" para="fullName" [controle]="form.controls.fullName">
-                  <input
-                    id="fullName"
-                    class="entrada"
-                    type="text"
-                    autocomplete="name"
-                    placeholder="Seu nome"
-                    formControlName="fullName"
-                  />
-                </app-campo>
-
-                <app-campo
-                  rotulo="E-mail profissional"
-                  para="email"
-                  [controle]="form.controls.email"
-                >
-                  <input
-                    id="email"
-                    class="entrada"
-                    type="email"
-                    inputmode="email"
-                    autocomplete="email"
-                    placeholder="chef@restaurante.com"
-                    formControlName="email"
-                  />
-                </app-campo>
-
-                <app-campo
-                  rotulo="Cargo principal"
-                  para="mainRole"
-                  [controle]="form.controls.mainRole"
-                >
-                  <select
-                    id="mainRole"
-                    class="entrada"
-                    [class.entrada--vazio]="!form.controls.mainRole.value"
-                    formControlName="mainRole"
-                  >
-                    <option value="" disabled>Selecione sua especialidade</option>
-                    @for (cargo of cargos; track cargo) {
-                      <option [value]="cargo">{{ cargo }}</option>
-                    }
-                  </select>
-                </app-campo>
-
-                <!-- Pills Contrato: CLT / PJ / Freelancer -->
-                <app-campo
-                  rotulo="Tipo de contrato"
-                  para="contractType"
-                  [controle]="form.controls.contractType"
-                >
-                  <fieldset class="pills" aria-label="Tipo de contrato">
-                    @for (tipo of contractTypes; track tipo) {
-                      <label class="pill" [class.pill--ativo]="form.controls.contractType.value === tipo">
-                        <input
-                          type="radio"
-                          name="contractType"
-                          [value]="tipo"
-                          class="pill__radio"
-                          formControlName="contractType"
-                        />
-                        <span class="pill__texto">{{ tipo }}</span>
-                      </label>
-                    }
-                  </fieldset>
-                </app-campo>
-
-                <app-campo
-                  rotulo="Senha"
-                  para="password"
-                  [controle]="form.controls.password"
-                  dica="Mínimo de 8 caracteres"
-                >
-                  <div class="campo-icone">
-                    <input
-                      id="password"
-                      class="entrada"
-                      [type]="mostrarSenha() ? 'text' : 'password'"
-                      autocomplete="new-password"
-                      placeholder="Crie uma senha"
-                      formControlName="password"
-                    />
+        @case (2) {
+          <section class="etapa">
+            <div class="etapa__conteudo">
+            <!-- Experiencias ja adicionadas -->
+            @if (experienciasAdicionadas().length > 0) {
+              <div class="experiencias-adicionadas">
+                @for (exp of experienciasAdicionadas(); track exp.id) {
+                  <article class="experiencia-card">
+                    <div class="experiencia-card__conteudo">
+                      <p class="experiencia-card__periodo">
+                        {{ formatarPeriodo(exp.startDate, exp.endDate, exp.currentJob) }}
+                      </p>
+                      <h3 class="experiencia-card__local">{{ exp.workPlace }}</h3>
+                      <p class="experiencia-card__cargo">{{ exp.role }}</p>
+                    </div>
                     <button
                       type="button"
-                      class="campo-icone__acao"
-                      [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
-                      [attr.aria-pressed]="mostrarSenha()"
-                      (click)="mostrarSenha.set(!mostrarSenha())"
+                      class="experiencia-card__remover"
+                      (click)="removerExperiencia(exp.id)"
+                      [attr.aria-label]="'Remover experiência em ' + exp.workPlace"
                     >
-                      @if (mostrarSenha()) {
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4.5 9 7a11 11 0 01-2.6 3.6M6.2 6.7C3.9 8.2 3 10.4 3 12c0 2.5 4 7 9 7 1.3 0 2.4-.3 3.5-.7"
-                            stroke="currentColor"
-                            stroke-width="1.7"
-                            stroke-linecap="round"
-                          />
-                        </svg>
-                      } @else {
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z"
-                            stroke="currentColor"
-                            stroke-width="1.7"
-                          />
-                          <circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7" />
-                        </svg>
-                      }
-                    </button>
-                  </div>
-
-                  <app-forca-senha [senha]="form.controls.password.value" />
-                </app-campo>
-
-                <app-campo
-                  rotulo="Confirmar senha"
-                  para="confirmPassword"
-                  [controle]="form.controls.confirmPassword"
-                >
-                  <div class="campo-icone">
-                    <input
-                      id="confirmPassword"
-                      class="entrada"
-                      [type]="mostrarSenha() ? 'text' : 'password'"
-                      autocomplete="new-password"
-                      placeholder="Repita a senha"
-                      formControlName="confirmPassword"
-                    />
-                  </div>
-                </app-campo>
-
-                <app-campo
-                  rotulo="Foto de perfil"
-                  para="profilePhoto"
-                  [controle]="form.controls.profilePhoto"
-                  [opcional]="true"
-                >
-                  <app-previa-imagem
-                    (arquivoChange)="form.controls.profilePhoto.setValue($event ?? '')"
-                    alt="Sua foto de perfil"
-                    legendaVazia="Adicionar foto"
-                  />
-                </app-campo>
-
-                <!-- Checkbox Termos/Privacidade -->
-                <div class="campo termo" [class.campo--erro]="form.controls.acceptedTerms.invalid && form.controls.acceptedTerms.touched">
-                  <label class="termo__label" for="acceptedTerms">
-                    <input
-                      id="acceptedTerms"
-                      type="checkbox"
-                      class="termo__checkbox"
-                      formControlName="acceptedTerms"
-                    />
-                    <span class="termo__check" aria-hidden="true">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12l4 4 9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </span>
-                    <span class="termo__texto">
-                      Concordo com os
-                      <a href="https://komandaatelier.com/termos" target="_blank" rel="noopener noreferrer" class="termo__link">Termos de Serviço</a>
-                      e
-                      <a href="https://komandaatelier.com/privacidade" target="_blank" rel="noopener noreferrer" class="termo__link">Política de Privacidade</a>
-                      do Komanda.
-                    </span>
-                  </label>
-                  @if (form.controls.acceptedTerms.touched && form.controls.acceptedTerms.invalid) {
-                    <span class="termo__erro" role="alert">Você deve aceitar os termos para continuar</span>
-                  }
-                </div>
-              </div>
-            </section>
-          }
-
-          @case (2) {
-            <section class="etapa">
-              <h1 class="titulo titulo--etapa2" tabindex="-1" #tituloEtapa>Sua experiência</h1>
-              <p class="subtitulo">Conte-nos sobre sua trajetória</p>
-
-              <div class="etapa__conteudo">
-                <!-- Experiências já adicionadas -->
-                <div class="experiencias-adicionadas">
-                  @for (exp of experienciasAdicionadas(); track exp.id) {
-                    <article class="experiencia-card">
-                      <div class="experiencia-card__conteudo">
-                        <h3 class="experiencia-card__local">{{ exp.workPlace }}</h3>
-                        <p class="experiencia-card__cargo">{{ exp.role }}</p>
-                        <p class="experiencia-card__periodo">
-                          {{ formatarPeriodo(exp.startDate, exp.endDate, exp.currentJob) }}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        class="experiencia-card__remover"
-                        (click)="removerExperiencia(exp.id)"
-                        aria-label="Remover experiência"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
-                      </button>
-                    </article>
-                  }
-                  @if (experienciasAdicionadas().length > 0) {
-                    <button type="button" class="btn-link" (click)="adicionarExperiencia()">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                      </svg>
-                      Adicionar outra experiência
-                    </button>
-                  }
-                </div>
-
-                <!-- Formulário Nova Experiência -->
-                <div class="nova-experiencia" [class.nova-experiencia--ativa]="novaExperienciaAtiva()">
-                  <div class="nova-experiencia__header">
-                    <h2 class="nova-experiencia__titulo">Nova Experiência</h2>
-                  </div>
-
-                  <div class="nova-experiencia__form">
-                    <div class="nova-experiencia__row">
-                      <app-campo
-                        rotulo="Local de Trabalho"
-                        para="workPlace"
-                        [controle]="form.controls.workPlace"
-                        dica="Ex: D.O.M."
-                      >
-                        <input
-                          id="workPlace"
-                          class="entrada"
-                          type="text"
-                          autocomplete="organization"
-                          placeholder="Nome do estabelecimento"
-                          formControlName="workPlace"
-                        />
-                      </app-campo>
-
-                      <app-campo
-                        rotulo="Cargo"
-                        para="role"
-                        [controle]="form.controls.role"
-                        dica="Ex: Chef de Partie"
-                      >
-                        <input
-                          id="role"
-                          class="entrada"
-                          type="text"
-                          autocomplete="organization-title"
-                          placeholder="Seu cargo"
-                          formControlName="role"
-                        />
-                      </app-campo>
-                    </div>
-
-                    <app-campo
-                      rotulo="Período"
-                      para="startDate"
-                      [controle]="form.controls.startDate"
-                    >
-                      <div class="periodo-inputs">
-                        <div class="periodo-input">
-                          <label class="periodo-label" for="startDate">Início</label>
-                          <app-seletor-mes-ano
-                            [valor]="form.controls.startDate.value"
-                            [desabilitado]="form.controls.startDate.disabled"
-                            (valorChange)="form.controls.startDate.setValue($event)"
-                          />
-                        </div>
-                        <div class="periodo-input">
-                          <label class="periodo-label" for="endDate">Fim</label>
-                          <app-seletor-mes-ano
-                            [valor]="form.controls.endDate.value"
-                            [desabilitado]="form.controls.endDate.disabled"
-                            (valorChange)="form.controls.endDate.setValue($event)"
-                          />
-                        </div>
-                        <label class="periodo-atual" for="currentJob">
-                          <input
-                            id="currentJob"
-                            type="checkbox"
-                            class="periodo-atual__checkbox"
-                            formControlName="currentJob"
-                            (change)="toggleAtual($event)"
-                          />
-                          <span class="periodo-atual__check" aria-hidden="true">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M5 12l4 4 9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                          </span>
-                          <span class="periodo-atual__texto">Atualmente trabalho aqui</span>
-                        </label>
-                      </div>
-                    </app-campo>
-
-                    <app-campo
-                      rotulo="Breve Descrição"
-                      para="experienceDescription"
-                      [controle]="form.controls.experienceDescription"
-                      dica="Descreva suas principais responsabilidades e conquistas"
-                      [maximo]="1000"
-                    >
-                      <textarea
-                        id="experienceDescription"
-                        class="entrada"
-                        rows="4"
-                        placeholder="Descreva suas principais responsabilidades e conquistas..."
-                        formControlName="experienceDescription"
-                      ></textarea>
-                    </app-campo>
-
-                    <app-campo
-                      rotulo="Habilidades"
-                      para="skills"
-                      [controle]="form.controls.skills"
-                      dica="Digite e aperte Enter para adicionar"
-                      [opcional]="true"
-                    >
-                      <app-tags
-                        formControlName="skills"
-                        [sugestoes]="habilidades"
-                        placeholder="Buscar habilidade..."
-                      />
-                    </app-campo>
-
-                    <div class="nova-experiencia__acoes">
-                      <button type="button" class="botao botao--secundario" (click)="cancelarNovaExperiencia()">Cancelar</button>
-                      <button type="button" class="botao" (click)="salvarNovaExperiencia()" [disabled]="!novaExperienciaValida()">Salvar experiência</button>
-                    </div>
-                  </div>
-                </div>
-
-                @if (experienciasAdicionadas().length === 0 && !novaExperienciaAtiva()) {
-                  <button type="button" class="btn-adicionar-primeira" (click)="adicionarExperiencia()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                    </svg>
-                    Adicionar primeira experiência
-                  </button>
-                }
-              </div>
-            </section>
-          }
-
-          @case (3) {
-            <section class="etapa">
-              <h1 class="titulo titulo--etapa3" tabindex="-1" #tituloEtapa>Onde você está?</h1>
-              <p class="subtitulo">Isso ajuda a encontrar vagas perto de você</p>
-
-              <div class="etapa__conteudo">
-                <app-campo
-                  rotulo="Localização (CEP)"
-                  para="zipCode"
-                  [controle]="form.controls.zipCode"
-                  [opcional]="true"
-                >
-                  <div class="campo-icone">
-                    <input
-                      id="zipCode"
-                      class="entrada"
-                      type="text"
-                      inputmode="numeric"
-                      autocomplete="postal-code"
-                      placeholder="00000-000"
-                      formControlName="zipCode"
-                      (input)="aplicarCep($event)"
-                    />
-                    <span class="campo-icone__acao campo-icone__acao--estatico" aria-hidden="true">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="1.7" />
-                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path
-                          d="M12 2v2.5M12 19.5V22M22 12h-2.5M4.5 12H2"
+                          d="M18 6L6 18M6 6l12 12"
                           stroke="currentColor"
-                          stroke-width="1.7"
+                          stroke-width="1.8"
                           stroke-linecap="round"
                         />
                       </svg>
-                    </span>
-                  </div>
-                </app-campo>
+                    </button>
+                  </article>
+                }
 
-                <app-campo
-                  rotulo="Bairro"
-                  para="neighborhood"
-                  [controle]="form.controls.neighborhood"
-                  [opcional]="true"
-                >
-                  <input
-                    id="neighborhood"
-                    class="entrada"
-                    type="text"
-                    placeholder="Pinheiros"
-                    formControlName="neighborhood"
-                  />
-                </app-campo>
+                @if (!novaExperienciaAtiva()) {
+                  <button type="button" class="btn-link" (click)="adicionarExperiencia()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    </svg>
+                    Adicionar outra experiência
+                  </button>
+                }
               </div>
-            </section>
-          }
-        }
-      </fieldset>
-    </form>
+            }
 
-    <div class="tela__rodape">
-      <button type="button" class="botao" [disabled]="enviando()" (click)="avancar()">
+            <!-- Formulario de nova experiencia -->
+            @if (novaExperienciaAtiva()) {
+              <div class="nova-experiencia">
+                <div class="nova-experiencia__header">
+                  <h2 class="nova-experiencia__titulo">Nova experiência</h2>
+                </div>
+
+                <div class="nova-experiencia__form">
+                  <div class="nova-experiencia__row">
+                    <app-campo
+                      rotulo="Local de trabalho"
+                      para="workPlace"
+                      [controle]="form.controls.workPlace"
+                      dica="Ex: D.O.M."
+                    >
+                      <input
+                        id="workPlace"
+                        class="entrada"
+                        type="text"
+                        autocomplete="organization"
+                        placeholder="Nome do estabelecimento"
+                        formControlName="workPlace"
+                      />
+                    </app-campo>
+
+                    <app-campo
+                      rotulo="Cargo"
+                      para="role"
+                      [controle]="form.controls.role"
+                      dica="Ex: Chef de Partie"
+                    >
+                      <input
+                        id="role"
+                        class="entrada"
+                        type="text"
+                        autocomplete="organization-title"
+                        placeholder="Seu cargo"
+                        formControlName="role"
+                      />
+                    </app-campo>
+                  </div>
+
+                  <app-campo rotulo="Período" para="startDate" [controle]="form.controls.startDate">
+                    <div class="periodo">
+                      <div class="periodo__campo">
+                        <span class="periodo__rotulo" id="rotulo-inicio">Início</span>
+                        <app-seletor-mes-ano
+                          [valor]="form.controls.startDate.value"
+                          [desabilitado]="form.controls.startDate.disabled"
+                          (valorChange)="form.controls.startDate.setValue($event)"
+                        />
+                      </div>
+
+                      <div class="periodo__campo">
+                        <span class="periodo__rotulo" id="rotulo-fim">Fim</span>
+                        <app-seletor-mes-ano
+                          [valor]="form.controls.endDate.value"
+                          [desabilitado]="form.controls.endDate.disabled"
+                          (valorChange)="form.controls.endDate.setValue($event)"
+                        />
+                      </div>
+
+                      <label class="periodo__atual" for="currentJob">
+                        <input
+                          id="currentJob"
+                          type="checkbox"
+                          class="termo__checkbox"
+                          formControlName="currentJob"
+                          (change)="toggleAtual($event)"
+                        />
+                        <span class="termo__check" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path
+                              d="M5 12l4 4 9-9"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span class="termo__texto">Trabalho aqui hoje</span>
+                      </label>
+                    </div>
+                  </app-campo>
+
+                  <app-campo
+                    rotulo="Breve descrição"
+                    para="experienceDescription"
+                    [controle]="form.controls.experienceDescription"
+                    dica="Principais responsabilidades e conquistas"
+                    [maximo]="1000"
+                  >
+                    <textarea
+                      id="experienceDescription"
+                      class="entrada"
+                      rows="4"
+                      placeholder="Descreva suas principais responsabilidades e conquistas…"
+                      formControlName="experienceDescription"
+                    ></textarea>
+                  </app-campo>
+
+                  <app-campo
+                    rotulo="Habilidades"
+                    para="skills"
+                    [controle]="form.controls.skills"
+                    dica="Digite e aperte Enter para adicionar"
+                    [opcional]="true"
+                  >
+                    <app-tags
+                      formControlName="skills"
+                      [sugestoes]="habilidades"
+                      placeholder="Buscar habilidade…"
+                    />
+                  </app-campo>
+
+                  <div class="nova-experiencia__acoes">
+                    <button type="button" class="botao botao--secundario" (click)="cancelarNovaExperiencia()">
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="botao"
+                      [disabled]="!novaExperienciaValida()"
+                      (click)="salvarNovaExperiencia()"
+                    >
+                      Salvar experiência
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (experienciasAdicionadas().length === 0 && !novaExperienciaAtiva()) {
+              <button type="button" class="btn-adicionar-primeira" (click)="adicionarExperiencia()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                Adicionar primeira experiência
+              </button>
+            }
+            </div>
+          </section>
+        }
+
+        @case (3) {
+          <section class="etapa">
+            <div class="etapa__conteudo">
+            <app-campo
+              rotulo="Localização (CEP)"
+              para="zipCode"
+              [controle]="form.controls.zipCode"
+              [opcional]="true"
+            >
+              <div class="campo-icone">
+                <input
+                  id="zipCode"
+                  class="entrada"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="postal-code"
+                  placeholder="00000-000"
+                  formControlName="zipCode"
+                  (input)="aplicarCep($event)"
+                />
+                <span class="campo-icone__acao campo-icone__acao--estatico" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="1.7" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    <path
+                      d="M12 2v2.5M12 19.5V22M22 12h-2.5M4.5 12H2"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </app-campo>
+
+            <app-campo
+              rotulo="Bairro"
+              para="neighborhood"
+              [controle]="form.controls.neighborhood"
+              [opcional]="true"
+            >
+              <input
+                id="neighborhood"
+                class="entrada"
+                type="text"
+                placeholder="Pinheiros"
+                formControlName="neighborhood"
+              />
+            </app-campo>
+            </div>
+          </section>
+        }
+      }
+    </fieldset>
+
+    <div class="cadastro__acao">
+      <button type="submit" class="botao" [disabled]="enviando()">
         @if (enviando()) {
           Criando conta…
         } @else if (ultimaEtapa()) {
@@ -451,5 +519,5 @@
         }
       </button>
     </div>
-  </div>
-</app-moldura>
+  </form>
+</div>

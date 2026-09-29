@@ -1,12 +1,90 @@
-.login__mensagem {
-  margin-top: var(--k-s-5);
+@use '../../../styles/mixins' as m;
+
+/* Entrar e a unica tela do fluxo com uma tarefa so: dois campos e um botao.
+   Por isso o corpo aqui nao comeca no alto — o bloco fica centrado na coluna,
+   e o espaco vazio em volta e o que faz a tela parecer curta. */
+.tela__corpo {
+  display: grid;
+  align-content: center;
 }
 
-.login__nota {
-  margin-top: var(--k-s-5);
+/* Coluna mais estreita que a das telas de cadastro: dois campos alinhados numa
+   largura de 34rem pareceriam perdidos. O caminho completo (0-3-0) ganha do
+   `.tela > .tela__corpo > *` global, que reserva 32rem. */
+.tela > .tela__corpo > .acesso {
+  width: 100%;
+  max-width: 22rem;
+  margin-inline: auto;
 }
 
-/* O botão vira link nesta tela: mesmo visual, semântica de navegação. */
-a.botao {
+.acesso__titulo {
+  font-size: clamp(1.75rem, 1.5rem + 1.1vw, 2.125rem);
+  font-weight: 700;
+}
+
+.acesso__apoio {
+  margin-top: var(--k-s-2);
+  font-size: var(--k-t-sm);
+  color: var(--k-texto-fraco);
+}
+
+.acesso__aviso {
+  margin-top: var(--k-s-5);
+  margin-bottom: 0;
+}
+
+.acesso__form {
+  display: grid;
+  gap: var(--k-s-5);
+  margin-top: var(--k-s-6);
+}
+
+.acesso__form .campo {
+  margin-bottom: 0;
+}
+
+/* Rotulo a esquerda, "esqueceu a senha?" a direita, mesma linha de base. */
+.acesso__linha-rotulo {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.acesso__linha-rotulo .campo__rotulo {
+  margin-bottom: 0;
+}
+
+/* Um so estilo para os dois links da tela (recuperar senha e cadastrar-se):
+   sublinhado apenas no hover, para que o dourado nao vire ruido ao lado do
+   botao — que e o dourado que importa aqui. */
+.acesso__link {
+  padding: 0;
+  font-size: var(--k-t-xs);
+  font-weight: 600;
+  color: var(--k-ouro);
   text-decoration: none;
+  transition: color 140ms ease;
+
+  &:hover {
+    color: var(--k-ouro-claro);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.acesso__enviar {
+  margin-top: var(--k-s-2);
+}
+
+.acesso__rodape {
+  margin-top: var(--k-s-6);
+  font-size: var(--k-t-sm);
+  color: var(--k-texto-fraco);
+  text-align: center;
+}
+
+/* No rodape o link acompanha o tamanho da frase em que ele vive. */
+.acesso__rodape .acesso__link {
+  font-size: var(--k-t-sm);
 }
