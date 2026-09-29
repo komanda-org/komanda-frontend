@@ -1,0 +1,484 @@
+@use '../../../../styles/mixins' as m;
+
+/* O <fieldset> que envolve as etapas não pode ter caixa própria: ele existe
+   só para desligar todos os campos de uma vez enquanto a requisição corre. */
+fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+/* O ícone do CEP é decorativo, não um botão: não existe busca por
+   geolocalização nesta task. Então ele não recebe hover nem cursor. */
+.campo-icone__acao--estatico {
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------- Pills Contrato */
+.pills {
+  display: flex;
+  gap: var(--k-s-2);
+  flex-wrap: wrap;
+}
+
+.pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 16px;
+  border-radius: var(--k-raio-lg); /* 12px */
+  border: 1px solid var(--k-linha);
+  background: var(--k-campo);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pill__radio {
+  @include m.apenas-leitor-de-tela;
+}
+
+.pill__texto {
+  font-family: var(--k-sans);
+  font-size: 0.875rem; /* 14px */
+  font-weight: 500;
+  color: var(--k-texto-muted);
+  transition: color 160ms ease;
+
+  /* Garante que a cor não seja herdada de outro elemento */
+  color: var(--k-texto-muted) !important;
+}
+
+.pill:hover {
+  border-color: var(--k-linha-forte);
+}
+
+.pill:has(.pill__radio:focus-visible) {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+/* Selecionado: borda ouro + fundo rgba ouro 0.1 (--k-ouro-fosco) */
+.pill--ativo {
+  border-color: var(--k-ouro);
+  background: var(--k-ouro-fosco);
+}
+
+.pill--ativo .pill__texto {
+  color: var(--k-ouro);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ Checkbox Termos */
+.termo {
+  margin-top: 0; /* o app-campo já tem margin-bottom, este vive sem o wrapper */
+}
+
+.termo__label {
+  display: inline-flex;
+  gap: var(--k-s-2);
+  align-items: flex-start;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.termo__checkbox {
+  @include m.apenas-leitor-de-tela;
+}
+
+.termo__check {
+  display: grid;
+  place-items: center;
+  width: 1.25rem; /* 20px */
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem; /* alinhamento óptico com a primeira linha do texto */
+  color: var(--k-ouro);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: 4px;
+  background: var(--k-campo);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.termo__check svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.termo__label:hover .termo__check {
+  border-color: var(--k-ouro);
+}
+
+.termo__label:has(.termo__checkbox:focus-visible) .termo__check {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+/* Checked: fundo ouro + check aparece */
+.termo__checkbox:checked + .termo__check {
+  background: var(--k-ouro);
+  border-color: var(--k-ouro);
+  color: #131313; /* --k-fundo para o check ficar escuro sobre o ouro */
+}
+
+.termo__checkbox:checked + .termo__check svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.termo__texto {
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm); /* 13px */
+  color: var(--k-texto-fraco);
+  line-height: 1.5;
+}
+
+.termo__link {
+  color: var(--k-ouro);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--k-ouro-claro);
+  }
+}
+
+.termo__erro {
+  display: block;
+  margin-top: var(--k-s-1);
+  font-size: var(--k-t-sm);
+  font-weight: 500;
+  color: var(--k-erro);
+}
+
+/* ---------------------------------------------------------- Etapa 2: Experiências */
+
+/* Experiências já adicionadas */
+.experiencias-adicionadas {
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-6);
+}
+
+.experiencia-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-s-3);
+  padding: var(--k-s-4) var(--k-s-5);
+  background: var(--k-superficie);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+}
+
+.experiencia-card__conteudo {
+  flex: 1;
+  min-width: 0;
+}
+
+.experiencia-card__local {
+  font-family: var(--k-serif);
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  color: var(--k-texto);
+  margin: 0 0 var(--k-s-1);
+}
+
+.experiencia-card__cargo {
+  font-family: var(--k-sans);
+  font-size: var(--k-t-base); /* 16px */
+  color: var(--k-texto-fraco);
+  margin: 0 0 var(--k-s-1);
+}
+
+.experiencia-card__periodo {
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm); /* 13px */
+  font-weight: 600;
+  color: var(--k-ouro);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.experiencia-card__remover {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  color: var(--k-texto-fraco);
+  background: transparent;
+  border: none;
+  border-radius: var(--k-raio);
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.experiencia-card__remover:hover {
+  color: var(--k-erro);
+  background: var(--k-erro-fundo);
+}
+
+/* Botão link para adicionar outra experiência */
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-s-2);
+  padding: var(--k-s-2) 0;
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+  color: var(--k-ouro);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.btn-link:hover {
+  color: var(--k-ouro-claro);
+}
+
+/* Botão para adicionar primeira experiência (estado vazio) */
+.btn-adicionar-primeira {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  width: 100%;
+  padding: var(--k-s-5) var(--k-s-6);
+  font-family: var(--k-sans);
+  font-size: var(--k-t-base);
+  font-weight: 500;
+  color: var(--k-ouro);
+  background: var(--k-superficie);
+  border: 1px dashed rgb(242 202 80 / 40%);
+  border-radius: var(--k-raio-lg);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.btn-adicionar-primeira:hover {
+  border-color: var(--k-ouro);
+  background: rgb(242 202 80 / 5%);
+  color: var(--k-ouro-claro);
+}
+
+/* Painel Nova Experiência */
+.nova-experiencia {
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  padding: var(--k-s-5);
+  background: var(--k-superficie);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+  animation: slideDown 240ms cubic-bezier(0.2, 0.8, 0.3, 1);
+
+  /* Garante centralização mesmo dentro de grid/flex pai */
+  justify-self: center;
+}
+
+/* A lista de experiências também centralizada */
+.experiencias-adicionadas {
+  justify-self: center;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nova-experiencia__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--k-s-5);
+  padding-bottom: var(--k-s-3);
+  border-bottom: 1px solid var(--k-linha);
+}
+
+.nova-experiencia__titulo {
+  font-family: var(--k-sans);
+  font-size: var(--k-t-lg);
+  font-weight: 600;
+  color: var(--k-texto);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.nova-experiencia__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-s-5);
+}
+
+.nova-experiencia__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-s-4);
+
+  @media (width < 48rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Período com dois inputs lado a lado + checkbox atual */
+.periodo-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--k-s-4);
+  align-items: end;
+
+  @media (width < 48rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.periodo-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-s-1);
+}
+
+.periodo-label {
+  @include m.rotulo;
+  font-size: var(--k-t-xs);
+}
+
+.periodo-input__wrapper {
+  position: relative;
+}
+
+.periodo-input__wrapper .entrada {
+  padding-right: 2.5rem;
+}
+
+.periodo-icone {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--k-texto-placeholder);
+  pointer-events: none;
+}
+
+.periodo-atual {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-2);
+  white-space: nowrap;
+  padding-bottom: 0.25rem; /* alinhar com o input */
+}
+
+.periodo-atual__checkbox {
+  @include m.apenas-leitor-de-tela;
+}
+
+.periodo-atual__check {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  color: var(--k-ouro);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: 4px;
+  background: var(--k-campo);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.periodo-atual__check svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.periodo-atual input:checked + .periodo-atual__check {
+  background: var(--k-ouro);
+  border-color: var(--k-ouro);
+  color: #131313;
+}
+
+.periodo-atual input:checked + .periodo-atual__check svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.periodo-atual__texto {
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm);
+  color: var(--k-texto-fraco);
+}
+
+/* Ações do formulário */
+.nova-experiencia__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--k-s-3);
+  margin-top: var(--k-s-2);
+  padding-top: var(--k-s-4);
+  border-top: 1px solid var(--k-linha);
+}
+
+.botao--secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  padding: var(--k-s-2) var(--k-s-4);
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+  color: var(--k-texto);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.botao--secundario:hover {
+  border-color: var(--k-linha-forte);
+  background: var(--k-superficie);
+  color: var(--k-texto);
+}
+
+/* ============================================================
+   Correções de tipografia para alinhar com Figma
+   ============================================================ */
+
+/* Título etapa 2: 36px, Noto Serif, weight 400 (não 700) */
+.titulo--etapa2 {
+  font-family: var(--k-serif);
+  font-size: 2.25rem; /* 36px */
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+/* Título etapa 3: 36px, Noto Serif, weight 400 (não 30px/700/Manrope) */
+.titulo--etapa3 {
+  font-family: var(--k-serif);
+  font-size: 2.25rem; /* 36px */
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+/* Select vazio: placeholder com cor correta (--k-texto-placeholder = #7e7e7e) */
+.entrada--vazio {
+  color: var(--k-texto-placeholder);
+}
+
+.entrada--vazio::placeholder {
+  color: var(--k-texto-placeholder);
+}

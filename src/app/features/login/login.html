@@ -1,0 +1,24 @@
+<app-moldura>
+  <div class="tela">
+    <app-topo-etapa titulo="Entrar" rotuloVoltar="Voltar ao cadastro" (voltar)="voltarAoRegistro()" />
+
+    <div class="tela__corpo">
+      <h1 class="titulo" tabindex="-1">Bem-vindo de volta</h1>
+
+      @if (mensagem(); as texto) {
+        <!-- role="status" (e não "alert") porque é uma boa notícia, não um erro:
+             o leitor de tela anuncia sem interromper o que está sendo lido. -->
+        <p class="aviso aviso--ok login__mensagem" role="status">{{ texto }}</p>
+      }
+
+      <p class="subtitulo login__nota">
+        A entrada no Komanda ainda não está disponível — a API não expõe rota de
+        autenticação. Sua conta já foi criada e estará aqui quando o login for liberado.
+      </p>
+    </div>
+
+    <div class="tela__rodape">
+      <a class="botao botao--fantasma" routerLink="/registro">Voltar ao cadastro</a>
+    </div>
+  </div>
+</app-moldura>

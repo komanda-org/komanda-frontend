@@ -1,0 +1,131 @@
+@use '../../../../styles/mixins' as m;
+
+/* Voltar simples no topo (sem titulo nem progresso, como no Figma). */
+.voltar {
+  padding: var(--k-s-4) var(--k-gutter) 0;
+}
+
+.voltar__botao {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--k-ouro);
+  background: rgb(28 27 27 / 50%);
+  border: 1px solid rgb(77 70 53 / 15%);
+  border-radius: var(--k-raio-lg);
+
+  &:hover {
+    border-color: rgb(77 70 53 / 40%);
+  }
+}
+
+.tela__corpo .subtitulo {
+  font-size: var(--k-t-base);
+  color: #d0c5af;
+}
+
+/* Grid de 2 colunas do Figma; empilha so em celular estreito. */
+.perfis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--k-s-4);
+  padding: 0;
+
+  /* Só o topo: o `margin: X 0 0` do shorthand zerava as laterais e impedia o
+     `margin-inline: auto` global de centralizar o grid dentro dos 36rem. */
+  margin-block-start: var(--k-s-6);
+  border: 0;
+
+  @media (width < 30rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.perfis__legenda {
+  @include m.apenas-leitor-de-tela;
+}
+
+/* O cartao inteiro e o alvo de clique: o <label> envolve o radio. */
+.perfil {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-s-2);
+  align-items: center;
+  padding: var(--k-s-6) var(--k-s-5) var(--k-s-5);
+  text-align: center;
+  cursor: pointer;
+  background: var(--k-fundo);
+  border: 1px solid rgb(77 70 53 / 40%);
+  border-radius: var(--k-raio);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+
+  &:hover {
+    border-color: rgb(77 70 53 / 70%);
+  }
+
+  /* O selecionado: fundo #1C1B1B, contorno ouro e brilho interno. */
+  &--ativo {
+    background: #1c1b1b;
+    border-color: var(--k-ouro);
+    box-shadow: inset 0 0 20px 1px rgb(242 202 80 / 5%);
+  }
+}
+
+.perfil__radio {
+  @include m.apenas-leitor-de-tela;
+}
+
+.perfil:has(.perfil__radio:focus-visible) {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+.perfil__icone {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--k-s-3);
+  color: var(--k-ouro);
+  background: #1e1e1a;
+  border-radius: var(--k-raio);
+  border: none; /* Remove herança de border-color do color: var(--k-ouro) no SVG */
+  transition: background-color 160ms ease;
+}
+
+.perfil--ativo .perfil__icone {
+  background: rgb(232 160 32 / 20%);
+}
+
+.perfil__nome {
+  font-family: var(--k-serif);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.55;
+}
+
+.perfil--ativo .perfil__nome {
+  font-weight: 700;
+}
+
+.perfil__resumo {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.6;
+  color: #d0c5af;
+  text-wrap: balance;
+}
+
+/* O visto dourado: absoluto no canto, so existe no cartao escolhido. */
+.perfil__marca {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--k-ouro);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.perfil--ativo .perfil__marca {
+  opacity: 1;
+}

@@ -1,0 +1,78 @@
+/**
+ * Listas fixas dos <select> do cadastro. A API valida so tamanho de string,
+ * entao qualquer item daqui passa com folga. Dado de dominio, nao detalhe de
+ * tela: quando vierem da API, some este arquivo.
+ */
+
+export const CARGOS: readonly string[] = [
+  'Garçom',
+  'Cozinheiro',
+  'Chef de cozinha',
+  'Sous chef',
+  'Auxiliar de cozinha',
+  'Chapeiro',
+  'Pizzaiolo',
+  'Confeiteiro',
+  'Padeiro',
+  'Sushiman',
+  'Churrasqueiro',
+  'Barista',
+  'Bartender',
+  'Sommelier',
+  'Maître',
+  'Hostess',
+  'Caixa',
+  'Copeiro',
+  'Auxiliar de limpeza',
+  'Entregador',
+  'Gerente de salão',
+  'Estoquista',
+];
+
+export const TIPOS_DE_COZINHA: readonly string[] = [
+  'Brasileira',
+  'Comida caseira',
+  'Mineira',
+  'Nordestina',
+  'Churrascaria',
+  'Italiana',
+  'Japonesa',
+  'Chinesa',
+  'Árabe',
+  'Mexicana',
+  'Peruana',
+  'Portuguesa',
+  'Francesa',
+  'Frutos do mar',
+  'Pizzaria',
+  'Hamburgueria',
+  'Padaria e confeitaria',
+  'Cafeteria',
+  'Bar e petiscos',
+  'Vegetariana e vegana',
+  'Contemporânea',
+];
+
+/** Habilidades técnicas para a etapa de experiências (Figma: busca + chips). */
+export const HABILIDADES: readonly string[] = [
+  'Cozinha Francesa',
+  'Cozinha Italiana',
+  'Cozinha Japonesa',
+  'Cozinha Brasileira',
+  'Gestão de Brigada',
+  'HACCP',
+  'Segurança Alimentar',
+  'Controle de Custos',
+  'Desenvolvimento de Cardápio',
+  'Confeitaria',
+  'Panificação',
+  'Churrasco',
+  'Cozinha de Vanguarda',
+  'Sous-vide',
+  'Fermentação Natural',
+  'Cozinha Molecular',
+  'Atendimento ao Cliente',
+  'Gestão de Estoque',
+  'Treinamento de Equipe',
+  'Cozinha Vegetariana/Vegana',
+];
