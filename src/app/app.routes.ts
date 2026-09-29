@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { AppLayout } from './layout/app-layout/app-layout';
+import { PlaceholderPage } from './pages/placeholder/placeholder-page';
 
 /**
  * Tabela de rotas.
@@ -12,6 +14,10 @@ import { Routes } from '@angular/router';
  * `loadComponent` recebe uma funcao que so roda quando a rota e visitada. O
  * `import()` dinamico faz o bundler separar aquele componente num arquivo
  * proprio — quem abre /registro nao baixa o codigo do cadastro do restaurante.
+ *
+ * O app autenticado mora dentro do `AppLayout` (header + sidebar fixos), que
+ * envolve as rotas filhas abaixo. As telas de conta ficam de fora: sao tela
+ * cheia, sem o chrome do app.
  */
 export const routes: Routes = [
   {
@@ -47,6 +53,17 @@ export const routes: Routes = [
     path: 'login',
     title: 'Entrar · Komanda',
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
+  },
+  {
+    path: '',
+    component: AppLayout,
+    children: [
+      { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
+      { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
+      { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
+      { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
+      { path: '', redirectTo: 'vagas', pathMatch: 'full' },
+    ],
   },
   {
     // Curinga sempre por ultimo: o Router para no primeiro que casar.

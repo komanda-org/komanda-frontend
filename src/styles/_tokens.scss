@@ -93,4 +93,10 @@
   /* Respiro lateral que acompanha a tela: 1rem no celular, ate 2.5rem no
      desktop. Uma variavel so, em vez de tres media queries espalhadas. */
   --k-gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+
+  /* --- Chapa fixa do app autenticado (header + sidebar) --- */
+  --k-header-h: 64px;
+  --k-sidebar-w: 256px;
+  --k-fundo-header: rgb(9 9 11 / 70%); /* translucido: o main aparece atras */
+  --k-icone-nav: rgb(255 255 255 / 50%); /* icone mascarado fora do item ativo */
 }
