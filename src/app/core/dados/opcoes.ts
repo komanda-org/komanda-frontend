@@ -1,13 +1,7 @@
 /**
- * Listas fixas usadas pelos <select> do cadastro.
- *
- * O prototipo desenha "Selecione sua especialidade" e "Selecione a culinaria"
- * como dropdowns, entao sao dropdowns. A API valida apenas tamanho de string
- * (min 1/max 100 em mainRole, min 3/max 100 em cuisineType) — qualquer item
- * daqui satisfaz isso com folga.
- *
- * Vivem em `core/dados` e nao dentro do componente porque sao dado de dominio,
- * nao detalhe de tela: no dia em que vierem da API, e este arquivo que some.
+ * Listas fixas dos <select> do cadastro. A API valida so tamanho de string,
+ * entao qualquer item daqui passa com folga. Dado de dominio, nao detalhe de
+ * tela: quando vierem da API, some este arquivo.
  */
 
 export const CARGOS: readonly string[] = [
@@ -57,4 +51,28 @@ export const TIPOS_DE_COZINHA: readonly string[] = [
   'Bar e petiscos',
   'Vegetariana e vegana',
   'Contemporânea',
+];
+
+/** Habilidades técnicas para a etapa de experiências (Figma: busca + chips). */
+export const HABILIDADES: readonly string[] = [
+  'Cozinha Francesa',
+  'Cozinha Italiana',
+  'Cozinha Japonesa',
+  'Cozinha Brasileira',
+  'Gestão de Brigada',
+  'HACCP',
+  'Segurança Alimentar',
+  'Controle de Custos',
+  'Desenvolvimento de Cardápio',
+  'Confeitaria',
+  'Panificação',
+  'Churrasco',
+  'Cozinha de Vanguarda',
+  'Sous-vide',
+  'Fermentação Natural',
+  'Cozinha Molecular',
+  'Atendimento ao Cliente',
+  'Gestão de Estoque',
+  'Treinamento de Equipe',
+  'Cozinha Vegetariana/Vegana',
 ];

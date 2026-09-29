@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TipoConta } from '../../../core/models/registro.model';
 import { Moldura } from '../../../shared/ui/moldura';
-import { TopoEtapa } from '../../../shared/ui/topo-etapa';
 
 /**
  * Primeira tela do cadastro: "Como voce vai usar o Komanda?"
@@ -13,7 +12,7 @@ import { TopoEtapa } from '../../../shared/ui/topo-etapa';
  */
 @Component({
   selector: 'app-escolha-perfil',
-  imports: [Moldura, TopoEtapa],
+  imports: [Moldura],
   templateUrl: './escolha-perfil.html',
   styleUrl: './escolha-perfil.scss',
 })

@@ -1,4 +1,4 @@
-<app-moldura>
+<app-moldura [frase]="fraseVitrine()">
   <div class="tela">
     <app-topo-etapa
       titulo="Criar conta"
@@ -32,45 +32,26 @@
         @switch (etapa()) {
           @case (1) {
             <section class="etapa">
-              <h1 class="titulo" tabindex="-1" #tituloEtapa>Sobre você</h1>
-              <p class="subtitulo">Leva menos de 2 minutos</p>
+              <p class="eyebrow">Leva menos de 2 minutos</p>
+              <h1 class="titulo titulo--etapa1" tabindex="-1" #tituloEtapa>Sobre você</h1>
 
               <div class="etapa__conteudo">
-                <app-previa-imagem
-                  [url]="form.controls.profilePhoto.value"
-                  alt="Sua foto de perfil"
-                  legendaVazia="Adicionar foto"
-                />
-
-                <app-campo
-                  rotulo="Foto de perfil"
-                  para="profilePhoto"
-                  [controle]="form.controls.profilePhoto"
-                  dica="Cole o link de uma imagem sua"
-                  [opcional]="true"
-                >
-                  <input
-                    id="profilePhoto"
-                    class="entrada"
-                    type="url"
-                    inputmode="url"
-                    placeholder="https://…"
-                    formControlName="profilePhoto"
-                  />
-                </app-campo>
-
                 <app-campo rotulo="Nome completo" para="fullName" [controle]="form.controls.fullName">
                   <input
                     id="fullName"
                     class="entrada"
                     type="text"
                     autocomplete="name"
-                    placeholder="Ex: Augusto Escoffier"
+                    placeholder="Seu nome"
                     formControlName="fullName"
                   />
                 </app-campo>
 
-                <app-campo rotulo="Email" para="email" [controle]="form.controls.email">
+                <app-campo
+                  rotulo="E-mail profissional"
+                  para="email"
+                  [controle]="form.controls.email"
+                >
                   <input
                     id="email"
                     class="entrada"
@@ -98,6 +79,28 @@
                       <option [value]="cargo">{{ cargo }}</option>
                     }
                   </select>
+                </app-campo>
+
+                <!-- Pills Contrato: CLT / PJ / Freelancer -->
+                <app-campo
+                  rotulo="Tipo de contrato"
+                  para="contractType"
+                  [controle]="form.controls.contractType"
+                >
+                  <fieldset class="pills" aria-label="Tipo de contrato">
+                    @for (tipo of contractTypes; track tipo) {
+                      <label class="pill" [class.pill--ativo]="form.controls.contractType.value === tipo">
+                        <input
+                          type="radio"
+                          name="contractType"
+                          [value]="tipo"
+                          class="pill__radio"
+                          formControlName="contractType"
+                        />
+                        <span class="pill__texto">{{ tipo }}</span>
+                      </label>
+                    }
+                  </fieldset>
                 </app-campo>
 
                 <app-campo
@@ -146,49 +149,239 @@
 
                   <app-forca-senha [senha]="form.controls.password.value" />
                 </app-campo>
+
+                <app-campo
+                  rotulo="Confirmar senha"
+                  para="confirmPassword"
+                  [controle]="form.controls.confirmPassword"
+                >
+                  <div class="campo-icone">
+                    <input
+                      id="confirmPassword"
+                      class="entrada"
+                      [type]="mostrarSenha() ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      placeholder="Repita a senha"
+                      formControlName="confirmPassword"
+                    />
+                  </div>
+                </app-campo>
+
+                <app-campo
+                  rotulo="Foto de perfil"
+                  para="profilePhoto"
+                  [controle]="form.controls.profilePhoto"
+                  [opcional]="true"
+                >
+                  <app-previa-imagem
+                    (arquivoChange)="form.controls.profilePhoto.setValue($event ?? '')"
+                    alt="Sua foto de perfil"
+                    legendaVazia="Adicionar foto"
+                  />
+                </app-campo>
+
+                <!-- Checkbox Termos/Privacidade -->
+                <div class="campo termo" [class.campo--erro]="form.controls.acceptedTerms.invalid && form.controls.acceptedTerms.touched">
+                  <label class="termo__label" for="acceptedTerms">
+                    <input
+                      id="acceptedTerms"
+                      type="checkbox"
+                      class="termo__checkbox"
+                      formControlName="acceptedTerms"
+                    />
+                    <span class="termo__check" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l4 4 9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                    <span class="termo__texto">
+                      Concordo com os
+                      <a href="https://komandaatelier.com/termos" target="_blank" rel="noopener noreferrer" class="termo__link">Termos de Serviço</a>
+                      e
+                      <a href="https://komandaatelier.com/privacidade" target="_blank" rel="noopener noreferrer" class="termo__link">Política de Privacidade</a>
+                      do Komanda.
+                    </span>
+                  </label>
+                  @if (form.controls.acceptedTerms.touched && form.controls.acceptedTerms.invalid) {
+                    <span class="termo__erro" role="alert">Você deve aceitar os termos para continuar</span>
+                  }
+                </div>
               </div>
             </section>
           }
 
           @case (2) {
             <section class="etapa">
-              <h1 class="titulo" tabindex="-1" #tituloEtapa>Sua experiência</h1>
+              <h1 class="titulo titulo--etapa2" tabindex="-1" #tituloEtapa>Sua experiência</h1>
               <p class="subtitulo">Conte-nos sobre sua trajetória</p>
 
               <div class="etapa__conteudo">
-                <app-campo
-                  rotulo="Descrição breve"
-                  para="experienceSummary"
-                  [controle]="form.controls.experienceSummary"
-                  dica="Onde já trabalhou e o que sabe fazer"
-                  [opcional]="true"
-                  [maximo]="1000"
-                >
-                  <textarea
-                    id="experienceSummary"
-                    class="entrada"
-                    rows="5"
-                    placeholder="3 anos em casa de massas, atendimento de salão e apoio na cozinha…"
-                    formControlName="experienceSummary"
-                  ></textarea>
-                </app-campo>
+                <!-- Experiências já adicionadas -->
+                <div class="experiencias-adicionadas">
+                  @for (exp of experienciasAdicionadas(); track exp.id) {
+                    <article class="experiencia-card">
+                      <div class="experiencia-card__conteudo">
+                        <h3 class="experiencia-card__local">{{ exp.workPlace }}</h3>
+                        <p class="experiencia-card__cargo">{{ exp.role }}</p>
+                        <p class="experiencia-card__periodo">
+                          {{ formatarPeriodo(exp.startDate, exp.endDate, exp.currentJob) }}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        class="experiencia-card__remover"
+                        (click)="removerExperiencia(exp.id)"
+                        aria-label="Remover experiência"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                      </button>
+                    </article>
+                  }
+                  @if (experienciasAdicionadas().length > 0) {
+                    <button type="button" class="btn-link" (click)="adicionarExperiencia()">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      </svg>
+                      Adicionar outra experiência
+                    </button>
+                  }
+                </div>
 
-                <app-campo
-                  rotulo="Outras funções de interesse"
-                  para="interestedRoles"
-                  [controle]="form.controls.interestedRoles"
-                  dica="Digite e aperte Enter para adicionar"
-                  [opcional]="true"
-                >
-                  <app-tags formControlName="interestedRoles" />
-                </app-campo>
+                <!-- Formulário Nova Experiência -->
+                <div class="nova-experiencia" [class.nova-experiencia--ativa]="novaExperienciaAtiva()">
+                  <div class="nova-experiencia__header">
+                    <h2 class="nova-experiencia__titulo">Nova Experiência</h2>
+                  </div>
+
+                  <div class="nova-experiencia__form">
+                    <div class="nova-experiencia__row">
+                      <app-campo
+                        rotulo="Local de Trabalho"
+                        para="workPlace"
+                        [controle]="form.controls.workPlace"
+                        dica="Ex: D.O.M."
+                      >
+                        <input
+                          id="workPlace"
+                          class="entrada"
+                          type="text"
+                          autocomplete="organization"
+                          placeholder="Nome do estabelecimento"
+                          formControlName="workPlace"
+                        />
+                      </app-campo>
+
+                      <app-campo
+                        rotulo="Cargo"
+                        para="role"
+                        [controle]="form.controls.role"
+                        dica="Ex: Chef de Partie"
+                      >
+                        <input
+                          id="role"
+                          class="entrada"
+                          type="text"
+                          autocomplete="organization-title"
+                          placeholder="Seu cargo"
+                          formControlName="role"
+                        />
+                      </app-campo>
+                    </div>
+
+                    <app-campo
+                      rotulo="Período"
+                      para="startDate"
+                      [controle]="form.controls.startDate"
+                    >
+                      <div class="periodo-inputs">
+                        <div class="periodo-input">
+                          <label class="periodo-label" for="startDate">Início</label>
+                          <app-seletor-mes-ano
+                            [valor]="form.controls.startDate.value"
+                            [desabilitado]="form.controls.startDate.disabled"
+                            (valorChange)="form.controls.startDate.setValue($event)"
+                          />
+                        </div>
+                        <div class="periodo-input">
+                          <label class="periodo-label" for="endDate">Fim</label>
+                          <app-seletor-mes-ano
+                            [valor]="form.controls.endDate.value"
+                            [desabilitado]="form.controls.endDate.disabled"
+                            (valorChange)="form.controls.endDate.setValue($event)"
+                          />
+                        </div>
+                        <label class="periodo-atual" for="currentJob">
+                          <input
+                            id="currentJob"
+                            type="checkbox"
+                            class="periodo-atual__checkbox"
+                            formControlName="currentJob"
+                            (change)="toggleAtual($event)"
+                          />
+                          <span class="periodo-atual__check" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path d="M5 12l4 4 9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </span>
+                          <span class="periodo-atual__texto">Atualmente trabalho aqui</span>
+                        </label>
+                      </div>
+                    </app-campo>
+
+                    <app-campo
+                      rotulo="Breve Descrição"
+                      para="experienceDescription"
+                      [controle]="form.controls.experienceDescription"
+                      dica="Descreva suas principais responsabilidades e conquistas"
+                      [maximo]="1000"
+                    >
+                      <textarea
+                        id="experienceDescription"
+                        class="entrada"
+                        rows="4"
+                        placeholder="Descreva suas principais responsabilidades e conquistas..."
+                        formControlName="experienceDescription"
+                      ></textarea>
+                    </app-campo>
+
+                    <app-campo
+                      rotulo="Habilidades"
+                      para="skills"
+                      [controle]="form.controls.skills"
+                      dica="Digite e aperte Enter para adicionar"
+                      [opcional]="true"
+                    >
+                      <app-tags
+                        formControlName="skills"
+                        [sugestoes]="habilidades"
+                        placeholder="Buscar habilidade..."
+                      />
+                    </app-campo>
+
+                    <div class="nova-experiencia__acoes">
+                      <button type="button" class="botao botao--secundario" (click)="cancelarNovaExperiencia()">Cancelar</button>
+                      <button type="button" class="botao" (click)="salvarNovaExperiencia()" [disabled]="!novaExperienciaValida()">Salvar experiência</button>
+                    </div>
+                  </div>
+                </div>
+
+                @if (experienciasAdicionadas().length === 0 && !novaExperienciaAtiva()) {
+                  <button type="button" class="btn-adicionar-primeira" (click)="adicionarExperiencia()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Adicionar primeira experiência
+                  </button>
+                }
               </div>
             </section>
           }
 
           @case (3) {
             <section class="etapa">
-              <h1 class="titulo" tabindex="-1" #tituloEtapa>Onde você está?</h1>
+              <h1 class="titulo titulo--etapa3" tabindex="-1" #tituloEtapa>Onde você está?</h1>
               <p class="subtitulo">Isso ajuda a encontrar vagas perto de você</p>
 
               <div class="etapa__conteudo">

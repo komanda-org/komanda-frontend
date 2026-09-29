@@ -1,26 +1,28 @@
 import { ValidationErrors } from '@angular/forms';
 
 /**
- * Traduz o objeto de erros de um control para UMA frase em portugues.
+ * Traduz o objeto de erros de um control para UMA frase em portugues — sem
+ * isso cada template teria uma escada de @if e o texto divergiria entre telas.
  *
- * Por que centralizar: sem isso, cada template teria uma escada de @if
- * ("se required mostra X, se minlength mostra Y..."). Aqui a regra existe uma
- * vez so e o texto fica consistente na aplicacao inteira.
- *
- * O `rotulo` e o nome do campo como o usuario o ve ("Email", "Senha",
- * "Nome completo"). E ele que faz a mensagem sair exatamente como a
- * especificacao pede:
- *   rotulo 'Email'         + erro email      -> "Email deve ser valido"
- *   rotulo 'Senha'         + minlength 8     -> "Senha deve ter no minimo 8 caracteres"
- *   rotulo 'Nome completo' + minlength 3     -> "Nome completo deve ter no minimo 3 caracteres"
+ * O `rotulo` e o nome do campo como o usuario o ve; ele faz a frase sair como
+ * a especificacao pede ("Email deve ser valido", "Senha deve ter no minimo
+ * 8 caracteres").
  */
 export function mensagemDoErro(erros: ValidationErrors | null, rotulo: string): string | null {
   if (!erros) {
     return null;
   }
 
-  // A ordem das checagens define a prioridade: mostramos um erro por vez,
-  // o mais "basico" primeiro. Empilhar tres mensagens num campo so confunde.
+  // Um erro por vez, do mais basico primeiro. Excecao: 'servidor' e
+  // 'conflito' vem da API depois do submit e sao mais especificos.
+  if (typeof erros['servidor'] === 'string' && erros['servidor']) {
+    return erros['servidor'];
+  }
+
+  if (erros['conflito']) {
+    return `${rotulo} já cadastrado`;
+  }
+
   if (erros['required']) {
     return `${rotulo} e obrigatorio`;
   }
@@ -58,6 +60,14 @@ export function mensagemDoErro(erros: ValidationErrors | null, rotulo: string): 
   if (erros['itemLongo']) {
     const maximo = (erros['itemLongo'] as { maximo: number }).maximo;
     return `Cada funcao deve ter no maximo ${maximo} caracteres`;
+  }
+
+  if (erros['confirmacao']) {
+    return 'As senhas nao conferem';
+  }
+
+  if (erros['obrigatorioTrue']) {
+    return 'Voce deve aceitar os termos para continuar';
   }
 
   return `${rotulo} e invalido`;

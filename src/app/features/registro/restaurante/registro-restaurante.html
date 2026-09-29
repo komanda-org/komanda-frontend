@@ -1,4 +1,4 @@
-<app-moldura>
+<app-moldura [frase]="fraseVitrine()">
   <div class="tela">
     <app-topo-etapa
       titulo="Cadastro do restaurante"
@@ -111,27 +111,17 @@
               <p class="subtitulo">Essas informações aparecem nas suas vagas e no perfil público.</p>
 
               <div class="etapa__conteudo">
-                <app-previa-imagem
-                  [url]="form.controls.logoUrl.value"
-                  formato="quadrado"
-                  alt="Logo do restaurante"
-                  legendaVazia="Adicionar logo"
-                />
-
                 <app-campo
                   rotulo="Logo"
                   para="logoUrl"
                   [controle]="form.controls.logoUrl"
-                  dica="Cole o link da imagem da marca"
                   [opcional]="true"
                 >
-                  <input
-                    id="logoUrl"
-                    class="entrada"
-                    type="url"
-                    inputmode="url"
-                    placeholder="https://…"
-                    formControlName="logoUrl"
+                  <app-previa-imagem
+                    formato="quadrado"
+                    (arquivoChange)="form.controls.logoUrl.setValue($event ?? '')"
+                    alt="Logo do restaurante"
+                    legendaVazia="Adicionar logo"
                   />
                 </app-campo>
 

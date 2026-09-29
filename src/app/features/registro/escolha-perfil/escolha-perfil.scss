@@ -1,14 +1,44 @@
 @use '../../../../styles/mixins' as m;
 
+/* Voltar simples no topo (sem titulo nem progresso, como no Figma). */
+.voltar {
+  padding: var(--k-s-4) var(--k-gutter) 0;
+}
+
+.voltar__botao {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--k-ouro);
+  background: rgb(28 27 27 / 50%);
+  border: 1px solid rgb(77 70 53 / 15%);
+  border-radius: var(--k-raio-lg);
+
+  &:hover {
+    border-color: rgb(77 70 53 / 40%);
+  }
+}
+
+.tela__corpo .subtitulo {
+  font-size: var(--k-t-base);
+  color: #d0c5af;
+}
+
+/* Grid de 2 colunas do Figma; empilha so em celular estreito. */
 .perfis {
   display: grid;
-  gap: var(--k-s-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--k-s-4);
   padding: 0;
-  margin: var(--k-s-6) 0 0;
+
+  /* Só o topo: o `margin: X 0 0` do shorthand zerava as laterais e impedia o
+     `margin-inline: auto` global de centralizar o grid dentro dos 36rem. */
+  margin-block-start: var(--k-s-6);
   border: 0;
 
-  @include m.medio {
-    gap: var(--k-s-4);
+  @media (width < 30rem) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -16,40 +46,30 @@
   @include m.apenas-leitor-de-tela;
 }
 
-/* O cartao inteiro e o alvo de clique: o <label> envolve o radio.
-   Area de toque generosa no celular sem uma linha de JavaScript. */
+/* O cartao inteiro e o alvo de clique: o <label> envolve o radio. */
 .perfil {
   position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-areas:
-    'icone marca  marca'
-    'nome  nome   nome'
-    'resumo resumo resumo';
+  display: flex;
+  flex-direction: column;
   gap: var(--k-s-2);
-  padding: var(--k-s-4);
+  align-items: center;
+  padding: var(--k-s-6) var(--k-s-5) var(--k-s-5);
+  text-align: center;
   cursor: pointer;
-  background: var(--k-superficie-2);
-  border: 1px solid var(--k-linha);
-  border-radius: var(--k-raio-lg);
-  transition: border-color 160ms ease, background-color 160ms ease;
+  background: var(--k-fundo);
+  border: 1px solid rgb(77 70 53 / 40%);
+  border-radius: var(--k-raio);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 
   &:hover {
-    border-color: var(--k-linha-forte);
+    border-color: rgb(77 70 53 / 70%);
   }
 
-  /* O selecionado: contorno dourado e o quadradinho do icone aceso. */
+  /* O selecionado: fundo #1C1B1B, contorno ouro e brilho interno. */
   &--ativo {
-    background: var(--k-superficie);
+    background: #1c1b1b;
     border-color: var(--k-ouro);
-  }
-
-  /* Os cartoes continuam EMPILHADOS no desktop, de proposito. Lado a lado eles
-     caberiam, mas o resumo quebraria em tres linhas e a comparacao entre as
-     duas opcoes ficaria mais dificil, nao mais facil. O que muda no desktop e
-     o respiro: mais ar dentro do cartao, ja que ha altura sobrando. */
-  @include m.medio {
-    padding: var(--k-s-5);
+    box-shadow: inset 0 0 20px 1px rgb(242 202 80 / 5%);
   }
 }
 
@@ -57,48 +77,50 @@
   @include m.apenas-leitor-de-tela;
 }
 
-/* O anel de foco precisa aparecer no CARTAO, ja que o radio real esta escondido.
-   :has() pergunta "este label contem um radio focado por teclado?" */
 .perfil:has(.perfil__radio:focus-visible) {
   outline: 2px solid var(--k-ouro);
   outline-offset: 2px;
 }
 
 .perfil__icone {
-  grid-area: icone;
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-bottom: var(--k-s-2);
-  color: var(--k-texto-fraco);
-  background: var(--k-campo);
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--k-s-3);
+  color: var(--k-ouro);
+  background: #1e1e1a;
   border-radius: var(--k-raio);
-  transition: color 160ms ease, background-color 160ms ease;
+  border: none; /* Remove herança de border-color do color: var(--k-ouro) no SVG */
+  transition: background-color 160ms ease;
 }
 
 .perfil--ativo .perfil__icone {
-  color: var(--k-ouro);
-  background: var(--k-ouro-fosco);
+  background: rgb(232 160 32 / 20%);
 }
 
 .perfil__nome {
-  grid-area: nome;
-  font-size: var(--k-t-base);
-  font-weight: 600;
+  font-family: var(--k-serif);
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.55;
+}
+
+.perfil--ativo .perfil__nome {
+  font-weight: 700;
 }
 
 .perfil__resumo {
-  grid-area: resumo;
-  font-size: var(--k-t-sm);
-  line-height: 1.4;
-  color: var(--k-texto-fraco);
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.6;
+  color: #d0c5af;
+  text-wrap: balance;
 }
 
-/* O visto dourado no canto: so existe no cartao escolhido. */
+/* O visto dourado: absoluto no canto, so existe no cartao escolhido. */
 .perfil__marca {
-  grid-area: marca;
-  justify-self: end;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
   color: var(--k-ouro);
   opacity: 0;
   transition: opacity 160ms ease;

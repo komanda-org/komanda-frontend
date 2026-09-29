@@ -2,18 +2,11 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { cnpjEhValido } from './cnpj';
 
 /**
- * VALIDADORES customizados.
+ * VALIDADORES customizados: recebem o control e devolvem `null` ou um objeto
+ * `{ chaveDoErro: ... }` — a chave que `mensagens-de-erro.ts` traduz.
  *
- * Um ValidatorFn e uma funcao que recebe o control e devolve:
- *   - `null`  quando esta tudo certo;
- *   - um objeto `{ chaveDoErro: ... }` quando falhou.
- *
- * A chave do objeto e o que aparece depois em `control.errors`, e e ela que o
- * tradutor de mensagens (mensagens-de-erro.ts) usa para escolher o texto.
- *
- * Todos aqui devolvem `null` quando o campo esta vazio. Motivo: campo vazio e
- * responsabilidade do `Validators.required`, nao deste validador. Se um campo
- * opcional ficasse invalido so por estar em branco, seria impossivel envia-lo.
+ * Todos devolvem `null` quando o campo esta vazio: campo em branco e assunto
+ * do `Validators.required`, senao campo opcional nao seria enviavel.
  */
 
 /** Bloqueia nomes compostos so de espaco em branco ("   "). */
@@ -30,20 +23,12 @@ export function naoApenasEspacos(): ValidatorFn {
 }
 
 /**
- * Comprimento minimo medido DEPOIS do trim.
+ * Comprimento minimo medido DEPOIS do trim: `montarPayload` envia o texto
+ * aparado, entao o `Validators.minLength` (que mede a string crua) deixaria
+ * "abc   " passar num minLength(6) e o back recusaria com 400.
  *
- * Por que existe: `montarPayload` envia todo texto com `.trim()`, mas o
- * `Validators.minLength` do Angular mede a string CRUA. "abc   " passaria por
- * um minLength(6) e chegaria ao back como "abc" — 400 garantido. Este validador
- * mede o mesmo valor que vai no JSON, entao o front e o back concordam.
- *
- * Devolve a chave `minlength` com a MESMA forma que o Angular usa
- * ({ requiredLength, actualLength }) de proposito: assim mensagens-de-erro.ts
- * ja sabe traduzir, sem precisar de um caso novo para dizer a mesma frase.
- * (So vale reusar a chave porque o significado e identico: "curto demais".)
- *
- * Nao aplicamos o mesmo ao maximo: aparar so encurta, entao um maxLength
- * medido no valor cru nunca deixa passar algo que o back vai recusar.
+ * Devolve a chave `minlength` com a mesma forma do Angular para o tradutor ja
+ * saber ler. Ao maximo nao aplicamos: aparar so encurta.
  */
 export function minimoAparado(minimo: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -91,15 +76,11 @@ export function cepValido(): ValidatorFn {
 /**
  * URL valida.
  *
- * Usa o construtor `URL` do proprio browser em vez de regex. Regex de URL e
- * notoriamente furada; o parser nativo ja implementa a especificacao inteira.
- * Restringimos a http/https porque `javascript:alert(1)` tambem e uma URL valida
- * para o parser — e nao queremos isso num campo de foto de perfil.
- *
- * A exigencia de ponto no hostname existe para acompanhar o back: o `@IsUrl()`
- * do class-validator roda com `require_tld: true` por padrao, entao ele RECUSA
- * "http://localhost/foto.png". Sem esta linha o front aprovaria uma URL que o
- * servidor devolveria como 400.
+ * Usa o parser `URL` do browser (regex de URL e furada) e aceita so http/https,
+ * porque `javascript:alert(1)` tambem passa nele. O ponto no hostname acompanha
+ * o back: o `@IsUrl()` do class-validator roda com `require_tld: true` e
+ * recusaria "http://localhost/foto.png" — sem isto o front aprovaria uma URL
+ * que o servidor devolveria como 400.
  */
 export function urlValida(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -135,5 +116,27 @@ export function itensAteTamanho(maximo: number): ValidatorFn {
     return valor.some((item) => item.length > maximo)
       ? { itemLongo: { maximo } }
       : null;
+  };
+}
+
+/** Confirmação de senha: dois controles devem ser iguais. */
+export function confirmacaoIgual(campoOriginal: string): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const form = control.parent;
+    if (!form) {
+      return null;
+    }
+    const original = form.get(campoOriginal);
+    if (!original) {
+      return null;
+    }
+    return control.value === original.value ? null : { confirmacao: true };
+  };
+}
+
+/** Checkbox obrigatório: deve ser true. */
+export function obrigatorioTrue(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    return control.value === true ? null : { obrigatorioTrue: true };
   };
 }

@@ -12,6 +12,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TIPOS_DE_COZINHA } from '../../../core/dados/opcoes';
+import {
+  aplicarConflito,
+  aplicarErrosDeValidacao,
+} from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
@@ -21,7 +25,6 @@ import {
   cepValido,
   cnpjValido,
   minimoAparado,
-  urlValida,
 } from '../../../core/validators/validadores';
 import { Campo } from '../../../shared/ui/campo';
 import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive';
@@ -43,14 +46,10 @@ type CampoRestaurante =
   | 'logoUrl';
 
 /**
- * Cadastro do restaurante em 2 etapas.
+ * Cadastro do restaurante em 2 etapas, na mesma arquitetura do profissional.
  *
- * Mesma arquitetura do wizard do profissional: um FormGroup unico e uma tabela
- * dizendo quais campos pertencem a cada etapa.
- *
- * A diferenca real esta no CNPJ: e o unico campo com validacao de ALGORITMO e
- * nao so de formato. "11.111.111/1111-11" tem o formato certo e mesmo assim e
- * invalido — quem decide isso e a funcao pura em core/validators/cnpj.ts.
+ * A diferenca esta no CNPJ: unico campo com validacao de ALGORITMO (e nao so de
+ * formato) — "11.111.111/1111-11" tem cara de CNPJ e mesmo assim e invalido.
  */
 @Component({
   selector: 'app-registro-restaurante',
@@ -86,6 +85,14 @@ export class RegistroRestaurante {
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
+  /** Frase da vitrine por etapa (aproximacao — copy final pendente de UX). */
+  protected readonly fraseVitrine = computed(
+    () =>
+      (['A equipe ideal para a sua casa.', 'Mostre sua casa aos candidatos.'] as const)[
+        this.etapa() - 1
+      ] ?? 'A equipe ideal para a sua casa.',
+  );
+
   /** Espelha a especificacao de POST /restaurants. */
   protected readonly form = this.fb.group({
     email: this.fb.control('', [
@@ -100,9 +107,7 @@ export class RegistroRestaurante {
     ]),
     phone: this.fb.control('', [Validators.required, Validators.maxLength(20)]),
     // Nos quatro campos abaixo o minimo e `minimoAparado` e nao
-    // `Validators.minLength`: montarPayload envia todos com .trim(), e o
-    // minLength do Angular mede a string crua. Sem isso, "descricao de 18
-    // letras   " passaria na tela e voltaria como 400 do back.
+    // `Validators.minLength`: montarPayload envia todos com .trim().
     restaurantName: this.fb.control('', [
       Validators.required,
       minimoAparado(3),
@@ -129,7 +134,7 @@ export class RegistroRestaurante {
       Validators.maxLength(10),
       cepValido(),
     ]),
-    logoUrl: this.fb.control('', [urlValida(), Validators.maxLength(2048)]),
+    logoUrl: this.fb.control(''),
   });
 
   private readonly camposPorEtapa: readonly (readonly CampoRestaurante[])[] = [
@@ -150,11 +155,9 @@ export class RegistroRestaurante {
   }
 
   /**
-   * Aplica uma mascara e mantem elemento e FormControl com o mesmo valor.
-   *
-   * `campo` e tipado com as chaves reais do form (e nao como `string`) — se
-   * alguem renomear `zipCode`, o TypeScript acusa o erro aqui em vez de a
-   * mascara simplesmente parar de funcionar em silencio.
+   * Aplica uma mascara e mantem elemento e FormControl com o mesmo valor. O
+   * `campo` e tipado com as chaves reais do form: renomear `zipCode` vira erro
+   * de compilacao aqui, nao mascara quebrada em silencio.
    */
   private formatar(
     evento: Event,
@@ -231,27 +234,28 @@ export class RegistroRestaurante {
       const conflito = traduzirConflito(erro);
       this.erroGeral.set(conflito.mensagem);
 
-      // 'email' esta na etapa 1 e 'cnpj' na etapa 2. Como o envio acontece na
-      // etapa 2, o conflito de email exige voltar uma tela; o de CNPJ so rola
-      // a pagina ate o banner.
+      // O erro aparece tambem NO campo, nao so no banner.
+      aplicarConflito(this.form, conflito.campo);
+
+      // 'email' esta na etapa 1 e 'cnpj' na 2: o conflito de email exige
+      // voltar uma tela, o de CNPJ so rola a pagina ate o banner.
       if (conflito.campo) {
         this.irParaEtapaDoCampo(conflito.campo);
       }
       return;
     }
 
-    this.errosDetalhados.set(erro.mensagens);
+    // 400: cada mensagem vira erro do proprio campo; o banner fica com o resto.
+    const restantes = aplicarErrosDeValidacao(this.form, erro.mensagens);
+    this.errosDetalhados.set(restantes.length > 1 ? restantes : []);
     this.erroGeral.set(
-      erro.mensagens.length > 1
+      restantes.length > 1
         ? 'Confira os campos abaixo:'
-        : (erro.mensagens[0] ?? 'Não foi possível criar a conta.'),
+        : (restantes[0] ?? 'Confira os campos destacados abaixo.'),
     );
   }
 
-  /**
-   * Leva o usuario ate a etapa que contem o campo recusado pelo servidor.
-   * (Mesma logica do cadastro de profissional — ver os comentarios de la.)
-   */
+  /** Leva o usuario ate a etapa que contem o campo recusado pelo servidor. */
   private irParaEtapaDoCampo(campo: string): void {
     const indice = this.camposPorEtapa.findIndex((campos) =>
       (campos as readonly string[]).includes(campo),
@@ -271,9 +275,8 @@ export class RegistroRestaurante {
   }
 
   /**
-   * Aqui todos os campos menos `logoUrl` sao obrigatorios, entao o payload e
-   * quase direto. O CNPJ vai MASCARADO (XX.XXX.XXX/XXXX-XX) porque e assim que
-   * a especificacao da rota descreve o formato esperado.
+   * Todos os campos menos `logoUrl` sao obrigatorios. O CNPJ vai MASCARADO
+   * (XX.XXX.XXX/XXXX-XX), formato que a especificacao da rota descreve.
    */
   private montarPayload(): RegistrarRestaurantePayload {
     const valores = this.form.getRawValue();
@@ -290,10 +293,8 @@ export class RegistroRestaurante {
       zipCode: valores.zipCode,
     };
 
-    const logo = valores.logoUrl.trim();
-    if (logo) {
-      payload.logoUrl = logo;
-    }
+    // TODO API: logoUrl vem como data URL (upload de arquivo) e o back so
+    // aceita URL; omitimos ate existir endpoint de upload multipart.
 
     return payload;
   }

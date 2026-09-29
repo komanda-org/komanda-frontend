@@ -1,9 +1,21 @@
-<app-moldura>
+<app-moldura frase="Vagas de gastronomia que combinam com você" [marcaGrande]="true">
   <div class="tela">
-    <app-topo-etapa titulo="Criar conta" rotuloVoltar="Ir para a entrada" (voltar)="sair()" />
+    <div class="voltar">
+      <button type="button" class="voltar__botao" aria-label="Ir para a entrada" (click)="sair()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M15 5l-7 7 7 7"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
 
     <div class="tela__corpo">
-      <h1 class="titulo" tabindex="-1">Como você vai usar o Komanda?</h1>
+      <h1 class="titulo titulo--escolha" tabindex="-1">Como você vai usar o Komanda?</h1>
       <p class="subtitulo">Escolha seu perfil para continuar</p>
 
       <!--

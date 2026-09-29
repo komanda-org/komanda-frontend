@@ -12,6 +12,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CARGOS } from '../../../core/dados/opcoes';
+import { HABILIDADES } from '../../../core/dados/opcoes';
+import {
+  aplicarConflito,
+  aplicarErrosDeValidacao,
+} from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
@@ -19,9 +24,11 @@ import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep } from '../../../core/utils/mascaras';
 import {
   cepValido,
+  confirmacaoIgual,
   itensAteTamanho,
   minimoAparado,
   naoApenasEspacos,
+  obrigatorioTrue,
   urlValida,
 } from '../../../core/validators/validadores';
 import { Campo } from '../../../shared/ui/campo';
@@ -29,6 +36,7 @@ import { EstadoCampoDirective } from '../../../shared/ui/estado-campo.directive'
 import { ForcaSenha } from '../../../shared/ui/forca-senha';
 import { Moldura } from '../../../shared/ui/moldura';
 import { PreviaImagem } from '../../../shared/ui/previa-imagem';
+import { SeletorMesAno } from '../../../shared/ui/seletor-mes-ano';
 import { Tags } from '../../../shared/ui/tags';
 import { TopoEtapa } from '../../../shared/ui/topo-etapa';
 
@@ -36,25 +44,29 @@ import { TopoEtapa } from '../../../shared/ui/topo-etapa';
 type CampoProfissional =
   | 'email'
   | 'password'
+  | 'confirmPassword'
   | 'fullName'
   | 'mainRole'
+  | 'contractType'
   | 'interestedRoles'
   | 'experienceSummary'
+  | 'workPlace'
+  | 'role'
+  | 'startDate'
+  | 'endDate'
+  | 'currentJob'
+  | 'experienceDescription'
+  | 'skills'
   | 'profilePhoto'
   | 'neighborhood'
-  | 'zipCode';
+  | 'zipCode'
+  | 'acceptedTerms';
 
 /**
  * Cadastro do profissional em 3 etapas.
  *
- * CONCEITO: wizard com um formulario so
- * Existe UM FormGroup com todos os campos, e uma tabela dizendo quais campos
- * pertencem a cada etapa. Avancar = validar apenas os campos daquela etapa.
- *
- * Por que nao um formulario por etapa? Porque o payload final precisa de tudo
- * junto, e porque voltar uma etapa nao pode perder o que ja foi digitado. Com
- * um grupo unico, o estado sobrevive a navegacao entre etapas de graca — os
- * campos apenas deixam de ser exibidos.
+ * Um unico FormGroup com todos os campos e uma tabela dizendo quem pertence a
+ * cada etapa: avancar valida so a etapa atual e voltar nao perde o digitado.
  */
 @Component({
   selector: 'app-registro-profissional',
@@ -67,9 +79,10 @@ type CampoProfissional =
     Tags,
     PreviaImagem,
     ForcaSenha,
+    SeletorMesAno,
   ],
   templateUrl: './registro-profissional.html',
-  styleUrl: './registro-profissional.scss',
+  styleUrls: ['./registro-profissional.scss'],
 })
 export class RegistroProfissional {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -79,6 +92,8 @@ export class RegistroProfissional {
   private readonly document = inject(DOCUMENT);
 
   protected readonly cargos = CARGOS;
+  protected readonly habilidades = HABILIDADES;
+  protected readonly contractTypes = ['CLT', 'PJ', 'Freelancer'] as const;
   protected readonly totalDeEtapas = 3;
 
   protected readonly etapa = signal(1);
@@ -91,14 +106,20 @@ export class RegistroProfissional {
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
+  /** Frase da vitrine por etapa (aproximacao ao Figma). */
+  protected readonly fraseVitrine = computed(
+    () =>
+      ([
+        'A cozinha certa para o seu talento.',
+        'Mostre onde você já brilhou.',
+        'Vagas perto de você.',
+      ] as const)[this.etapa() - 1] ?? 'A cozinha certa para o seu talento.',
+  );
+
   /**
-   * `NonNullableFormBuilder` em vez do FormBuilder comum: com ele o tipo de cada
-   * control e `string` e nao `string | null`, o que elimina dezenas de checagens
-   * de null ao montar o payload.
-   *
-   * Os validadores espelham a especificacao de POST /professionals. Validar aqui
-   * nao substitui a validacao do servidor: serve para responder na hora e evitar
-   * uma ida a rede que ja se sabe que vai falhar.
+   * `NonNullableFormBuilder`: o tipo de cada control vira `string` (e nao
+   * `string | null`), eliminando checagens de null ao montar o payload.
+   * Validar aqui nao substitui o back — so evita uma ida a rede previsivel.
    */
   protected readonly form = this.fb.group({
     email: this.fb.control('', [
@@ -111,43 +132,160 @@ export class RegistroProfissional {
       Validators.minLength(8),
       Validators.maxLength(64),
     ]),
+    confirmPassword: this.fb.control('', [
+      Validators.required,
+      confirmacaoIgual('password'),
+    ]),
     fullName: this.fb.control('', [
       Validators.required,
-      // minimoAparado, nao Validators.minLength: o payload envia fullName.trim(),
-      // entao o minimo tem que ser medido no texto aparado (ver validadores.ts).
+      // minimoAparado, nao Validators.minLength: o payload envia fullName.trim().
       minimoAparado(3),
       Validators.maxLength(100),
       naoApenasEspacos(),
     ]),
     mainRole: this.fb.control('', [
       Validators.required,
-      // Espelha o @Matches(/\S/) do CreateProfessionalDto: required sozinho
-      // deixaria passar "   ", que o trim do payload transforma em "" e o back
-      // recusa com "Cargo principal nao pode estar vazio".
+      // Espelha o @Matches(/\S/) do DTO: required sozinho deixaria passar "   ".
       naoApenasEspacos(),
       Validators.maxLength(100),
     ]),
+    contractType: this.fb.control<string>('', [
+      Validators.required,
+    ]),
     interestedRoles: this.fb.control<string[]>([], [itensAteTamanho(50)]),
     experienceSummary: this.fb.control('', [Validators.maxLength(1000)]),
-    profilePhoto: this.fb.control('', [urlValida()]),
+    workPlace: this.fb.control('', [Validators.maxLength(100)]),
+    role: this.fb.control('', [Validators.maxLength(100)]),
+    startDate: this.fb.control(''),
+    endDate: this.fb.control(''),
+    currentJob: this.fb.control(false),
+    experienceDescription: this.fb.control('', [Validators.maxLength(1000)]),
+    skills: this.fb.control<string[]>([], [itensAteTamanho(50)]),
+    profilePhoto: this.fb.control(''),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
     zipCode: this.fb.control('', [cepValido()]),
+    acceptedTerms: this.fb.control(false, [obrigatorioTrue()]),
   });
 
   /** Qual campo pertence a qual etapa. O indice 0 e a etapa 1. */
   private readonly camposPorEtapa: readonly (readonly CampoProfissional[])[] = [
-    ['profilePhoto', 'fullName', 'email', 'mainRole', 'password'],
-    ['experienceSummary', 'interestedRoles'],
+    ['profilePhoto', 'fullName', 'email', 'mainRole', 'contractType', 'password', 'confirmPassword', 'acceptedTerms'],
+    ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
     ['zipCode', 'neighborhood'],
   ];
 
   protected aplicarCep(evento: Event): void {
     const alvo = evento.target as HTMLInputElement;
     const formatado = mascararCep(alvo.value);
-    // Escrever de volta no elemento evita o cursor "pular" quando a mascara
-    // insere o hifen; depois sincronizamos o FormControl com o mesmo valor.
+    // Escrever de volta evita o cursor "pular" quando a mascara insere o hifen.
     alvo.value = formatado;
     this.form.controls.zipCode.setValue(formatado);
+  }
+
+  protected readonly experienceSummary = computed(() => {
+    const exps = this.experienciasAdicionadas();
+    if (exps.length === 0) return '';
+    return exps.map(e => `${e.workPlace} — ${e.role} (${this.formatarPeriodo(e.startDate, e.endDate, e.currentJob)})\n${e.experienceDescription}`).join('\n\n');
+  });
+
+  protected readonly skillsConcat = computed(() => this.experienciasAdicionadas().flatMap(e => e.skills));
+
+  protected readonly novaExperienciaAtiva = signal(false);
+  protected readonly proximoExperienciaId = signal(1);
+
+  protected readonly experienciasAdicionadas = signal<Array<{
+    id: number;
+    workPlace: string;
+    role: string;
+    startDate: string;
+    endDate: string;
+    currentJob: boolean;
+    experienceDescription: string;
+    skills: string[];
+  }>>([]);
+
+  protected adicionarExperiencia(): void {
+    this.novaExperienciaAtiva.set(true);
+    this.resetarNovaExperiencia();
+    this.reposicionar();
+  }
+
+  protected cancelarNovaExperiencia(): void {
+    this.novaExperienciaAtiva.set(false);
+    this.resetarNovaExperiencia();
+  }
+
+  protected novaExperienciaValida(): boolean {
+    const w = this.form.controls.workPlace.value?.trim();
+    const r = this.form.controls.role.value?.trim();
+    const s = this.form.controls.startDate.value?.trim();
+    return !!w && !!r && !!s;
+  }
+
+  protected salvarNovaExperiencia(): void {
+    if (!this.novaExperienciaValida()) return;
+
+    const id = this.proximoExperienciaId();
+    this.experienciasAdicionadas.update(arr => [...arr, {
+      id,
+      workPlace: this.form.controls.workPlace.value.trim(),
+      role: this.form.controls.role.value.trim(),
+      startDate: this.form.controls.startDate.value.trim(),
+      endDate: this.form.controls.endDate.value.trim(),
+      currentJob: this.form.controls.currentJob.value,
+      experienceDescription: this.form.controls.experienceDescription.value.trim(),
+      skills: this.form.controls.skills.value,
+    }]);
+    this.proximoExperienciaId.set(id + 1);
+    this.novaExperienciaAtiva.set(false);
+    this.resetarNovaExperiencia();
+    this.sincronizarCamposAPI();
+  }
+
+  protected removerExperiencia(id: number): void {
+    this.experienciasAdicionadas.update(arr => arr.filter(e => e.id !== id));
+    this.sincronizarCamposAPI();
+  }
+
+  protected formatarPeriodo(inicio: string, fim: string, atual: boolean): string {
+    if (!inicio) return '';
+    const formatar = (data: string) => {
+      if (!data) return '';
+      const [mes, ano] = data.split('/');
+      return `${mes}/${ano}`;
+    };
+    const ini = formatar(inicio);
+    if (atual || !fim) return `${ini} — Presente`;
+    return `${ini} — ${formatar(fim)}`;
+  }
+
+  protected toggleAtual(evento: Event): void {
+    const checkbox = evento.target as HTMLInputElement;
+    this.form.controls.currentJob.setValue(checkbox.checked);
+    if (checkbox.checked) {
+      this.form.controls.endDate.setValue('');
+    }
+  }
+
+  private resetarNovaExperiencia(): void {
+    this.form.controls.workPlace.setValue('');
+    this.form.controls.role.setValue('');
+    this.form.controls.startDate.setValue('');
+    this.form.controls.endDate.setValue('');
+    this.form.controls.currentJob.setValue(false);
+    this.form.controls.experienceDescription.setValue('');
+    this.form.controls.skills.setValue([]);
+  }
+
+  /** Sincroniza experiências estruturadas para os campos que a API aceita hoje. */
+  private sincronizarCamposAPI(): void {
+    const exps = this.experienciasAdicionadas();
+    // experienceSummary: concatena tudo
+    this.form.controls.experienceSummary.setValue(this.experienceSummary());
+    // interestedRoles: mergeia skills + interestedRoles originais
+    const skillsUnicas = [...new Set(this.skillsConcat())];
+    const rolesOriginais = this.form.controls.interestedRoles.value;
+    this.form.controls.interestedRoles.setValue([...new Set([...rolesOriginais, ...skillsUnicas])]);
   }
 
   protected avancar(): void {
@@ -155,8 +293,7 @@ export class RegistroProfissional {
       return;
     }
 
-    // Sem isto, um campo nunca tocado seria invalido mas nao mostraria erro:
-    // a pessoa clicaria em "Continuar" e nada aconteceria na tela.
+    // Sem isto, campo nunca tocado seria invalido mas nao mostraria erro.
     const campos = this.camposPorEtapa[this.etapa() - 1] ?? [];
     campos.forEach((campo) => this.form.controls[campo].markAsTouched());
 
@@ -185,14 +322,10 @@ export class RegistroProfissional {
   }
 
   /**
-   * Ao trocar de etapa: volta ao topo e joga o foco no titulo novo.
-   *
-   * O foco importa tanto quanto a rolagem — sem ele, quem usa leitor de tela
-   * continuaria no botao "Continuar" da etapa anterior, sem saber que a tela
-   * inteira mudou. O `setTimeout` espera o Angular pintar a etapa nova.
-   *
-   * `document.defaultView` em vez de `window` porque no SSR nao existe `window`
-   * global e o codigo quebraria ao ser avaliado no servidor.
+   * Ao trocar de etapa: volta ao topo e foca o titulo novo — sem o foco, quem
+   * usa leitor de tela continuaria no botao da etapa anterior. O `setTimeout`
+   * espera o Angular pintar; `document.defaultView` porque nao ha `window`
+   * global no SSR.
    */
   private reposicionar(): void {
     this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -206,13 +339,11 @@ export class RegistroProfissional {
     this.servico
       .registrarProfissional(this.montarPayload())
       // Cancela a inscricao se o componente for destruido no meio da requisicao.
-      // Sem isto, o callback mexeria em signals de um componente que ja morreu.
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () =>
           void this.router.navigate(['/login'], {
-            // A mensagem viaja pelo `state` do Router: memoria pura, some no F5
-            // e funciona no SSR. localStorage nao existe no servidor.
+            // `state` do Router: memoria pura, some no F5 e funciona no SSR.
             state: { mensagem: 'Conta criada com sucesso. Entre para continuar.' },
           }),
         error: (erro: unknown) => this.tratarErro(erro),
@@ -222,8 +353,7 @@ export class RegistroProfissional {
   private tratarErro(erro: unknown): void {
     this.enviando.set(false);
 
-    // O interceptor normaliza tudo que vem da API. Se caiu aqui e nao e ErroApi,
-    // foi erro de programacao nosso, nao da rede.
+    // Se nao e ErroApi, nao passou pelo interceptor: erro nosso, nao da rede.
     if (!ehErroApi(erro)) {
       this.erroGeral.set('Algo deu errado ao criar a conta. Tente novamente.');
       return;
@@ -233,32 +363,31 @@ export class RegistroProfissional {
       const conflito = traduzirConflito(erro);
       this.erroGeral.set(conflito.mensagem);
 
-      // O envio acontece na ultima etapa, mas o campo recusado (email) fica na
-      // etapa 1. Sem voltar, a pessoa le "Email ja cadastrado" olhando para os
-      // campos de CEP e bairro, sem ter como corrigir o que foi apontado.
+      // O erro aparece tambem NO campo, nao so no banner.
+      aplicarConflito(this.form, conflito.campo);
+
+      // O campo recusado (email) fica na etapa 1: sem voltar, a pessoa le o
+      // erro olhando para CEP e bairro, sem ter como corrigir.
       if (conflito.campo) {
         this.irParaEtapaDoCampo(conflito.campo);
       }
       return;
     }
 
-    this.errosDetalhados.set(erro.mensagens);
+    // 400: cada mensagem vira erro do proprio campo; o banner fica com o resto.
+    const restantes = aplicarErrosDeValidacao(this.form, erro.mensagens);
+    this.errosDetalhados.set(restantes.length > 1 ? restantes : []);
     this.erroGeral.set(
-      erro.mensagens.length > 1
+      restantes.length > 1
         ? 'Confira os campos abaixo:'
-        : (erro.mensagens[0] ?? 'Não foi possível criar a conta.'),
+        : (restantes[0] ?? 'Confira os campos destacados abaixo.'),
     );
   }
 
   /**
-   * Leva o usuario ate a etapa que contem o campo recusado pelo servidor.
-   *
-   * O `as readonly string[]` alarga o tipo de propósito: `campo` pode ser
-   * 'cnpj', que nao existe neste formulario, e sem o alargamento o TypeScript
-   * recusaria a comparacao. Alargar (tipo estreito -> tipo largo) e seguro:
-   * nao estamos prometendo nada que o valor nao cumpra, ao contrario de `any`,
-   * que desligaria a checagem inteira. O findIndex devolvendo -1 ja e a
-   * resposta correta para "este formulario nao tem esse campo".
+   * Leva o usuario ate a etapa que contem o campo recusado. O `as readonly
+   * string[]` alarga o tipo porque `campo` pode ser 'cnpj', que nao existe
+   * aqui; -1 do `findIndex` ja responde "este form nao tem esse campo".
    */
   private irParaEtapaDoCampo(campo: string): void {
     const indice = this.camposPorEtapa.findIndex((campos) =>
@@ -281,12 +410,12 @@ export class RegistroProfissional {
   /**
    * Monta o corpo da requisicao.
    *
-   * Regra importante: campo opcional em branco NAO vai no payload. Mandar
-   * `neighborhood: ''` faria o servidor validar uma string vazia contra as
-   * regras do campo — e falhar. Omitir a chave e diferente de manda-la vazia.
+   * Campo opcional em branco NAO vai no payload: `neighborhood: ''` faria o
+   * servidor validar a string vazia e falhar — omitir a chave e diferente de
+   * manda-la vazia. `password` e o unico sem `.trim()` (espaco vale em senha).
    *
-   * `password` e o unico campo sem `.trim()`: espaco em senha e caractere
-   * valido, e apara-lo mudaria silenciosamente a senha escolhida.
+   * TODO API: enviar contractType, confirmPassword e acceptedTerms quando o
+   * back aceitar; hoje o `forbidNonWhitelisted` recusa campos fora do DTO.
    */
   private montarPayload(): RegistrarProfissionalPayload {
     const valores = this.form.getRawValue();
@@ -307,10 +436,8 @@ export class RegistroProfissional {
       payload.experienceSummary = resumo;
     }
 
-    const foto = valores.profilePhoto.trim();
-    if (foto) {
-      payload.profilePhoto = foto;
-    }
+    // TODO API: profilePhoto vem como data URL (upload de arquivo) e o back so
+    // aceita URL; omitimos ate existir endpoint de upload multipart.
 
     const bairro = valores.neighborhood.trim();
     if (bairro) {
