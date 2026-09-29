@@ -12,15 +12,16 @@
 
 :root {
   /* --- Superficies: do fundo para a frente --- */
-  --k-fundo: #121212;
+  --k-fundo: #131313;
   --k-superficie: #1a1a1a;
   --k-superficie-2: #1e1e1e; /* cartoes */
-  --k-campo: #212121; /* fundo dos inputs */
+  --k-campo: #201f1f; /* fundo dos inputs — Figma #201F1F */
   --k-linha: #2a2a2a; /* divisorias e bordas discretas */
   --k-linha-forte: #333;
 
   /* --- Dourado: o unico acento --- */
-  --k-ouro: #e9a825;
+  --k-ouro: #f2ca50;
+  --k-ouro-escuro: #d4af37; /* segunda parada do gradiente do CTA */
   --k-ouro-claro: #f5b94a;
   --k-ouro-fosco: #4a3a14; /* fundo de pilulas e estados selecionados */
 
@@ -30,6 +31,7 @@
   --k-texto: #f0efed;
   --k-texto-fraco: #9c9c9c; /* 6.9:1 */
   --k-texto-placeholder: #7e7e7e; /* 4.7:1 */
+  --k-texto-muted: #d0c5af; /* Texto secundário dourado suave (cards inativos, resumos) */
 
   /* --- Estados --- */
   --k-erro: #e5533d; /* 5.1:1 sobre o fundo */
@@ -40,8 +42,9 @@
   /* --- Tipografia ---
      Serifada de alto contraste nos titulos (o ar de casa boa que o prototipo
      tem) e uma grotesca neutra em tudo que se le ou se digita. */
-  --k-serif: 'Bodoni Moda', 'Times New Roman', serif;
-  --k-sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --k-serif: 'Noto Serif', 'Bodoni Moda', 'Times New Roman', serif;
+  --k-sans: 'Manrope', 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --k-display: 'Playfair Display', 'Bodoni Moda', Georgia, serif; /* marca da vitrine */
 
   /* Escala tipografica ancorada em 16px.
      Os tamanhos pequenos sao FIXOS de proposito: rotulo e mensagem de erro nao
@@ -62,7 +65,7 @@
   --k-t-base: 1rem; /* 16px — corpo e inputs; abaixo disso o iOS da zoom */
   --k-t-lg: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
   --k-t-xl: clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem); /* titulo da etapa */
-  --k-t-2xl: clamp(2.125rem, 1.6rem + 2.6vw, 3.25rem); /* frase da vitrine */
+  --k-t-2xl: clamp(2.125rem, 1.6rem + 2.6vw, 3.75rem); /* titulo etapa 1 (ate 60px) e frase da vitrine */
 
   /* --- Espacamento — escala de 4px --- */
   --k-s-1: 0.25rem;

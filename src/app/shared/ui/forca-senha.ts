@@ -1,12 +1,8 @@
 import { Component, computed, input } from '@angular/core';
 
 /**
- * Medidor de forca da senha — as quatro barrinhas e o rotulo "FORCA: MEDIA"
- * que aparecem no prototipo logo abaixo do campo.
- *
- * Nao e validacao: a regra da API continua sendo so o tamanho (8 a 64). Isto
- * e orientacao — mostra ao usuario que "12345678" passa mas e fraca, sem
- * impedir ninguem de enviar.
+ * Medidor de forca da senha (barrinhas + rotulo). NAO e validacao: a regra da
+ * API continua so o tamanho (8 a 64) — isto e orientacao.
  */
 type Nivel = 0 | 1 | 2 | 3 | 4;
 
@@ -16,7 +12,7 @@ type Nivel = 0 | 1 | 2 | 3 | 4;
     <div class="forca">
       <div class="forca__barras" aria-hidden="true">
         @for (faixa of faixas; track faixa) {
-          <span class="forca__barra" [class.forca__barra--cheia]="nivel() >= faixa" [style.background]="cor()"></span>
+          <span class="forca__barra" [class.forca__barra--cheia]="nivel() >= faixa"></span>
         }
       </div>
 
@@ -24,7 +20,7 @@ type Nivel = 0 | 1 | 2 | 3 | 4;
            a pessoa digita, sem precisar sair do campo. -->
       <p class="forca__texto" aria-live="polite">
         @if (nivel() > 0) {
-          Força: <strong [style.color]="cor()">{{ rotulo() }}</strong>
+          FORÇA: <strong>{{ rotulo() }}</strong>
         }
       </p>
     </div>
@@ -45,21 +41,22 @@ type Nivel = 0 | 1 | 2 | 3 | 4;
     }
 
     .forca__barra {
-      height: 3px;
-      background: var(--k-linha) !important;
+      height: 4px;
+      background: var(--k-linha);
       border-radius: var(--k-raio-pilula);
       transition: background-color 200ms ease;
     }
 
     .forca__barra--cheia {
-      background: currentcolor;
+      background: var(--k-ouro);
     }
 
     .forca__texto {
-      font-size: var(--k-t-xs);
-      font-weight: 500;
+      font-family: var(--k-sans);
+      font-size: var(--k-t-2xs); /* 10px */
+      font-weight: 700;
       letter-spacing: 0.08em;
-      color: var(--k-texto-placeholder);
+      color: var(--k-ouro);
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -70,11 +67,7 @@ export class ForcaSenha {
 
   protected readonly faixas = [1, 2, 3, 4] as const;
 
-  /**
-   * Um ponto por criterio atendido. Nao e uma medida criptografica de entropia
-   * — e um empurrao honesto: comprimento primeiro, porque e o que mais importa
-   * de verdade, depois variedade de caracteres.
-   */
+  /** Um ponto por criterio: comprimento primeiro, depois variedade. */
   protected readonly nivel = computed<Nivel>(() => {
     const valor = this.senha();
 
@@ -100,26 +93,15 @@ export class ForcaSenha {
   protected readonly rotulo = computed(() => {
     switch (this.nivel()) {
       case 1:
-        return 'fraca';
+        return 'FRACA';
       case 2:
-        return 'média';
+        return 'MÉDIA';
       case 3:
-        return 'boa';
+        return 'BOA';
       case 4:
-        return 'forte';
+        return 'FORTE';
       default:
         return '';
-    }
-  });
-
-  protected readonly cor = computed(() => {
-    switch (this.nivel()) {
-      case 1:
-        return 'var(--k-erro)';
-      case 2:
-        return 'var(--k-ouro)';
-      default:
-        return 'var(--k-ok)';
     }
   });
 }

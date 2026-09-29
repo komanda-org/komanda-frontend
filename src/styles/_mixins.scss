@@ -19,11 +19,12 @@
   border: 0;
 }
 
-/* O rotulo pequeno em caixa alta que aparece acima de cada campo no prototipo. */
+/* O rotulo pequeno em caixa alta do Figma: Manrope SemiBold 12px, ouro, uppercase. */
 @mixin rotulo {
-  font-size: var(--k-t-xs);
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-family: var(--k-sans);
+  font-size: 0.75rem; /* 12px fixo — rotulo nao escala com a tela */
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 

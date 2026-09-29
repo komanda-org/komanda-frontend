@@ -1,26 +1,28 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, input, output, signal, viewChild, ElementRef } from '@angular/core';
 
 /**
- * Previa da foto de perfil / logo.
- *
- * No prototipo isto e um botao de upload. Aqui e uma PREVIA: os campos da task
- * (`profilePhoto` e `logoUrl`) sao URLs, nao arquivos — a API espera um link,
- * nao um multipart. Entao o circulo mostra o que a URL colada aponta, e vira
- * um placeholder tracejado enquanto nao ha nada valido.
- *
- * Quando existir endpoint de upload, e este componente que muda — e so ele.
+ * Previa da foto de perfil / logo: clique abre o seletor de arquivo e mostra o
+ * preview como data URL (base64) — a API ainda nao tem upload multipart. Com o
+ * endpoint pronto, so este componente muda.
  */
 @Component({
   selector: 'app-previa-imagem',
   template: `
-    <div class="previa" [class.previa--quadrada]="formato() === 'quadrado'">
+    <div
+      class="previa"
+      [class.previa--quadrada]="formato() === 'quadrado'"
+      (click)="abrirSeletor()"
+      tabindex="0"
+      (keydown.enter)="abrirSeletor()"
+      (keydown.space)="$event.preventDefault(); abrirSeletor()"
+      role="button"
+      aria-label="Clique para escolher imagem"
+    >
       @if (mostrarImagem()) {
-        <!-- (error) cobre URL que existe mas nao e imagem, ou que caiu.
-             Sem isto o alt apareceria quebrado dentro do circulo. -->
-        <img class="previa__img" [src]="url()" [alt]="alt()" (error)="falhou.set(true)" />
+        <img class="previa__img" [src]="previewUrl()" [alt]="alt()" />
       } @else {
         <span class="previa__vazio" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path
               d="M3 8.5A1.5 1.5 0 014.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0121 8.5v9A1.5 1.5 0 0119.5 19h-15A1.5 1.5 0 013 17.5v-9z"
               stroke="currentColor"
@@ -34,26 +36,48 @@ import { Component, computed, input, signal } from '@angular/core';
     </div>
 
     <p class="previa__rotulo">{{ legenda() }}</p>
+
+    <!-- Input file oculto, so para abrir o seletor -->
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      class="previa__file-input"
+      (change)="arquivoSelecionado($event)"
+      aria-hidden="true"
+    />
   `,
   styles: `
     :host {
       display: flex;
       flex-direction: column;
-      gap: var(--k-s-2);
+      gap: var(--k-s-3);
       align-items: center;
-      margin-bottom: var(--k-s-5);
     }
 
     .previa {
       display: grid;
       place-items: center;
-      width: 5.5rem;
-      height: 5.5rem;
+      width: 7.5rem;
+      height: 7.5rem;
       overflow: hidden;
       color: var(--k-ouro);
-      background: var(--k-superficie-2);
-      border: 1px dashed var(--k-linha-forte);
+      background: #0e0e0e;
+      border: 1px dashed rgb(242 202 80 / 40%);
       border-radius: 50%;
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease;
+      position: relative;
+
+      &:hover {
+        border-color: var(--k-ouro);
+        background: rgb(242 202 80 / 5%);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--k-ouro);
+        outline-offset: 2px;
+      }
     }
 
     .previa--quadrada {
@@ -74,31 +98,73 @@ import { Component, computed, input, signal } from '@angular/core';
     }
 
     .previa__rotulo {
-      font-size: var(--k-t-xs);
+      font-size: 0.75rem;
       font-weight: 500;
-      letter-spacing: 0.12em;
-      color: var(--k-texto-placeholder);
+      letter-spacing: 0.05em;
+      color: rgb(242 202 80 / 80%);
       text-transform: uppercase;
+    }
+
+    .previa__file-input {
+      display: none;
     }
   `,
 })
 export class PreviaImagem {
-  readonly url = input('');
   readonly formato = input<'circulo' | 'quadrado'>('circulo');
   readonly alt = input('Pré-visualização');
   readonly legendaVazia = input('Adicionar foto');
 
+  /** Emite o data URL (base64) quando o usuario escolhe um arquivo. */
+  readonly arquivoChange = output<string | null>();
+
+  protected readonly previewUrl = signal<string | null>(null);
   protected readonly falhou = signal(false);
 
-  protected readonly mostrarImagem = computed(() => {
-    const endereco = this.url().trim();
+  private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
-    // Zera o "falhou" quando a URL muda: uma URL nova merece nova tentativa.
-    // Ler `url()` aqui e o que liga este computed a mudanca do input.
-    return endereco.startsWith('http') && !this.falhou();
-  });
+  protected readonly mostrarImagem = computed(() => !!this.previewUrl() && !this.falhou());
 
   protected readonly legenda = computed(() =>
     this.mostrarImagem() ? 'Pré-visualização' : this.legendaVazia(),
   );
+
+  protected abrirSeletor(): void {
+    // Abre o seletor de arquivos do navegador via input oculto
+    this.fileInput()?.nativeElement.click();
+  }
+
+  protected arquivoSelecionado(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const arquivo = input.files?.[0];
+
+    if (!arquivo) {
+      return;
+    }
+
+    // Validacao basica: so imagens, max 5MB
+    if (!arquivo.type.startsWith('image/')) {
+      this.falhou.set(true);
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      this.falhou.set(true);
+      return;
+    }
+
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      this.previewUrl.set(leitor.result as string);
+      this.falhou.set(false);
+      this.arquivoChange.emit(leitor.result as string);
+    };
+    leitor.onerror = () => {
+      this.falhou.set(true);
+      this.arquivoChange.emit(null);
+    };
+    leitor.readAsDataURL(arquivo);
+
+    // Limpa o input para permitir selecionar o mesmo arquivo de novo
+    input.value = '';
+  }
 }

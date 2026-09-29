@@ -35,13 +35,10 @@
   }
 
   @include m.amplo {
-    /* minmax(0, 1fr): a vitrine fica com TODO o espaco que sobrar.
+    /* 45/55 do Figma: a vitrine contextual ocupa 45%, o formulario 55%.
        O `0` como minimo evita o classico bug de grid em que um filho com texto
-       longo se recusa a encolher e estoura a largura da pagina.
-
-       clamp(28rem, 34vw, 36rem): o painel acompanha a tela mas com teto e piso
-       — nunca vira uma coluna esganada nem um formulario obeso. */
-    grid-template-columns: minmax(0, 1fr) clamp(28rem, 34vw, 36rem);
+       longo se recusa a encolher e estoura a largura da pagina. */
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
     align-content: normal;
     justify-items: stretch;
     height: 100dvh;
@@ -70,12 +67,13 @@
     padding: var(--k-s-7) clamp(2.5rem, 5vw, 5rem);
     overflow: hidden;
 
-    /* Um brilho dourado muito fraco no alto, sobre a superficie escura. E o
-       unico lugar do produto onde o ouro aparece em area grande — e mesmo aqui
-       ele fica em 8% de opacidade, para nao competir com o botao. */
+    /* Um brilho dourado muito fraco no alto, sobre o fundo quase preto da
+       vitrine (#0E0E0E no Figma). E o unico lugar do produto onde o ouro
+       aparece em area grande — e mesmo aqui ele fica em 8% de opacidade, para
+       nao competir com o botao. */
     background:
-      radial-gradient(120% 80% at 15% 0%, rgb(233 168 37 / 8%) 0%, transparent 60%),
-      var(--k-superficie);
+      radial-gradient(120% 80% at 15% 0%, rgb(242 202 80 / 8%) 0%, transparent 60%),
+      #0e0e0e;
   }
 }
 
@@ -116,7 +114,7 @@
 .vitrine__item {
   position: relative;
   padding-left: var(--k-s-5);
-  font-size: var(--k-t-sm);
+  font-size: var(--k-t-base);
   color: var(--k-texto-fraco);
 
   /* Bullet desenhado no ::before: um tracinho dourado no lugar do disco. */
@@ -135,4 +133,30 @@
   font-size: var(--k-t-xs);
   letter-spacing: 0.04em;
   color: var(--k-texto-placeholder);
+}
+
+/* Variante logo centralizado: a vitrine vira o lockup da marca
+   (escolha de perfil no Figma). So faz sentido em desktop, onde a
+   vitrine existe — no celular ela continua escondida. */
+.vitrine--logo {
+  align-items: center;
+  text-align: center;
+}
+
+.vitrine__logo-wrap {
+  margin-block: auto;
+}
+
+.vitrine__logo {
+  font-family: var(--k-display);
+  font-size: clamp(3.5rem, 3rem + 3vw, 6rem); /* ate 96px, como no Figma */
+  line-height: 1;
+  color: var(--k-ouro);
+}
+
+.vitrine__tagline {
+  margin-top: var(--k-s-4);
+  font-size: var(--k-t-lg);
+  color: #d0c5af;
+  text-wrap: balance;
 }

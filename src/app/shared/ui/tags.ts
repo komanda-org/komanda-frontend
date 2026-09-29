@@ -1,29 +1,22 @@
-import { Component, forwardRef, signal } from '@angular/core';
+import { Component, computed, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
- * Campo de multiplas etiquetas — usado em "Outras funcoes de interesse",
- * o unico campo do formulario cujo valor e `string[]` e nao `string`.
+ * Campo de multiplas etiquetas com autocomplete — "Outras funcoes de interesse"
+ * e "Habilidades".
  *
- * CONCEITO: ControlValueAccessor
- * O Angular so sabe conversar com <input>, <select> e <textarea>. Para que ele
- * consiga usar formControlName num componente NOSSO, precisamos ensina-lo a
- * traduzir — e esse tradutor e o ControlValueAccessor. Ele tem 4 metodos:
- *
- *   writeValue        -> o formulario manda um valor PARA a tela
- *   registerOnChange  -> guardamos o callback para avisar o formulario de mudancas
- *   registerOnTouched -> guardamos o callback de "o usuario saiu do campo"
- *   setDisabledState  -> o formulario liga/desliga o campo
- *
- * Sem isso, `<app-tags formControlName="...">` daria erro em tempo de execucao.
+ * Herda de ControlValueAccessor, o tradutor que permite usar `formControlName`
+ * num componente nosso (sem ele, `<app-tags formControlName="...">` quebra em
+ * runtime): `writeValue` recebe o valor, `registerOnChange` devolve as mudancas
+ * para o formulario, `registerOnTouched` avisa a saida e `setDisabledState`
+ * liga/desliga.
  */
 @Component({
   selector: 'app-tags',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      // forwardRef porque a classe Tags ainda nao existe nesta linha:
-      // o decorator e avaliado ANTES da declaracao da classe terminar.
+      // forwardRef: o decorator e avaliado antes da classe Tags existir.
       useExisting: forwardRef(() => Tags),
       multi: true,
     },
@@ -45,18 +38,30 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         </span>
       }
 
-      <input
-        id="interestedRoles"
-        class="tags__entrada"
-        type="text"
-        autocomplete="off"
-        [disabled]="desabilitado()"
-        [value]="rascunho()"
-        [placeholder]="tags().length ? '' : 'Cozinheiro, Barista…'"
-        (input)="rascunho.set(valorDigitado($event))"
-        (keydown)="aoTeclar($event)"
-        (blur)="aoSair()"
-      />
+      <div class="tags__entrada-wrap" (click)="focar()">
+        <input
+          #entrada
+          class="tags__entrada"
+          type="text"
+          autocomplete="off"
+          [disabled]="desabilitado()"
+          [value]="rascunho()"
+          [placeholder]="tags().length ? '' : placeholder()"
+          (input)="rascunho.set(valorDigitado($event))"
+          (keydown)="aoTeclar($event)"
+          (blur)="aoSair()"
+          (focus)="sugestoesAbertas.set(true)"
+        />
+        @if (sugestoesAbertas() && sugestoesFiltradas().length > 0 && !desabilitado()) {
+          <ul class="tags__sugestoes" role="listbox">
+            @for (sug of sugestoesFiltradas(); track sug) {
+              <li class="tags__sugestao" role="option" (mousedown)="selecionarSugestao(sug)">
+                {{ sug }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
     </div>
   `,
   styles: `
@@ -111,9 +116,14 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       background: var(--k-ouro);
     }
 
-    .tags__entrada {
+    .tags__entrada-wrap {
+      position: relative;
       flex: 1;
       min-width: 8rem;
+    }
+
+    .tags__entrada {
+      width: 100%;
       padding: var(--k-s-2) 0;
       background: transparent;
       border: 0;
@@ -126,15 +136,53 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     .tags__entrada::placeholder {
       color: var(--k-texto-placeholder);
     }
+
+    /* Dropdown de sugestoes */
+    .tags__sugestoes {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: var(--k-s-1);
+      padding: var(--k-s-2);
+      background: var(--k-superficie);
+      border: 1px solid var(--k-linha-forte);
+      border-radius: var(--k-raio);
+      list-style: none;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 40%);
+      max-height: 16rem;
+      overflow-y: auto;
+    }
+
+    .tags__sugestao {
+      padding: var(--k-s-2) var(--k-s-3);
+      font-size: var(--k-t-sm);
+      color: var(--k-texto);
+      cursor: pointer;
+      border-radius: var(--k-raio);
+      transition: background-color 100ms ease;
+    }
+
+    .tags__sugestao:hover {
+      background: var(--k-campo);
+      color: var(--k-ouro);
+    }
   `,
 })
 export class Tags implements ControlValueAccessor {
+  /** Lista de sugestoes para autocomplete (ex: HABILIDADES, CARGOS). */
+  readonly sugestoes = input<readonly string[]>([]);
+
+  /** Placeholder do input quando nao ha tags. */
+  readonly placeholder = input('Cozinheiro, Barista…');
+
   protected readonly tags = signal<string[]>([]);
   protected readonly desabilitado = signal(false);
   protected readonly rascunho = signal('');
+  protected readonly sugestoesAbertas = signal(false);
 
-  // Callbacks entregues pelo Angular. Comecam como no-op para o caso do
-  // componente ser usado fora de um formulario.
+  // Callbacks do Angular; no-op quando usado fora de um formulario.
   private aoMudar: (valor: string[]) => void = () => {};
   private aoTocar: () => void = () => {};
 
@@ -154,8 +202,21 @@ export class Tags implements ControlValueAccessor {
     this.desabilitado.set(desabilitado);
   }
 
+  /** Sugestoes filtradas pelo que o usuario digitou (case/acento-insensivel). */
+  protected readonly sugestoesFiltradas = computed(() => {
+    const termo = this.rascunho().trim().toLowerCase();
+    if (!termo) return this.sugestoes().slice(0, 10);
+    return this.sugestoes().filter(s =>
+      s.toLowerCase().includes(termo)
+    ).slice(0, 10);
+  });
+
   protected valorDigitado(evento: Event): string {
     return (evento.target as HTMLInputElement).value;
+  }
+
+  protected focar(): void {
+    this.sugestoesAbertas.set(true);
   }
 
   protected aoTeclar(evento: KeyboardEvent): void {
@@ -167,8 +228,7 @@ export class Tags implements ControlValueAccessor {
       return;
     }
 
-    // Backspace com o input vazio apaga a ultima etiqueta — atalho esperado
-    // por quem ja usou qualquer campo de tags.
+    // Backspace com o input vazio apaga a ultima etiqueta.
     if (evento.key === 'Backspace' && this.rascunho().length === 0) {
       const atuais = this.tags();
 
@@ -176,12 +236,37 @@ export class Tags implements ControlValueAccessor {
         this.publicar(atuais.slice(0, -1));
       }
     }
+
+    // Seta para baixo abre sugestoes
+    if (evento.key === 'ArrowDown') {
+      evento.preventDefault();
+      this.sugestoesAbertas.set(true);
+    }
+
+    // Escape fecha sugestoes
+    if (evento.key === 'Escape') {
+      this.sugestoesAbertas.set(false);
+    }
   }
 
   /** Sair do campo com texto pendente nao pode perder o que foi digitado. */
   protected aoSair(): void {
     this.confirmar();
     this.aoTocar();
+    // Fecha sugestoes com delay para permitir click no item
+    setTimeout(() => this.sugestoesAbertas.set(false), 150);
+  }
+
+  protected selecionarSugestao(sug: string): void {
+    // Evita duplicata
+    const jaExiste = this.tags().some(
+      (tag) => tag.localeCompare(sug, 'pt-BR', { sensitivity: 'base' }) === 0,
+    );
+    if (!jaExiste) {
+      this.publicar([...this.tags(), sug]);
+    }
+    this.rascunho.set('');
+    this.sugestoesAbertas.set(false);
   }
 
   protected remover(alvo: string): void {
@@ -197,8 +282,7 @@ export class Tags implements ControlValueAccessor {
       return;
     }
 
-    // Evita duplicata sem diferenciar maiuscula de minuscula nem acento:
-    // "Garçom" e "garcom" sao a mesma funcao.
+    // Evita duplicata sem diferenciar maiuscula nem acento.
     const jaExiste = this.tags().some(
       (tag) => tag.localeCompare(texto, 'pt-BR', { sensitivity: 'base' }) === 0,
     );
