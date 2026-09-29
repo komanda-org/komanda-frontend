@@ -1,7 +1,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  background: var(--komanda-surface);
+  background: var(--k-superficie);
   overflow-y: auto;
 }
 
@@ -33,11 +33,11 @@
 
 .name {
   margin: 0;
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: var(--k-serif);
   font-size: 18px;
   line-height: 28px;
   letter-spacing: 0.025em;
-  color: var(--komanda-text);
+  color: var(--k-texto);
 }
 
 .role {
@@ -70,14 +70,14 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--komanda-muted);
+  color: var(--k-texto-fraco);
 }
 
 .nav-icon {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  background-color: var(--komanda-nav-icon);
+  background-color: var(--k-icone-nav);
   mask-image: var(--icon-url);
   mask-size: contain;
   mask-repeat: no-repeat;
@@ -90,10 +90,10 @@
 
 .nav-link.active {
   background: rgb(39 39 42 / 30%);
-  border-left-color: var(--komanda-gold);
-  color: var(--komanda-gold);
+  border-left-color: var(--k-ouro);
+  color: var(--k-ouro);
 }
 
 .nav-link.active .nav-icon {
-  background-color: var(--komanda-gold);
+  background-color: var(--k-ouro);
 }

@@ -1,0 +1,102 @@
+/**
+ * DESIGN TOKENS — extraidos do prototipo do Figma.
+ *
+ * Sao CSS custom properties (nao variaveis SCSS) de proposito: existem em
+ * runtime, entao um componente consegue sobrescrever uma cor no seu escopo.
+ * Variavel SCSS some na compilacao e nao permite isso.
+ *
+ * A interface e escura com um unico acento dourado. Toda hierarquia nasce de
+ * tres coisas: o nivel de cinza da superficie, o peso do texto e o dourado —
+ * que aparece pouco, e por isso pesa.
+ */
+
+:root {
+  /* --- Superficies: do fundo para a frente --- */
+  --k-fundo: #131313;
+  --k-superficie: #1a1a1a;
+  --k-superficie-2: #1e1e1e; /* cartoes */
+  --k-campo: #201f1f; /* fundo dos inputs — Figma #201F1F */
+  --k-linha: #2a2a2a; /* divisorias e bordas discretas */
+  --k-linha-forte: #333;
+
+  /* --- Dourado: o unico acento --- */
+  --k-ouro: #f2ca50;
+  --k-ouro-escuro: #d4af37; /* segunda parada do gradiente do CTA */
+  --k-ouro-claro: #f5b94a;
+  --k-ouro-fosco: #4a3a14; /* fundo de pilulas e estados selecionados */
+
+  /* --- Texto ---
+     Cada tom abaixo foi conferido contra --k-fundo para passar em 4.5:1,
+     o minimo da WCAG AA. Cinza bonito e ilegivel continua ilegivel. */
+  --k-texto: #f0efed;
+  --k-texto-fraco: #9c9c9c; /* 6.9:1 */
+  --k-texto-placeholder: #7e7e7e; /* 4.7:1 */
+  --k-texto-muted: #d0c5af; /* Texto secundário dourado suave (cards inativos, resumos) */
+
+  /* --- Estados --- */
+  --k-erro: #e5533d; /* 5.1:1 sobre o fundo */
+  --k-erro-fundo: #2a1512;
+  --k-ok: #4caf7d;
+  --k-ok-fundo: #14251d;
+
+  /* --- Tipografia ---
+     Serifada de alto contraste nos titulos (o ar de casa boa que o prototipo
+     tem) e uma grotesca neutra em tudo que se le ou se digita. */
+  --k-serif: 'Noto Serif', 'Bodoni Moda', 'Times New Roman', serif;
+  --k-sans: 'Manrope', 'Archivo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --k-display: 'Playfair Display', 'Bodoni Moda', Georgia, serif; /* marca da vitrine */
+
+  /* Escala tipografica ancorada em 16px.
+     Os tamanhos pequenos sao FIXOS de proposito: rotulo e mensagem de erro nao
+     ganham nada em crescer junto com a tela, e um <input> abaixo de 16px faz o
+     iOS dar zoom sozinho ao receber foco.
+
+     Ja os titulos usam clamp(minimo, preferido, maximo) — a fonte cresce junto
+     com a largura da janela, mas presa entre dois limites. Le-se assim:
+       clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem)
+       ├─ nunca menor que 28px (celular)
+       ├─ no meio do caminho acompanha a viewport (1vw = 1% da largura)
+       └─ nunca maior que 40px (monitor grande)
+     Isso substitui tres media queries por uma linha, e cobre TODA largura —
+     inclusive as que voce nao pensou em testar. */
+  --k-t-2xs: 0.625rem; /* 10px — badge de etapa */
+  --k-t-xs: 0.6875rem; /* 11px — rotulos em caixa alta */
+  --k-t-sm: 0.8125rem; /* 13px — apoio e mensagens */
+  --k-t-base: 1rem; /* 16px — corpo e inputs; abaixo disso o iOS da zoom */
+  --k-t-lg: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --k-t-xl: clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem); /* titulo da etapa */
+  --k-t-2xl: clamp(2.125rem, 1.6rem + 2.6vw, 3.75rem); /* titulo etapa 1 (ate 60px) e frase da vitrine */
+
+  /* --- Espacamento — escala de 4px --- */
+  --k-s-1: 0.25rem;
+  --k-s-2: 0.5rem;
+  --k-s-3: 0.75rem;
+  --k-s-4: 1rem;
+  --k-s-5: 1.5rem;
+  --k-s-6: 2rem;
+  --k-s-7: 3rem;
+
+  /* --- Forma --- */
+  --k-raio: 8px;
+  --k-raio-lg: 12px;
+  --k-raio-pilula: 999px;
+
+  /* --- Larguras ---
+     O formulario NAO deve crescer com a tela. Um <input> de 900px e horrivel de
+     usar e uma linha de texto larga demais faz o olho perder o comeco da linha
+     seguinte. Entao a coluna do formulario tem teto, e o espaco que sobra no
+     desktop vai para a vitrine ao lado — nao para dentro do formulario. */
+  --k-largura-painel: 30rem; /* o cartao/coluna do formulario */
+  --k-largura-vitrine: 32rem; /* o texto da vitrine, centrado na coluna dela */
+  --k-largura: var(--k-largura-painel); /* nome antigo, mantido por compatibilidade */
+
+  /* Respiro lateral que acompanha a tela: 1rem no celular, ate 2.5rem no
+     desktop. Uma variavel so, em vez de tres media queries espalhadas. */
+  --k-gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+
+  /* --- Chapa fixa do app autenticado (header + sidebar) --- */
+  --k-header-h: 64px;
+  --k-sidebar-w: 256px;
+  --k-fundo-header: rgb(9 9 11 / 70%); /* translucido: o main aparece atras */
+  --k-icone-nav: rgb(255 255 255 / 50%); /* icone mascarado fora do item ativo */
+}

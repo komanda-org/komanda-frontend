@@ -1,0 +1,162 @@
+@use '../../../styles/mixins' as m;
+
+/* :host e o proprio <app-moldura>. Um elemento de componente nasce inline;
+   inline nao aceita altura, e a moldura de 100dvh nao existiria. */
+:host {
+  display: block;
+}
+
+/**
+ * O GRID DE PAGINA.
+ *
+ *   celular  1 coluna, colada nas bordas — a tela inteira e o app
+ *   medio    1 coluna, mas o cartao passa a flutuar centrado
+ *   amplo    2 colunas: vitrine elastica + painel de largura limitada
+ */
+.moldura {
+  display: grid;
+  min-height: 100dvh;
+  background: var(--k-fundo);
+
+  @include m.medio {
+    /* align-content centraliza as LINHAS do grid dentro do container; como so
+       existe uma linha, o efeito e centralizar o cartao na vertical.
+       justify-items centraliza o item dentro da coluna, na horizontal. */
+    align-content: center;
+
+    /* `safe center` = "centralize, MAS se o conteudo for mais alto que a tela,
+       alinhe no inicio". Sem o `safe`, um formulario mais alto que a janela
+       transborda para CIMA e o topo fica inalcancavel — nao existe scroll para
+       area negativa. E o bug classico de centralizacao, e a palavra-chave
+       resolve. A linha anterior fica como fallback para browsers antigos. */
+    align-content: safe center;
+    justify-items: center;
+    padding: var(--k-s-6) var(--k-s-5);
+  }
+
+  @include m.amplo {
+    /* 45/55 do Figma: a vitrine contextual ocupa 45%, o formulario 55%.
+       O `0` como minimo evita o classico bug de grid em que um filho com texto
+       longo se recusa a encolher e estoura a largura da pagina. */
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+    align-content: normal;
+    justify-items: stretch;
+    height: 100dvh;
+    padding: 0;
+  }
+
+  /* Em telas muito baixas a moldura para de exigir 100dvh: melhor deixar a
+     pagina rolar do que espremer o conteudo ate ele ficar ilegivel. */
+  @include m.altura-curta {
+    min-height: 0;
+  }
+}
+
+/* ----------------------------------------------------------------- Vitrine */
+
+.vitrine {
+  /* Escondida por padrao. Note que o CUSTO dela no celular e zero: `display:
+     none` nao renderiza, nao mede e nao pinta. */
+  display: none;
+
+  @include m.amplo {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--k-s-6);
+    padding: var(--k-s-7) clamp(2.5rem, 5vw, 5rem);
+    overflow: hidden;
+
+    /* Um brilho dourado muito fraco no alto, sobre o fundo quase preto da
+       vitrine (#0E0E0E no Figma). E o unico lugar do produto onde o ouro
+       aparece em area grande — e mesmo aqui ele fica em 8% de opacidade, para
+       nao competir com o botao. */
+    background:
+      radial-gradient(120% 80% at 15% 0%, rgb(242 202 80 / 8%) 0%, transparent 60%),
+      #0e0e0e;
+  }
+}
+
+/* Em telas enormes o texto para de crescer e fica centrado na coluna, em vez de
+   se espalhar por 900px de largura. */
+.vitrine__conteudo {
+  max-width: var(--k-largura-vitrine);
+  margin-block: auto;
+}
+
+.vitrine__marca {
+  @include m.rotulo;
+
+  margin-bottom: var(--k-s-5);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-sm);
+  letter-spacing: 0.32em;
+  color: var(--k-ouro);
+}
+
+.vitrine__frase {
+  font-family: var(--k-serif);
+  font-size: var(--k-t-2xl);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.vitrine__lista {
+  display: grid;
+  gap: var(--k-s-3);
+  padding: 0;
+  margin: var(--k-s-6) 0 0;
+  list-style: none; /* a marcacao semantica de lista fica; o bullet feio sai */
+}
+
+.vitrine__item {
+  position: relative;
+  padding-left: var(--k-s-5);
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+
+  /* Bullet desenhado no ::before: um tracinho dourado no lugar do disco. */
+  &::before {
+    position: absolute;
+    top: 0.7em;
+    left: 0;
+    width: var(--k-s-3);
+    height: 1px;
+    content: '';
+    background: var(--k-ouro);
+  }
+}
+
+.vitrine__rodape {
+  font-size: var(--k-t-xs);
+  letter-spacing: 0.04em;
+  color: var(--k-texto-placeholder);
+}
+
+/* Variante logo centralizado: a vitrine vira o lockup da marca
+   (escolha de perfil no Figma). So faz sentido em desktop, onde a
+   vitrine existe — no celular ela continua escondida. */
+.vitrine--logo {
+  align-items: center;
+  text-align: center;
+}
+
+.vitrine__logo-wrap {
+  margin-block: auto;
+}
+
+.vitrine__logo {
+  font-family: var(--k-display);
+  font-size: clamp(3.5rem, 3rem + 3vw, 6rem); /* ate 96px, como no Figma */
+  line-height: 1;
+  color: var(--k-ouro);
+}
+
+.vitrine__tagline {
+  margin-top: var(--k-s-4);
+  font-size: var(--k-t-lg);
+  color: #d0c5af;
+  text-wrap: balance;
+}

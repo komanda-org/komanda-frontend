@@ -1,21 +1,21 @@
 .header {
-  height: var(--header-h);
+  height: var(--k-header-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  background: var(--komanda-header);
+  background: var(--k-fundo-header);
   backdrop-filter: blur(12px);
   box-shadow: 0 1px 0 0 rgb(24 24 27 / 100%);
 }
 
 .logo {
-  font-family: 'Noto Serif', Georgia, serif;
+  font-family: var(--k-serif);
   font-size: 24px;
   line-height: 32px;
   letter-spacing: -0.05em;
   text-transform: uppercase;
-  color: var(--komanda-gold);
+  color: var(--k-ouro);
 }
 
 .bell {

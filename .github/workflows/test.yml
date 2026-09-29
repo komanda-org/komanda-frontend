@@ -1,0 +1,37 @@
+name: testes
+
+# Roda `ng test` (Vitest + jsdom, sem navegador) em todo PR. Se falhar, o check
+# fica vermelho e o merge e bloqueado pela regra de branch protection que exige
+# este check (ver README do workflow abaixo: exige "testes / ng test").
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Um commit novo no mesmo PR cancela a execucao anterior que ainda estiver rodando.
+concurrency:
+  group: testes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: ng test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Testes unitarios
+        run: npx ng test --watch=false --no-progress
+        env:
+          CI: "true"
