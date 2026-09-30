@@ -29,6 +29,7 @@
           -->
           <span class="painel__midia-rotulo">Foto de perfil (opcional)</span>
           <app-previa-imagem
+            [valor]="form.controls.profilePhoto.value"
             alt="Sua foto de perfil"
             legendaVazia="Upload"
             (arquivoChange)="form.controls.profilePhoto.setValue($event ?? '')"

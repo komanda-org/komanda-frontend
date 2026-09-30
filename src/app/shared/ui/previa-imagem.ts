@@ -1,13 +1,19 @@
 import { Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
 
 /**
- * Previa da foto de perfil / logo: clique abre o seletor de arquivo e mostra o
- * preview como data URL (base64) — a API ainda nao tem upload multipart. Com o
+ * Previa da foto de perfil / logo: clique abre o seletor de arquivo e devolve a
+ * imagem como data URL (base64) — a API ainda nao tem upload multipart. Com o
  * endpoint pronto, so este componente muda.
  *
- * O quadrado tracejado e o alvo inteiro: icone e legenda vivem DENTRO dele,
- * como no prototipo. Uma legenda por fora criaria um texto que parece clicavel
- * e nao e.
+ * COMPONENTE CONTROLADO: a imagem chega por `valor` e sai por `arquivoChange`.
+ * Ele NAO guarda o data URL num signal proprio de proposito — as etapas do
+ * cadastro vivem num `@switch`, que destroi e recria o componente ao trocar de
+ * etapa. Um estado interno nasceria vazio na volta e a previa sumiria, mesmo
+ * com o FormControl ainda preenchido.
+ *
+ * O unico estado que fica aqui e `falhou`, porque ele so descreve a ULTIMA
+ * tentativa de escolher arquivo: nao e dado do formulario e nao faz falta
+ * nenhuma se a pessoa mudar de etapa.
  */
 @Component({
   selector: 'app-previa-imagem',
@@ -27,7 +33,7 @@ import { Component, ElementRef, computed, input, output, signal, viewChild } fro
       (keydown.space)="$event.preventDefault(); abrirSeletor()"
     >
       @if (mostrarImagem()) {
-        <img class="previa__img" [src]="previewUrl()" [alt]="alt()" />
+        <img class="previa__img" [src]="valor()" [alt]="alt()" />
         <span class="previa__trocar">Trocar</span>
       } @else {
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -44,13 +50,20 @@ import { Component, ElementRef, computed, input, output, signal, viewChild } fro
       }
     </div>
 
-    @if (falhou()) {
-      <p class="previa__erro" role="alert">
-        Escolha uma imagem de até 5 MB.
-      </p>
+    <!--
+      O remover fica FORA da area clicavel: um <button> dentro de um
+      role="button" e um alvo dentro de outro alvo — o leitor de tela anuncia
+      dois controles no mesmo lugar e o clique dispara os dois.
+    -->
+    @if (mostrarImagem()) {
+      <button type="button" class="previa__remover" (click)="remover()">Remover</button>
     }
 
-    <!-- Input file oculto: quem abre o seletor e a area tracejada acima. -->
+    @if (falhou()) {
+      <p class="previa__erro" role="alert">Escolha uma imagem de até 5 MB.</p>
+    }
+
+    <!-- Input file oculto: quem abre o seletor e a área tracejada acima. -->
     <input
       #fileInput
       type="file"
@@ -63,7 +76,9 @@ import { Component, ElementRef, computed, input, output, signal, viewChild } fro
   `,
   styles: `
     :host {
-      display: block;
+      display: grid;
+      justify-items: start;
+      gap: var(--k-s-2);
     }
 
     .previa {
@@ -124,9 +139,22 @@ import { Component, ElementRef, computed, input, output, signal, viewChild } fro
       background: rgb(0 0 0 / 65%);
     }
 
+    .previa__remover {
+      min-height: 2.25rem;
+      padding: 0;
+      font-size: var(--k-t-sm);
+      color: var(--k-texto-fraco);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 140ms ease;
+
+      &:hover {
+        color: var(--k-erro);
+      }
+    }
+
     .previa__erro {
       max-width: clamp(7rem, 13vw, 11rem);
-      margin-top: var(--k-s-2);
       font-size: var(--k-t-sm);
       color: var(--k-erro);
     }
@@ -137,21 +165,28 @@ import { Component, ElementRef, computed, input, output, signal, viewChild } fro
   `,
 })
 export class PreviaImagem {
+  /** O data URL atual. Quem manda e o pai — ver o cabecalho da classe. */
+  readonly valor = input('');
+
   readonly alt = input('Pré-visualização');
   readonly legendaVazia = input('Upload');
 
-  /** Emite o data URL (base64) quando o usuario escolhe um arquivo. */
+  /** Data URL escolhido, ou `null` quando a pessoa remove ou o arquivo falha. */
   readonly arquivoChange = output<string | null>();
 
-  protected readonly previewUrl = signal<string | null>(null);
   protected readonly falhou = signal(false);
 
   private readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
-  protected readonly mostrarImagem = computed(() => !!this.previewUrl() && !this.falhou());
+  protected readonly mostrarImagem = computed(() => !!this.valor() && !this.falhou());
 
   protected abrirSeletor(): void {
     this.fileInput()?.nativeElement.click();
+  }
+
+  protected remover(): void {
+    this.falhou.set(false);
+    this.arquivoChange.emit(null);
   }
 
   protected arquivoSelecionado(evento: Event): void {
@@ -168,7 +203,6 @@ export class PreviaImagem {
 
     if (!arquivo.type.startsWith('image/') || arquivo.size > 5 * 1024 * 1024) {
       this.falhou.set(true);
-      this.previewUrl.set(null);
       this.arquivoChange.emit(null);
       return;
     }
@@ -176,7 +210,6 @@ export class PreviaImagem {
     const leitor = new FileReader();
 
     leitor.onload = () => {
-      this.previewUrl.set(leitor.result as string);
       this.falhou.set(false);
       this.arquivoChange.emit(leitor.result as string);
     };
