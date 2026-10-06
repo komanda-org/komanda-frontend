@@ -1,0 +1,772 @@
+@use 'mixins' as m;
+
+/**
+ * PRIMITIVOS DE INTERFACE — o vocabulario visual do prototipo. Vivem no global
+ * porque todas as telas os usam: uma copia por tela sairia de sincronia na
+ * primeira mudanca de cor.
+ */
+
+/* ---------------------------------------------------------------- Estrutura */
+
+/* Componentes de rota entram como irmaos do <router-outlet> e nascem inline;
+   inline nao aceita altura nem largura de pagina. */
+router-outlet ~ * {
+  display: block;
+}
+
+/* A "tela": o cartao onde as telas simples acontecem (entrar, escolher perfil).
+   Mobile-first: a base (celular) nao tem media query, os maiores sao a excecao.
+
+     celular  100% da altura, sem borda — o app E a tela
+     medio    cartao com borda, centrado pela .moldura
+     amplo    coluna direita do grid, altura cheia */
+.tela {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--k-fundo);
+
+  @include m.medio {
+    width: 100%;
+    max-width: var(--k-largura-painel);
+    min-height: auto;
+    overflow: hidden;
+    border: 1px solid var(--k-linha);
+    border-radius: var(--k-raio-lg);
+
+    /* Sombra de elevacao: separa o cartao do plano de tras. */
+    box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
+  }
+
+  @include m.amplo {
+    /* Aqui o cartao vira coluna de altura cheia colada na vitrine: por isso
+       desfazemos borda, raio e sombra. */
+    max-width: none;
+    height: 100dvh;
+    overflow: hidden;
+    border: 0;
+    border-left: 1px solid var(--k-linha);
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.tela__corpo {
+  flex: 1;
+  padding: var(--k-s-5) var(--k-gutter) var(--k-s-6);
+
+  @include m.medio {
+    padding: var(--k-s-6) var(--k-gutter);
+  }
+
+  @include m.amplo {
+    /* `min-height: 0` e a linha mais importante daqui: sem ela, o filho de
+       flex nunca encolhe, nunca rola e empurra o rodape para fora da tela. */
+    min-height: 0;
+    padding: var(--k-s-7) var(--k-gutter) var(--k-s-6);
+    overflow-y: auto;
+
+    /* Reserva o espaco da barra sempre: sem isto o conteudo pula uns pixels ao
+       trocar de etapa. */
+    scrollbar-gutter: stable both-edges;
+  }
+}
+
+/* Os filhos do corpo tem teto de leitura e sao centrados. O caminho completo
+   `.tela > .tela__corpo > *` (0-2-0) e de proposito: `fieldset { margin: 0 }`
+   vira `fieldset[_ngcontent]` (0-1-1) e casaria DEPOIS desta regra se ela fosse
+   so `.tela__corpo > *` (0-1-0), deixando o fieldset colado na esquerda. */
+@include m.amplo {
+  .tela > .tela__corpo > * {
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+}
+
+/* Area do CTA: rola com o conteudo, sem barra fixa. */
+.tela__rodape {
+  padding: var(--k-s-4) var(--k-gutter) var(--k-s-6);
+  background: transparent;
+
+  /* `display: grid` no pai, e nao `margin: auto` no filho: o .botao e
+     inline-flex, e margem automatica nao centraliza elemento de linha. */
+  display: grid;
+  justify-items: center;
+
+  > * {
+    width: 100%;
+    max-width: 32rem;
+  }
+}
+
+/* -------------------------------------------------------- Palco do cadastro
+   As telas de cadastro nao sao "vitrine + formulario": sao duas salas.
+   A ESQUERDA responde "onde estou" (voltar, etapa, progresso, titulo, foto).
+   A DIREITA responde "o que eu digito". Essa divisao e o motivo de o cadastro
+   nao usar a .moldura — a coluna da esquerda deixou de ser decoracao. */
+
+.cadastro {
+  display: grid;
+
+  /* Empilhado, o painel vale o tamanho do seu conteudo e a bancada fica com o
+     resto. Sem isto as duas linhas dividem os 100dvh em partes iguais e o
+     painel abre um vao enorme entre a foto e o primeiro campo. */
+  grid-template-rows: auto 1fr;
+  min-height: 100dvh;
+  background: var(--k-bancada);
+
+  @include m.amplo {
+    /* Lado a lado, cada coluna rola por conta propria: volta a ser uma linha. */
+    grid-template-rows: 1fr;
+
+    /* 44/56: o painel de contexto e menor que a bancada de trabalho, porque
+       quem esta cadastrando olha para os campos, nao para o titulo. */
+    grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+    height: 100dvh;
+  }
+}
+
+/* --- Coluna da esquerda --- */
+
+.painel {
+  display: flex;
+  flex-direction: column;
+  padding: var(--k-s-4) var(--k-gutter) var(--k-s-5);
+
+  /* O brilho dourado nasce no canto superior esquerdo, exatamente de onde o
+     olho entra na pagina. 6% de opacidade: percebe-se a temperatura, nao a
+     cor — o ouro forte fica reservado para o botao e para os rotulos. */
+  background:
+    radial-gradient(130% 90% at 10% 0%, rgb(242 202 80 / 6%) 0%, transparent 62%),
+    var(--k-palco);
+
+  @include m.amplo {
+    height: 100dvh;
+    padding: var(--k-s-6) clamp(2rem, 3.5vw, 3.5rem) var(--k-s-6);
+    overflow-y: auto;
+    border-right: 1px solid var(--k-linha);
+  }
+}
+
+/* Linha de cima: voltar · CRIAR CONTA · 1 de 2 */
+.painel__topo {
+  display: flex;
+  gap: var(--k-s-4);
+  align-items: center;
+  margin-bottom: var(--k-s-5);
+}
+
+.painel__voltar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--k-ouro);
+  background: rgb(255 255 255 / 3%);
+  border: 1px solid rgb(242 202 80 / 18%);
+  border-radius: var(--k-raio-lg);
+  transition: border-color 160ms ease, background-color 160ms ease;
+
+  &:hover {
+    background: rgb(242 202 80 / 8%);
+    border-color: rgb(242 202 80 / 45%);
+  }
+}
+
+.painel__marca {
+  @include m.rotulo;
+
+  flex: 1;
+  font-size: var(--k-t-sm);
+  letter-spacing: 0.28em;
+  color: var(--k-ouro);
+  text-align: center;
+
+  /* O letter-spacing acrescenta espaco DEPOIS da ultima letra tambem, o que
+     puxa o texto um tiquinho para a esquerda do centro real. O text-indent
+     devolve exatamente esse tanto. */
+  text-indent: 0.28em;
+}
+
+.painel__contador {
+  @include m.rotulo;
+
+  flex-shrink: 0;
+  min-width: 3rem;
+  font-size: var(--k-t-xs);
+  color: var(--k-texto-fraco);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bloco central: eyebrow + titulo + midia. `margin-block: auto` centra o bloco
+   na altura que sobra, e e por isso que topo e rodape ficam presos nas pontas. */
+.painel__conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-s-6);
+  padding-block: var(--k-s-6);
+
+  @include m.amplo {
+    padding-block: var(--k-s-7);
+    margin-block: auto;
+  }
+}
+
+.painel__rodape {
+  @include m.rotulo;
+
+  /* No celular o painel e so o cabecalho da pagina: o selo de LGPD ficaria no
+     meio do caminho entre o titulo e o primeiro campo, atrapalhando a leitura. */
+  display: none;
+  margin-top: var(--k-s-6);
+  font-size: var(--k-t-2xs);
+  letter-spacing: 0.16em;
+  color: var(--k-texto-placeholder);
+
+  @include m.amplo {
+    display: block;
+  }
+}
+
+/* Rotulo da midia do painel ("ADICIONAR LOGO (OPCIONAL)"). */
+.painel__midia-rotulo {
+  @include m.rotulo;
+
+  display: block;
+  margin-bottom: var(--k-s-4);
+  color: var(--k-texto-fraco);
+}
+
+/* --- Coluna da direita --- */
+
+.cadastro__campos {
+  /* `--k-campo` e uma custom property, entao pode ser REDEFINIDA num escopo:
+     todo input abaixo desta linha passa a usar o cinza da bancada sem que
+     nenhuma regra de `.entrada` precise saber que a bancada existe. */
+  --k-campo: var(--k-campo-bancada);
+
+  padding: var(--k-s-6) var(--k-gutter) var(--k-s-7);
+  background: var(--k-bancada);
+
+  @include m.amplo {
+    height: 100dvh;
+    padding: var(--k-s-7) clamp(2rem, 3.5vw, 4rem);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Teto de leitura: um <input> de 700px e horrivel de usar, e uma linha longa
+   faz o olho perder o comeco da linha seguinte.
+
+   O caminho completo (0-2-0) e de proposito: `fieldset { margin: 0 }` no CSS do
+   componente vira `fieldset[_ngcontent]` (0-1-1) e ganharia de um simples
+   `.cadastro__campos > *` (0-1-0) — o formulario ficaria colado na esquerda
+   enquanto o botao, que nao e fieldset, apareceria centrado. */
+.cadastro > .cadastro__campos > * {
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+/* O CTA vive no fim da coluna de campos, alinhado com eles. */
+.cadastro__acao {
+  max-width: 34rem;
+  margin: var(--k-s-6) auto 0;
+}
+
+/* --------------------------------------------------------------- Cabecalho */
+
+.topo {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: center;
+  padding: var(--k-s-4) var(--k-gutter);
+  border-bottom: 1px solid var(--k-linha);
+
+  @include m.amplo {
+    flex-shrink: 0;
+  }
+}
+
+.topo__voltar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: calc(var(--k-s-2) * -1);
+  color: var(--k-texto);
+  border-radius: var(--k-raio);
+
+  &:hover {
+    background: var(--k-superficie-2);
+  }
+}
+
+.topo__titulo {
+  flex: 1;
+  overflow: hidden;
+  font-family: var(--k-serif);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--k-ouro);
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Barra de progresso: 3px, preenche em dourado conforme as etapas avancam. */
+.progresso {
+  flex-shrink: 0;
+  height: 3px;
+  background: rgb(255 255 255 / 8%);
+  border-radius: var(--k-raio-pilula);
+}
+
+.progresso__preenchido {
+  height: 100%;
+  background: linear-gradient(90deg, var(--k-ouro-escuro), var(--k-ouro));
+  border-radius: var(--k-raio-pilula);
+  transition: width 420ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------ Titulos */
+
+.titulo {
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+
+  /* h1 com tabindex="-1" recebe foco por codigo ao trocar de etapa; sem isto
+     o leitor de tela continuaria no ponto antigo. */
+  &:focus {
+    outline: none;
+  }
+}
+
+/* A SEGUNDA METADE do titulo, em ouro. O corte nao e enfeite: a parte branca
+   diz a acao ("Sobre o seu") e a dourada diz o ASSUNTO ("Restaurante"). Quem
+   bate o olho le so a palavra dourada e ja sabe em que cadastro esta. */
+.titulo__realce {
+  display: block;
+  color: var(--k-ouro);
+}
+
+/* Titulo grande do painel de cadastro.
+   O vw da conta e deliberadamente baixo: o titulo vive numa coluna de ~44% da
+   tela, entao uma escala presa a largura da JANELA o fazia quebrar em tres
+   linhas num notebook de 1024px. */
+.titulo--painel {
+  font-size: clamp(2.25rem, 0.9rem + 2.9vw, 3.5rem);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.titulo--escolha {
+  font-size: clamp(1.875rem, 1.5rem + 1.6vw, 2.25rem);
+  line-height: 1.25;
+}
+
+/* Eyebrow dourado acima do titulo ("LEVA MENOS DE 2 MINUTOS"). */
+.eyebrow {
+  @include m.rotulo;
+
+  margin: 0 0 var(--k-s-3);
+  font-weight: 700;
+  color: var(--k-ouro);
+}
+
+.subtitulo {
+  max-width: 42ch; /* linha de apoio curta: mais que isso cansa de ler */
+  margin-top: var(--k-s-3);
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+}
+
+/* -------------------------------------------------------------------- Campo */
+
+.etapa__conteudo {
+  display: grid;
+  gap: var(--k-s-6);
+  align-content: start;
+  margin-top: var(--k-s-6);
+}
+
+.etapa__conteudo .campo {
+  margin-bottom: 0;
+}
+
+/* Na coluna de campos o titulo mora no painel ao lado, entao o grid comeca no
+   alto: o respiro de cima ja veio do padding da propria coluna. */
+.cadastro__campos .etapa__conteudo {
+  margin-top: 0;
+}
+
+.campo {
+  display: block;
+  margin-bottom: var(--k-s-4);
+}
+
+.campo__rotulo {
+  @include m.rotulo;
+
+  display: flex;
+  gap: var(--k-s-2);
+  align-items: baseline;
+  margin-bottom: var(--k-s-3);
+  color: var(--k-ouro);
+}
+
+/* Variante para a tela de entrar: ali o rotulo e conversa ("E-mail"), nao
+   etiqueta de formulario longo — entao volta a caixa normal e ao branco. */
+.campo__rotulo--suave {
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--k-texto);
+  text-transform: none;
+}
+
+.campo__opcional {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--k-texto-placeholder);
+}
+
+.entrada {
+  display: block;
+  width: 100%;
+  min-height: var(--k-altura-campo);
+  padding: var(--k-s-3) var(--k-s-4);
+  color: var(--k-texto);
+  background: var(--k-campo);
+
+  /* A borda existe, mas quase nao se ve: o que desenha a caixa e o contraste
+     entre o cinza do campo e o do fundo. No foco ela vira ouro e passa a ser o
+     unico elemento gritando na tela. */
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: var(--k-raio);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+
+  &::placeholder {
+    color: var(--k-texto-placeholder);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: rgb(255 255 255 / 14%);
+  }
+
+  &:focus {
+    border-color: var(--k-ouro);
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(242 202 80 / 12%);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--invalido {
+    border-color: var(--k-erro);
+  }
+}
+
+textarea.entrada {
+  min-height: 7.5rem;
+  padding: var(--k-s-4);
+  line-height: 1.55;
+}
+
+/* Select com setinha nossa (a do sistema nao acompanha a paleta). */
+select.entrada {
+  padding-right: var(--k-s-7);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%239c9c9c' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--k-s-4) center;
+  cursor: pointer;
+}
+
+/* Enquanto vazio, o select parece placeholder. Nao da para usar `:invalid`:
+   o validador vive no FormControl e nao escreve `required` no elemento — a
+   classe e ligada no template quando o valor esta vazio. */
+select.entrada--vazio {
+  color: var(--k-texto-placeholder);
+}
+
+select.entrada option {
+  color: var(--k-texto);
+  background: var(--k-superficie-2);
+}
+
+.campo__rodape {
+  display: flex;
+  gap: var(--k-s-3);
+  justify-content: space-between;
+  margin-top: var(--k-s-2);
+  font-size: var(--k-t-sm);
+}
+
+.campo__erro {
+  font-weight: 500;
+  color: var(--k-erro);
+}
+
+.campo__dica {
+  color: var(--k-texto-placeholder);
+}
+
+.campo__contador {
+  margin-left: auto;
+  font-size: var(--k-t-xs);
+  color: var(--k-texto-placeholder);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Campo com icone a direita (senha, CEP) ou a esquerda (tipo do campo). */
+.campo-icone {
+  position: relative;
+}
+
+.campo-icone .entrada {
+  padding-right: 3rem;
+}
+
+.campo-icone--inicio .entrada {
+  padding-left: 3rem;
+}
+
+.campo-icone__acao {
+  position: absolute;
+  top: 50%;
+  right: var(--k-s-2);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--k-texto-fraco);
+  border-radius: var(--k-raio);
+  transform: translateY(-50%);
+
+  &:hover {
+    color: var(--k-texto);
+  }
+}
+
+/* O icone de contexto (envelope, cadeado) e decorativo: marca o tipo do campo
+   e nao aceita clique — senao vira um botao que nao faz nada. */
+.campo-icone__marca {
+  position: absolute;
+  top: 50%;
+  left: var(--k-s-4);
+  display: grid;
+  place-items: center;
+  color: var(--k-texto-placeholder);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+/* ------------------------------------------------------- Checkbox de termos
+   Vive no global porque os dois cadastros usam a mesma caixinha, e o
+   profissional ainda a reaproveita no "Trabalho aqui hoje". Uma copia por tela
+   sairia de sincronia na primeira mudanca de cor. */
+
+.termo__label {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+/* O <input> real continua no DOM — escondido, mas focavel e clicavel pelo
+   <label>. O que se ve e o <span> ao lado; trocar o input por uma <div> com
+   role="checkbox" custaria teclado, autofill e o estado nativo de graca. */
+.termo__checkbox {
+  @include m.apenas-leitor-de-tela;
+}
+
+.termo__check {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.25rem; /* 20px */
+  height: 1.25rem;
+  margin-top: 0.125rem; /* alinhamento optico com a primeira linha do texto */
+  color: var(--k-ouro);
+  background: var(--k-campo);
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 4px;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.termo__check svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.termo__label:hover .termo__check {
+  border-color: var(--k-ouro);
+}
+
+.termo__checkbox:focus-visible + .termo__check {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+/* O irmao adjacente (+) so funciona porque o <input> vem IMEDIATAMENTE antes
+   do <span> no template. Trocar a ordem quebra o visual sem quebrar o form —
+   por isso o comentario fica aqui, e nao no HTML. */
+.termo__checkbox:checked + .termo__check {
+  color: #131313;
+  background: var(--k-ouro);
+  border-color: var(--k-ouro);
+}
+
+.termo__checkbox:checked + .termo__check svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.termo__texto {
+  font-size: var(--k-t-sm);
+  line-height: 1.55;
+  color: var(--k-texto-fraco);
+}
+
+.termo__link {
+  color: var(--k-ouro);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--k-ouro-claro);
+  }
+}
+
+.termo__erro {
+  display: block;
+  margin-top: var(--k-s-2);
+  font-size: var(--k-t-sm);
+  font-weight: 500;
+  color: var(--k-erro);
+}
+
+/* ------------------------------------------------------------------- Botoes */
+
+.botao {
+  display: inline-flex;
+  gap: var(--k-s-2);
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  /* min-height garante o alvo de toque de 44px (WCAG 2.5.8) mesmo se a fonte
+     do botao encolher. */
+  min-height: 3.25rem;
+  padding: var(--k-s-3) var(--k-s-4);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #2b2100;
+  text-transform: uppercase;
+  background: var(--k-ouro);
+  border-radius: var(--k-raio);
+  transition: filter 140ms ease, transform 100ms ease, box-shadow 140ms ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 6px 20px rgb(242 202 80 / 16%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.55;
+  }
+
+  /* Botao de frase, nao de comando: na tela de entrar o CTA e "Entrar", uma
+     palavra so — em caixa alta espacada ela viraria letreiro de fachada. */
+  &--frase {
+    font-size: var(--k-t-base);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  &--fantasma {
+    color: var(--k-texto);
+    background: transparent;
+    border: 1px solid var(--k-linha-forte);
+
+    &:hover:not(:disabled) {
+      background: var(--k-superficie-2);
+      box-shadow: none;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ Avisos */
+
+.aviso {
+  padding: var(--k-s-3) var(--k-s-4);
+  margin-bottom: var(--k-s-4);
+  font-size: var(--k-t-sm);
+  border-left: 3px solid;
+  border-radius: 0 var(--k-raio) var(--k-raio) 0;
+
+  &--erro {
+    color: var(--k-erro);
+    background: var(--k-erro-fundo);
+    border-color: var(--k-erro);
+  }
+
+  &--ok {
+    color: var(--k-ok);
+    background: var(--k-ok-fundo);
+    border-color: var(--k-ok);
+  }
+}
+
+.aviso__lista {
+  padding-left: var(--k-s-4);
+  margin: var(--k-s-1) 0 0;
+}
+
+/* ------------------------------------------------------------------ Secoes */
+
+.secao {
+  margin-top: var(--k-s-6);
+}
+
+.secao__rotulo {
+  @include m.rotulo;
+
+  margin-bottom: var(--k-s-4);
+  color: var(--k-ouro);
+}
+
+/* Animacao de troca de etapa: o unico momento de movimento na tela. */
+.etapa {
+  display: block;
+  animation: etapa-entra 280ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes etapa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}

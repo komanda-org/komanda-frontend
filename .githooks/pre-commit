@@ -1,0 +1,18 @@
+#!/bin/sh
+# Bloqueia o commit se os testes falharem.
+# Pule esta etapa (quando for commit mecanico, por exemplo) com: SKIP_TESTS=1 git commit ...
+
+if [ "$SKIP_TESTS" = "1" ]; then
+  echo "testes pulados (SKIP_TESTS=1)"
+  exit 0
+fi
+
+echo "rodando ng test --watch=false ..."
+if ! npx ng test --watch=false --no-progress; then
+  echo ""
+  echo "TESTES FALHARAM - commit bloqueado."
+  echo "Corrija, ou pule so esta vez com: SKIP_TESTS=1 git commit ..."
+  exit 1
+fi
+
+echo "testes verdes"

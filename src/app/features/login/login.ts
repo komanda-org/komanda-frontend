@@ -14,105 +14,61 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class Login {
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly submitting = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-  protected readonly showPassword = signal(false);
+  protected readonly mostrarSenha = signal(false);
+
+  /** Mensagem de sucesso que chega do cadastro. */
+  protected readonly mensagem = signal<string | null>(null);
+
+  /** Resposta do proprio formulario enquanto nao ha API de autenticacao. */
+  protected readonly nota = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
-    password: this.fb.control('', [Validators.required, Validators.minLength(8)]),
+    password: this.fb.control('', [Validators.required]),
   });
 
-  protected emailError(): string | null {
-    const control = this.form.controls.email;
+  constructor() {
+    // `getCurrentNavigation()` so responde DURANTE a navegacao — por isso a
+    // leitura acontece no construtor, e nao depois.
+    //
+    // Por que nao `history.state`? Porque no SSR nao existe `history`: o codigo
+    // roda no Node antes de chegar ao browser e quebraria a renderizacao.
+    const navegacao = this.router.getCurrentNavigation();
+    const estado = navegacao?.extras.state as { mensagem?: string } | undefined;
 
-    if (!control.touched || control.valid) {
+    this.mensagem.set(estado?.mensagem ?? null);
+  }
+
+  /**
+   * Metodo, e nao `computed()`: o estado de um FormControl (touched, errors)
+   * nao e signal, entao `computed` nao perceberia a mudanca.
+   */
+  protected erro(campo: 'email' | 'password'): string | null {
+    const controle = this.form.controls[campo];
+
+    // Erro so depois da saida do campo: acusar enquanto digita e hostil.
+    if (!controle.touched || controle.valid) {
       return null;
     }
 
-    if (control.hasError('required')) {
-      return 'Email é obrigatório';
-    }
-
-    return 'Email deve ser válido';
+    return mensagemDoErro(controle.errors, campo === 'email' ? 'E-mail' : 'Senha');
   }
 
-  protected passwordError(): string | null {
-    const control = this.form.controls.password;
-
-    if (!control.touched || control.valid) {
-      return null;
-    }
-
-    if (control.hasError('required')) {
-      return 'Senha é obrigatória';
-    }
-
-    return 'Senha deve ter no mínimo 8 caracteres';
-  }
-
-  protected togglePasswordVisibility(): void {
-    this.showPassword.update((visible) => !visible);
-  }
-
-  protected submit(): void {
-    if (this.submitting()) {
-      return;
-    }
-
-    // Without this, a never-touched invalid field would just do nothing on
-    // "Entrar" — no error visible, no request sent.
+  protected entrar(): void {
     this.form.markAllAsTouched();
 
     if (this.form.invalid) {
       return;
     }
 
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-
-    this.authService
-      .login(this.form.getRawValue())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => void this.goToDashboard(),
-        error: (error: unknown) => this.handleError(error),
-      });
+    this.mensagem.set(null);
+    this.nota.set('A entrada ainda não está liberada. Sua conta já existe e estará aqui assim que o login abrir.');
   }
 
-  /**
-   * `navigate()` resolves `false` when the navigation is cancelled (a guard
-   * blocking it, for instance) and rejects when it fails outright — a lazy
-   * chunk that won't load. Ignoring the promise leaves the button stuck on
-   * "Entrando..." forever, so both cases hand control back to the user.
-   */
-  private async goToDashboard(): Promise<void> {
-    try {
-      if (await this.router.navigate(['/dashboard'])) {
-        return;
-      }
-    } catch {
-      // Same recovery as a cancelled navigation.
-    }
-
-    this.submitting.set(false);
-    this.errorMessage.set('Não foi possível abrir o painel. Tente novamente.');
-  }
-
-  private handleError(error: unknown): void {
-    this.submitting.set(false);
-
-    // The interceptor normalizes everything that comes from the API. Landing
-    // here with something else means it's a bug on our side, not the network.
-    if (!isApiError(error)) {
-      this.errorMessage.set('Algo deu errado ao entrar. Tente novamente.');
-      return;
-    }
-
-    this.errorMessage.set(translateLoginError(error));
+  protected esqueciSenha(): void {
+    this.mensagem.set(null);
+    this.nota.set('A recuperação de senha ainda não está disponível.');
   }
 }

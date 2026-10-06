@@ -1,0 +1,90 @@
+/**
+ * RESET — nivela as diferencas entre browsers antes do nosso estilo entrar.
+ * Enxuto de proposito: so o que este projeto realmente usa.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+
+  /* Avisa ao browser que a interface e escura: barras de rolagem, campos
+     nativos e o teclado do celular ja nascem no tom certo. */
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100dvh;
+  font-family: var(--k-sans);
+  font-size: var(--k-t-base);
+  line-height: 1.55;
+  color: var(--k-texto);
+  background-color: var(--k-fundo);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Form controls nao herdam fonte por padrao — isso corrige. */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Foco visivel e requisito de acessibilidade, nao enfeite.
+   :focus-visible so aparece para teclado — o mouse nao dispara. */
+:focus-visible {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

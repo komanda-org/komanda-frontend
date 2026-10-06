@@ -1,13 +1,16 @@
-/* You can add global styles to this file, and also import other style files */
+/**
+ * Folha global do Komanda.
+ *
+ * `@use` (e nao `@import`) porque @import esta depreciado no Sass: ele despeja
+ * tudo num escopo unico e permite colisao silenciosa de nomes. @use isola cada
+ * arquivo num namespace proprio.
+ *
+ * A ordem importa: tokens primeiro — reset e ui consomem as variaveis dele.
+ */
+@use 'styles/tokens';
+@use 'styles/reset';
+@use 'styles/ui';
 
-html,
-body {
-    min-height: 100%;
-    margin: 0;
-    background: #121212;
-}
-
-body,
 app-root {
     display: block;
     min-height: 100dvh;
