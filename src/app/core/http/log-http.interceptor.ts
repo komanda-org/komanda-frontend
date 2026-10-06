@@ -34,7 +34,7 @@ export function redigirCorpo(corpo: unknown): unknown {
  */
 export const logHttpInterceptor: HttpInterceptorFn = (req, next) => {
   // Em producao nao logamos nada: o corpo do cadastro pode conter senha.
-  if (environment.producao) {
+  if (environment.production) {
     return next(req);
   }
 

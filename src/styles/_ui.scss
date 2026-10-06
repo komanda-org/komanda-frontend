@@ -413,6 +413,13 @@ router-outlet ~ * {
   margin-bottom: var(--k-s-4);
 }
 
+.campo__cabecalho {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
 .campo__rotulo {
   @include m.rotulo;
 

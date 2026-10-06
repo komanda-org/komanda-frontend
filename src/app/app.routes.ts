@@ -12,13 +12,13 @@ export const routes: Routes = [
     path: 'registro',
     title: 'Criar conta · Komanda',
     loadComponent: () =>
-      import('./features/registro/escolha-perfil/escolha-perfil').then((m) => m.EscolhaPerfil),
+      import('./pages/registro/escolha-perfil/escolha-perfil').then((m) => m.EscolhaPerfil),
   },
   {
     path: 'registro/profissional',
     title: 'Criar conta · Profissional · Komanda',
     loadComponent: () =>
-      import('./features/registro/profissional/registro-profissional').then(
+      import('./pages/registro/profissional/registro-profissional').then(
         (m) => m.RegistroProfissional,
       ),
   },
@@ -26,20 +26,20 @@ export const routes: Routes = [
     path: 'registro/restaurante',
     title: 'Criar conta · Restaurante · Komanda',
     loadComponent: () =>
-      import('./features/registro/restaurante/registro-restaurante').then(
+      import('./pages/registro/restaurante/registro-restaurante').then(
         (m) => m.RegistroRestaurante,
       ),
   },
   {
     path: 'login',
     title: 'Entrar · Komanda',
-    loadComponent: () => import('./features/login/login').then((m) => m.Login),
+    loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
   {
     path: 'auth/recuperar-senha',
     title: 'Recuperar senha · Komanda',
     loadComponent: () =>
-      import('./features/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
     path: 'dashboard',

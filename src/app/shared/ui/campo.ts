@@ -11,12 +11,19 @@ import { mensagemDoErro } from '../../core/validators/mensagens-de-erro';
   selector: 'app-campo',
   template: `
     <div class="campo">
-      <label class="campo__rotulo" [attr.for]="para()">
-        {{ rotulo() }}
-        @if (opcional()) {
-          <span class="campo__opcional">opcional</span>
-        }
-      </label>
+      <div class="campo__cabecalho">
+        <label
+          class="campo__rotulo"
+          [class.campo__rotulo--suave]="suave()"
+          [attr.for]="para()"
+        >
+          {{ rotulo() }}
+          @if (opcional()) {
+            <span class="campo__opcional">opcional</span>
+          }
+        </label>
+        <ng-content select="[campoAction]" />
+      </div>
 
       <ng-content />
 
@@ -46,6 +53,8 @@ export class Campo {
 
   readonly dica = input<string>('');
   readonly opcional = input(false);
+  readonly suave = input(false);
+  readonly customErrorMessage = input<string | null | undefined>(undefined);
   /** Quando informado, mostra contador de caracteres. */
   readonly maximo = input<number | null>(null);
 
@@ -59,6 +68,11 @@ export class Campo {
     // Erro so depois da saida do campo (touched): acusar enquanto digita e hostil.
     if (!controle.touched || controle.valid) {
       return null;
+    }
+
+    const customMessage = this.customErrorMessage();
+    if (customMessage !== undefined) {
+      return customMessage;
     }
 
     return mensagemDoErro(controle.errors, this.rotulo());
