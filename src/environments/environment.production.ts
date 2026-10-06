@@ -1,12 +1,11 @@
 /**
- * Configuracao de PRODUCAO.
+ * Production configuration.
  *
- * Trocado no lugar de environment.ts em build de producao pelo
- * `fileReplacements` do angular.json. Em producao nao existe o proxy do
- * dev-server: quem faz esse papel e o reverse proxy (nginx/Caddy) servindo
- * front e API sob o mesmo dominio.
+ * Swapped in for environment.ts during production builds via angular.json's
+ * fileReplacements. There is no dev-server proxy in production — a reverse
+ * proxy (nginx/Caddy) serves the front-end and the API under the same domain.
  */
 export const environment = {
-  producao: true,
+  production: true,
   apiUrl: '/api',
 };

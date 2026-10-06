@@ -1,119 +1,69 @@
-<app-moldura>
-  <div class="tela">
-    <div class="tela__corpo">
-      <div class="acesso">
-        <h1 class="titulo acesso__titulo" tabindex="-1">Bem-vindo de volta</h1>
-        <p class="acesso__apoio">Acesse sua conta para continuar</p>
+<main class="login">
+  <div class="login__layout">
+    <section class="login__brand-panel" aria-label="Komanda">
+      <div class="login__brand-content">
+        <p class="login__brand">Komanda</p>
+        <p class="login__tagline">Vagas de gastronomia que combinam com você</p>
+      </div>
+      <p class="login__legal">POLÍTICA DE PRIVACIDADE <span>·</span> LGPD</p>
+    </section>
 
-        @if (mensagem(); as texto) {
-          <!-- role="status" (e não "alert") porque é uma boa notícia, não um
-               erro: o leitor de tela anuncia sem interromper a leitura. -->
-          <p class="aviso aviso--ok acesso__aviso" role="status">{{ texto }}</p>
+    <section class="login__form-panel" aria-labelledby="login-title">
+      <div class="login__form-content">
+        <h1 id="login-title" class="login__title">Bem-vindo</h1>
+        <p class="login__subtitle">Acesse sua conta para continuar.</p>
+
+        @if (errorMessage(); as message) {
+        <p class="login__error" role="alert">{{ message }}</p>
         }
 
-        @if (nota(); as texto) {
-          <p class="aviso aviso--erro acesso__aviso" role="alert">{{ texto }}</p>
-        }
-
-        <form class="acesso__form" [formGroup]="form" novalidate (ngSubmit)="entrar()">
-          <div class="campo">
-            <label class="campo__rotulo campo__rotulo--suave" for="email">E-mail</label>
-
-            <div class="campo-icone campo-icone--inicio">
-              <span class="campo-icone__marca" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6" />
-                  <path d="M3.5 6.5l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                </svg>
-              </span>
-
-              <input
-                id="email"
-                class="entrada"
-                type="email"
-                inputmode="email"
-                autocomplete="email"
-                placeholder="nome@exemplo.com"
-                formControlName="email"
-              />
+        <form class="login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label class="field__label" for="email">E-mail</label>
+            <div class="field__control">
+              <span class="field__icon field__icon--mail" aria-hidden="true"></span>
+              <input id="email" type="email" formControlName="email" class="field__input field__input--with-icon"
+                [class.field__input--invalid]="emailError()" placeholder="nome@exemplo.com" autocomplete="email"
+                [attr.aria-invalid]="emailError() ? 'true' : null"
+                [attr.aria-describedby]="emailError() ? 'email-error' : null" />
             </div>
-
-            @if (erro('email'); as texto) {
-              <div class="campo__rodape">
-                <span class="campo__erro" id="email-erro" role="alert">{{ texto }}</span>
-              </div>
+            @if (emailError(); as message) {
+            <span id="email-error" class="field__error" role="alert">{{ message }}</span>
             }
           </div>
 
-          <div class="campo">
-            <!--
-              O rótulo e o "esqueceu a senha?" dividem a mesma linha: quem não
-              lembra a senha olha para o campo, não para o rodapé da tela.
-            -->
-            <div class="acesso__linha-rotulo">
-              <label class="campo__rotulo campo__rotulo--suave" for="password">Senha</label>
-              <button type="button" class="acesso__link" (click)="esqueciSenha()">
-                Esqueceu a senha?
+          <div class="field">
+            <div class="field__heading">
+              <label class="field__label" for="password">Senha</label>
+              <a class="login__forgot" routerLink="/auth/recuperar-senha">Esqueceu a senha?</a>
+            </div>
+            <div class="field__control">
+              <span class="field__icon field__icon--lock" aria-hidden="true"></span>
+              <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+                class="field__input field__input--with-icon field__input--with-action"
+                [class.field__input--invalid]="passwordError()" placeholder="••••••••" autocomplete="current-password"
+                [attr.aria-invalid]="passwordError() ? 'true' : null"
+                [attr.aria-describedby]="passwordError() ? 'password-error' : null" />
+              <button class="field__visibility" type="button"
+                [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+                [attr.aria-pressed]="showPassword()" (click)="togglePasswordVisibility()">
+                <span class="field__icon field__icon--eye" aria-hidden="true"></span>
               </button>
             </div>
-
-            <div class="campo-icone campo-icone--inicio">
-              <span class="campo-icone__marca" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.6" />
-                  <path d="M8 10V7.5a4 4 0 018 0V10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                </svg>
-              </span>
-
-              <input
-                id="password"
-                class="entrada"
-                [type]="mostrarSenha() ? 'text' : 'password'"
-                autocomplete="current-password"
-                placeholder="••••••••"
-                formControlName="password"
-              />
-
-              <button
-                type="button"
-                class="campo-icone__acao"
-                [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
-                [attr.aria-pressed]="mostrarSenha()"
-                (click)="mostrarSenha.set(!mostrarSenha())"
-              >
-                @if (mostrarSenha()) {
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4.5 9 7a11 11 0 01-2.6 3.6M6.2 6.7C3.9 8.2 3 10.4 3 12c0 2.5 4 7 9 7 1.3 0 2.4-.3 3.5-.7"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                } @else {
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z" stroke="currentColor" stroke-width="1.7" />
-                    <circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7" />
-                  </svg>
-                }
-              </button>
-            </div>
-
-            @if (erro('password'); as texto) {
-              <div class="campo__rodape">
-                <span class="campo__erro" id="password-erro" role="alert">{{ texto }}</span>
-              </div>
+            @if (passwordError(); as message) {
+            <span id="password-error" class="field__error" role="alert">{{ message }}</span>
             }
           </div>
 
-          <button type="submit" class="botao botao--frase acesso__enviar">Entrar</button>
+          <button type="submit" class="login__submit" [disabled]="submitting()">
+            {{ submitting() ? 'Entrando...' : 'Entrar' }}
+          </button>
         </form>
 
-        <p class="acesso__rodape">
-          Não tem uma conta?
-          <a class="acesso__link" routerLink="/registro">Cadastre-se</a>
+        <p class="login__footer">
+          Não tem uma conta? <a routerLink="/registro">Cadastre-se</a>
         </p>
       </div>
-    </div>
+    </section>
   </div>
-</app-moldura>
+</main>

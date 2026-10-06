@@ -1,25 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { mensagemDoErro } from '../../core/validators/mensagens-de-erro';
-import { EstadoCampoDirective } from '../../shared/ui/estado-campo.directive';
-import { Moldura } from '../../shared/ui/moldura';
+import { isApiError } from '../../core/models/api-error.model';
+import { translateLoginError } from '../../core/http/translate-login-error';
+import { AuthService } from '../../core/services/auth.service';
 
-/**
- * Tela de entrada.
- *
- * ESCOPO: o back-end ainda nao tem rota de autenticacao. O formulario existe
- * porque e a porta do produto — a tela precisa parecer e se comportar como uma
- * tela de login desde ja —, mas o envio NAO chama a API: inventar um contrato
- * aqui criaria codigo que teria de ser reescrito no dia em que a rota nascer.
- *
- * O que ela faz de verdade: valida o que foi digitado, exibe a mensagem de
- * sucesso vinda do cadastro e avisa, sem rodeios, que a entrada ainda nao
- * abriu. Quando /auth/login existir, so `entrar()` muda.
- */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, Moldura, EstadoCampoDirective],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
