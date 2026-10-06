@@ -5,10 +5,12 @@ import { Router, RouterLink } from '@angular/router';
 import { isApiError } from '../../core/models/api-error.model';
 import { translateLoginError } from '../../core/http/translate-login-error';
 import { AuthService } from '../../core/services/auth.service';
+import { Campo } from '../../shared/ui/campo';
+import { Moldura } from '../../shared/ui/moldura';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Campo, Moldura, ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

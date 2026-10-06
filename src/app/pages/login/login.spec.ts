@@ -36,6 +36,16 @@ describe('Login', () => {
 
   afterEach(() => httpTestingController.verify());
 
+  it('reuses the shared frame, fields, and button styles', () => {
+    expect(fixture.nativeElement.querySelector('app-moldura')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('app-campo')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelector('button[type="submit"].botao')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Vagas de gastronomia que combinam com você',
+    );
+    expect(fixture.nativeElement.textContent).toContain('Política de privacidade · LGPD');
+  });
+
   it('applies the email and password validations before submitting', () => {
     component.form.setValue({ email: 'not-an-email', password: 'short' });
 

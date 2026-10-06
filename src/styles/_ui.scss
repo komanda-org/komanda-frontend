@@ -413,6 +413,13 @@ router-outlet ~ * {
   margin-bottom: var(--k-s-4);
 }
 
+.campo__cabecalho {
+  display: flex;
+  gap: var(--k-s-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
 .campo__rotulo {
   @include m.rotulo;
 
@@ -421,6 +428,10 @@ router-outlet ~ * {
   align-items: baseline;
   margin-bottom: var(--k-s-3);
   color: var(--k-ouro);
+}
+
+.campo__cabecalho .campo__rotulo {
+  margin-bottom: var(--k-s-3);
 }
 
 /* Variante para a tela de entrar: ali o rotulo e conversa ("E-mail"), nao
