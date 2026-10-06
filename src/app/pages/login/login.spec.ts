@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
 import { provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { apiErrorInterceptor } from '../../core/http/api-error.interceptor';
 import { Login } from './login';
 
@@ -21,7 +22,7 @@ describe('Login', () => {
     await TestBed.configureTestingModule({
       imports: [Login],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'login', component: Login }]),
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
       ],
@@ -102,6 +103,19 @@ describe('Login', () => {
 
     expect(fixture.nativeElement.textContent).toContain(
       'Muitas tentativas. Aguarde um minuto antes de tentar novamente.',
+    );
+  });
+
+  it('shows the success banner carried by the registration navigation', async () => {
+    const harness = await RouterTestingHarness.create();
+
+    await router.navigate(['/login'], {
+      state: { mensagem: 'Conta criada com sucesso. Entre para continuar.' },
+    });
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.querySelector('.aviso--ok')?.textContent).toContain(
+      'Conta criada com sucesso. Entre para continuar.',
     );
   });
 });

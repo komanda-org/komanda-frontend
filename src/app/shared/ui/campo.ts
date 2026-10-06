@@ -63,16 +63,16 @@ export class Campo {
    * nao e signal, entao `computed` nao perceberia a mudanca.
    */
   protected erro(): string | null {
-    const customMessage = this.customErrorMessage();
-    if (customMessage !== undefined) {
-      return customMessage;
-    }
-
     const controle = this.controle();
 
     // Erro so depois da saida do campo (touched): acusar enquanto digita e hostil.
     if (!controle.touched || controle.valid) {
       return null;
+    }
+
+    const customMessage = this.customErrorMessage();
+    if (customMessage !== undefined) {
+      return customMessage;
     }
 
     return mensagemDoErro(controle.errors, this.rotulo());

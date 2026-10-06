@@ -430,10 +430,6 @@ router-outlet ~ * {
   color: var(--k-ouro);
 }
 
-.campo__cabecalho .campo__rotulo {
-  margin-bottom: var(--k-s-3);
-}
-
 /* Variante para a tela de entrar: ali o rotulo e conversa ("E-mail"), nao
    etiqueta de formulario longo — entao volta a caixa normal e ao branco. */
 .campo__rotulo--suave {

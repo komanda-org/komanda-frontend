@@ -22,12 +22,22 @@ export class Login {
 
   protected readonly showPassword = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  /** Mensagem de sucesso que chega do cadastro. */
+  protected readonly mensagem = signal<string | null>(null);
   protected readonly submitting = signal(false);
 
   protected readonly form = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
     password: this.fb.control('', [Validators.required, Validators.minLength(8)]),
   });
+
+  constructor() {
+    // `getCurrentNavigation()` so responde DURANTE a navegacao — por isso a
+    // leitura acontece no construtor. `state` some no F5 e nao existe no SSR.
+    const navegacao = this.router.getCurrentNavigation();
+    const estado = navegacao?.extras.state as { mensagem?: string } | undefined;
+    this.mensagem.set(estado?.mensagem ?? null);
+  }
 
   protected emailError(): string | null {
     const control = this.form.controls.email;

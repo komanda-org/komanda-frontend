@@ -6,6 +6,12 @@
           <h1 id="login-title" class="titulo login__title">Bem-vindo</h1>
           <p class="subtitulo login__subtitle">Acesse sua conta para continuar.</p>
 
+          @if (mensagem(); as texto) {
+            <div class="aviso aviso--ok" role="status">
+              <strong>{{ texto }}</strong>
+            </div>
+          }
+
           @if (errorMessage(); as message) {
             <p class="login__error" role="alert">{{ message }}</p>
           }
