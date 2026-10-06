@@ -20,6 +20,7 @@ export class Login {
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly showPassword = signal(false);
 
   protected readonly form = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.email]),
@@ -52,6 +53,10 @@ export class Login {
     }
 
     return 'Senha deve ter no mínimo 8 caracteres';
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
   }
 
   protected submit(): void {
