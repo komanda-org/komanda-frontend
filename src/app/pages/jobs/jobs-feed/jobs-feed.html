@@ -1,0 +1,166 @@
+<section class="feed" aria-labelledby="greeting">
+  <header class="feed__header">
+    <h1 id="greeting">Olá, João</h1>
+    <p>
+      {{ totalJobs() }} {{ totalJobs() === 1 ? 'vaga' : 'vagas' }} perto de você
+    </p>
+  </header>
+
+  <div class="search-row">
+    <form class="search" (ngSubmit)="search()">
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <circle cx="10.8" cy="10.8" r="6.3"></circle>
+        <path d="m16 16 4.2 4.2"></path>
+      </svg>
+      <input
+        type="search"
+        name="jobSearch"
+        [(ngModel)]="searchInput"
+        placeholder="Buscar vagas por cargo ou restaurante..."
+        aria-label="Buscar vagas por cargo ou restaurante"
+      />
+    </form>
+    <button
+      class="filters-toggle"
+      type="button"
+      [attr.aria-expanded]="quickFiltersVisible()"
+      aria-controls="quick-filters"
+      (click)="toggleQuickFilters()"
+    >
+      <svg aria-hidden="true" viewBox="0 0 20 20">
+        <path d="M3 5h14M5 10h10m-7 5h4"></path>
+      </svg>
+      Filtros
+    </button>
+  </div>
+
+  @if (quickFiltersVisible()) {
+    <nav id="quick-filters" class="chips" aria-label="Filtros rápidos">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--active]="activeFilter() === 'para-voce'"
+        [attr.aria-pressed]="activeFilter() === 'para-voce'"
+        (click)="selectFilter('para-voce')"
+      >
+        Para você
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--active]="activeFilter() === 'CLT'"
+        [attr.aria-pressed]="activeFilter() === 'CLT'"
+        (click)="selectFilter('CLT')"
+      >
+        CLT
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--active]="activeFilter() === 'PJ'"
+        [attr.aria-pressed]="activeFilter() === 'PJ'"
+        (click)="selectFilter('PJ')"
+      >
+        PJ
+      </button>
+    </nav>
+  }
+
+  @if (loading()) {
+    <div class="status status--loading" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando vagas...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="status status--error" role="alert">
+      <p>{{ loadError() }}</p>
+      <button type="button" class="retry-button" (click)="load()">Tentar novamente</button>
+    </div>
+  } @else if (visibleJobs().length === 0) {
+    <div class="status status--empty" role="status">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <circle cx="10.8" cy="10.8" r="6.3"></circle>
+          <path d="m16 16 4.2 4.2"></path>
+        </svg>
+      </span>
+      <h2>Nenhuma vaga encontrada</h2>
+      <p>Tente ajustar a busca ou os filtros para ver mais oportunidades.</p>
+      @if (submittedQuery() || activeFilter() !== 'para-voce') {
+        <button
+          type="button"
+          class="retry-button"
+          (click)="searchInput = ''; search(); activeFilter.set('para-voce')"
+        >
+          Limpar filtros
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="jobs-grid">
+      @for (job of visibleJobs(); track job.id; let index = $index) {
+        <article class="job-card">
+          <div class="job-card__topline">
+            <div class="restaurant">
+              <span
+                class="restaurant__initial"
+                [class.restaurant__initial--1]="index % 4 === 1"
+                [class.restaurant__initial--2]="index % 4 === 2"
+                [class.restaurant__initial--3]="index % 4 === 3"
+                aria-hidden="true"
+              >
+                {{ restaurantInitial(job) }}
+              </span>
+              <div class="restaurant__details">
+                <p class="restaurant__name">{{ job.restaurant.restaurantName }}</p>
+                <h2 class="job-card__title">{{ job.title }}</h2>
+              </div>
+            </div>
+            @if (job.urgent) {
+              <span class="urgent-badge">Urgente</span>
+            }
+          </div>
+
+          <ul class="badges" aria-label="Detalhes da vaga">
+            @if (job.shift) {
+              <li class="badge">{{ job.shift }}</li>
+            }
+            <li class="badge">{{ job.contractType }}</li>
+            @if (job.distanceKm !== null && job.distanceKm !== undefined) {
+              <li class="badge">{{ formatDistance(job.distanceKm) }}</li>
+            }
+          </ul>
+
+          <footer class="job-card__footer">
+            <div class="salary">
+              <span class="salary__label">Salário</span>
+              <span class="salary__value">{{ formatSalary(job.salary) }}</span>
+            </div>
+            <div class="application">
+              @if (hasApplied(job)) {
+                <button class="apply-button apply-button--applied" type="button" disabled>
+                  <svg aria-hidden="true" viewBox="0 0 20 20">
+                    <path d="m4 10 4 4 8-8"></path>
+                  </svg>
+                  Candidatura enviada
+                </button>
+              } @else {
+                <button
+                  class="apply-button"
+                  type="button"
+                  [disabled]="isApplying(job.id)"
+                  (click)="apply(job)"
+                >
+                  {{ isApplying(job.id) ? 'Enviando...' : 'Candidatar-se' }}
+                </button>
+              }
+              @if (applicationError(job.id); as message) {
+                <p class="application__error" role="alert">{{ message }}</p>
+              }
+            </div>
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</section>

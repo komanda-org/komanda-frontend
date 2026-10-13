@@ -50,7 +50,12 @@ export const routes: Routes = [
     path: '',
     component: AppLayout,
     children: [
-      { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
+      {
+        path: 'vagas',
+        title: 'Vagas · Komanda',
+        loadComponent: () =>
+          import('./pages/jobs/jobs-feed/jobs-feed').then((m) => m.JobsFeed),
+      },
       { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
       { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
       { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
