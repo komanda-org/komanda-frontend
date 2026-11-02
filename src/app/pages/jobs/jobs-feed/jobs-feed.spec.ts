@@ -6,6 +6,7 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Application, Job, JobsResponse } from '../../../core/models/jobs.model';
+import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 import { JobsFeed } from './jobs-feed';
 
 const jobs: Job[] = [
@@ -58,6 +59,8 @@ describe('JobsFeed', () => {
   const response: JobsResponse = { data: jobs, total: 12, skip: 0, take: 20 };
 
   beforeEach(async () => {
+    localStorage.removeItem('komanda.user');
+    localStorage.removeItem('komanda.professionalPreferences.joao@example.com');
     await TestBed.configureTestingModule({
       imports: [JobsFeed],
       providers: [
@@ -123,6 +126,28 @@ describe('JobsFeed', () => {
     cltChip.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
+  });
+
+  it('filters Para você by the professional role and contract preference', () => {
+    localStorage.setItem(
+      'komanda.user',
+      JSON.stringify({ id: 'professional-1', role: 'PROFISSIONAL', email: 'joao@example.com' }),
+    );
+    TestBed.inject(ProfessionalPreferencesService).saveForEmail('joao@example.com', {
+      mainRole: 'Cozinheiro',
+      interestedRoles: [],
+      contractType: 'CLT',
+    });
+
+    const sameRoleWithDifferentContract: Job = {
+      ...jobs[0],
+      id: 'job-pj-cook',
+      contractType: 'PJ',
+    };
+    loadJobs({ ...response, data: [...jobs, sameRoleWithDifferentContract] });
+
+    expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Cozinheiro de Linha');
   });
 
   it('sends an application once and switches the action to the submitted state', () => {

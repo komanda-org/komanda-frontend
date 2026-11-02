@@ -19,7 +19,9 @@ import {
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { ehErroApi } from '../../../core/models/erro-api.model';
+import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
+import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep } from '../../../core/utils/mascaras';
 import {
@@ -85,6 +87,7 @@ type CampoProfissional =
 export class RegistroProfissional {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly servico = inject(RegistroService);
+  private readonly professionalPreferencesService = inject(ProfessionalPreferencesService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -330,11 +333,16 @@ export class RegistroProfissional {
       // Cancela a inscricao se o componente for destruido no meio da requisicao.
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () =>
+        next: () => {
+          this.professionalPreferencesService.saveForEmail(
+            this.form.controls.email.value,
+            this.montarPreferencias(),
+          );
           void this.router.navigate(['/login'], {
             // `state` do Router: memoria pura, some no F5 e funciona no SSR.
             state: { mensagem: 'Conta criada com sucesso. Entre para continuar.' },
-          }),
+          });
+        },
         error: (erro: unknown) => this.tratarErro(erro),
       });
   }
@@ -438,5 +446,14 @@ export class RegistroProfissional {
     }
 
     return payload;
+  }
+
+  private montarPreferencias(): ProfessionalPreferences {
+    const values = this.form.getRawValue();
+    return {
+      mainRole: values.mainRole.trim(),
+      interestedRoles: values.interestedRoles,
+      contractType: values.contractType as ProfessionalPreferences['contractType'],
+    };
   }
 }

@@ -3,10 +3,13 @@ import { Component, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { isApiError } from '../../../core/models/api-error.model';
-import { ApplicationsService } from '../../../core/services/applications.service';
-import { JobsService } from '../../../core/services/jobs.service';
 import { Job } from '../../../core/models/jobs.model';
+import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
 import { ehErroApi } from '../../../core/models/erro-api.model';
+import { ApplicationsService } from '../../../core/services/applications.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { JobsService } from '../../../core/services/jobs.service';
+import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 
 type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | null;
 
@@ -19,6 +22,8 @@ type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | null;
 export class JobsFeed {
   private readonly jobsService = inject(JobsService);
   private readonly applicationsService = inject(ApplicationsService);
+  private readonly authService = inject(AuthService);
+  private readonly professionalPreferencesService = inject(ProfessionalPreferencesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -37,6 +42,10 @@ export class JobsFeed {
   protected readonly visibleJobs = computed(() => {
     const query = this.submittedQuery().toLocaleLowerCase('pt-BR');
     const filter = this.activeFilter();
+    const preferences =
+      filter === 'para-voce'
+        ? this.professionalPreferencesService.getForEmail(this.authService.getUser()?.email)
+        : null;
 
     return this.jobs().filter((job) => {
       const matchesQuery =
@@ -44,9 +53,11 @@ export class JobsFeed {
         job.title.toLocaleLowerCase('pt-BR').includes(query) ||
         job.restaurant.restaurantName.toLocaleLowerCase('pt-BR').includes(query);
       const matchesContract =
-        filter !== 'CLT' && filter !== 'PJ' ? true : job.contractType === filter;
+        filter === 'CLT' || filter === 'PJ' ? job.contractType === filter : true;
+      const matchesPreferences =
+        filter !== 'para-voce' || this.matchesPreferences(job, preferences);
 
-      return matchesQuery && matchesContract;
+      return matchesQuery && matchesContract && matchesPreferences;
     });
   });
 
@@ -162,6 +173,33 @@ export class JobsFeed {
 
   protected formatDistance(distanceKm: number): string {
     return `${distanceKm.toFixed(1)} KM`;
+  }
+
+  private matchesPreferences(job: Job, preferences: ProfessionalPreferences | null): boolean {
+    if (!preferences) {
+      return true;
+    }
+
+    const searchableJob = this.normalizeText(
+      [job.title, job.description, job.requirements ?? ''].join(' '),
+    );
+    const preferredRoles = [preferences.mainRole, ...preferences.interestedRoles]
+      .map((role) => this.normalizeText(role))
+      .filter(Boolean);
+    const matchesRole =
+      preferredRoles.length === 0 || preferredRoles.some((role) => searchableJob.includes(role));
+    const expectedContract =
+      preferences.contractType === 'Freelancer' ? 'FREELANCER' : preferences.contractType;
+
+    return matchesRole && job.contractType === expectedContract;
+  }
+
+  private normalizeText(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pt-BR')
+      .trim();
   }
 
   private errorMessage(error: unknown, action: 'load' | 'apply'): string {

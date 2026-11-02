@@ -30,7 +30,7 @@ export class AuthService {
   login(payload: LoginPayload): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${this.baseUrl}/auth/login`, payload)
-      .pipe(tap((response) => this.storeSession(response)));
+      .pipe(tap((response) => this.storeSession(response, payload.email)));
   }
 
   logout(): void {
@@ -66,7 +66,7 @@ export class AuthService {
     }
   }
 
-  private storeSession(response: LoginResponse): void {
+  private storeSession(response: LoginResponse, email: string): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
@@ -76,7 +76,10 @@ export class AuthService {
     // unguarded throw would turn a successful 200 into a login error.
     try {
       localStorage.setItem(TOKEN_KEY, response.access_token);
-      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+      localStorage.setItem(
+        USER_KEY,
+        JSON.stringify({ ...response.user, email: email.trim().toLocaleLowerCase('en-US') }),
+      );
     } catch {
       // Nothing gets persisted, but the credentials were accepted: let the
       // caller through rather than reporting a failure that didn't happen.
