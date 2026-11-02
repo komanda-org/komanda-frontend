@@ -28,21 +28,22 @@ export class ProfessionalPreferencesService {
       return null;
     }
 
-    const raw = localStorage.getItem(this.storageKey(email));
-    if (!raw) {
-      return null;
-    }
-
     try {
+      const key = this.storageKey(email);
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        return null;
+      }
+
       const value: unknown = JSON.parse(raw);
       if (!this.isPreferences(value)) {
-        localStorage.removeItem(this.storageKey(email));
+        localStorage.removeItem(key);
         return null;
       }
 
       return value;
-    } catch {
-      localStorage.removeItem(this.storageKey(email));
+    } catch (error: unknown) {
+      console.warn('Não foi possível ler as preferências profissionais neste dispositivo.', error);
       return null;
     }
   }

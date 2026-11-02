@@ -38,8 +38,12 @@ export class AuthService {
       return;
     }
 
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch (error: unknown) {
+      console.warn('Não foi possível limpar a sessão neste dispositivo.', error);
+    }
   }
 
   getUser(): AuthUser | null {
@@ -49,18 +53,14 @@ export class AuthService {
       return null;
     }
 
-    const raw = localStorage.getItem(USER_KEY);
-
-    if (!raw) {
-      return null;
-    }
-
     try {
-      return JSON.parse(raw) as AuthUser;
-    } catch {
+      const raw = localStorage.getItem(USER_KEY);
+      return raw ? (JSON.parse(raw) as AuthUser) : null;
+    } catch (error: unknown) {
       // A corrupt or outdated value would throw here on every change detection
       // pass — the template calls getUser() through user() — leaving a blank
-      // page with no reachable logout to clear it. Drop the session instead.
+      // page with no reachable logout to clear it. Return no session instead.
+      console.warn('Não foi possível ler a sessão neste dispositivo.', error);
       this.logout();
       return null;
     }
