@@ -59,7 +59,14 @@ export const routes: Routes = [
     component: AppLayout,
     children: [
       { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
-      { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
+      {
+        path: 'matches',
+        title: 'Minhas candidaturas · Komanda',
+        loadComponent: () =>
+          import('./features/applications/my-applications/my-applications').then(
+            (m) => m.MyApplications,
+          ),
+      },
       { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
       { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
