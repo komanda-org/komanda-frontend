@@ -3,8 +3,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { erroApiInterceptor } from './core/http/erro-api.interceptor';
-import { logHttpInterceptor } from './core/http/log-http.interceptor';
+import { apiErrorInterceptor } from './core/http/api-error.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -14,16 +13,10 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
 
     /**
-     * `withFetch()`: o XHR nao existe no Node — sem o fetch, toda requisicao
-     * feita durante o SSR falharia.
-     *
-     * Ordem dos interceptors = ordem de execucao na ida (na volta, o inverso):
-     * o log por ultimo, para ver a resposta crua antes do `erroApi` normalizar
-     * (e mascarar o que nao deve ser impresso). Ele se desliga em producao.
+     * `withFetch()` swaps the old XMLHttpRequest for the fetch API — not
+     * cosmetic: XHR doesn't exist in Node, so any request made during SSR
+     * would fail without it.
      */
-    provideHttpClient(
-      withFetch(),
-      withInterceptors([erroApiInterceptor, logHttpInterceptor]),
-    ),
+    provideHttpClient(withFetch(), withInterceptors([apiErrorInterceptor])),
   ],
 };

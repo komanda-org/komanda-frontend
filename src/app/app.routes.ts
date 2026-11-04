@@ -2,28 +2,9 @@ import { Routes } from '@angular/router';
 import { AppLayout } from './layout/app-layout/app-layout';
 import { PlaceholderPage } from './pages/placeholder/placeholder-page';
 
-/**
- * Tabela de rotas.
- *
- * O fluxo do prototipo vira tres rotas: a escolha de perfil e uma tela propria,
- * e cada perfil tem a sua. Nao sao "etapas do Router" — as etapas de dentro de
- * cada cadastro sao estado do componente, para que voltar uma etapa nao perca
- * o que ja foi digitado.
- *
- * CONCEITO: lazy loading
- * `loadComponent` recebe uma funcao que so roda quando a rota e visitada. O
- * `import()` dinamico faz o bundler separar aquele componente num arquivo
- * proprio — quem abre /registro nao baixa o codigo do cadastro do restaurante.
- *
- * O app autenticado mora dentro do `AppLayout` (header + sidebar fixos), que
- * envolve as rotas filhas abaixo. As telas de conta ficam de fora: sao tela
- * cheia, sem o chrome do app.
- */
 export const routes: Routes = [
   {
     path: '',
-    // pathMatch 'full' e obrigatorio aqui: sem ele, '' casaria com QUALQUER
-    // caminho (todo path comeca com string vazia) e nada mais seria alcancado.
     pathMatch: 'full',
     redirectTo: 'registro',
   },
@@ -31,13 +12,13 @@ export const routes: Routes = [
     path: 'registro',
     title: 'Criar conta · Komanda',
     loadComponent: () =>
-      import('./features/registro/escolha-perfil/escolha-perfil').then((m) => m.EscolhaPerfil),
+      import('./pages/registro/escolha-perfil/escolha-perfil').then((m) => m.EscolhaPerfil),
   },
   {
     path: 'registro/profissional',
     title: 'Criar conta · Profissional · Komanda',
     loadComponent: () =>
-      import('./features/registro/profissional/registro-profissional').then(
+      import('./pages/registro/profissional/registro-profissional').then(
         (m) => m.RegistroProfissional,
       ),
   },
@@ -45,14 +26,25 @@ export const routes: Routes = [
     path: 'registro/restaurante',
     title: 'Criar conta · Restaurante · Komanda',
     loadComponent: () =>
-      import('./features/registro/restaurante/registro-restaurante').then(
+      import('./pages/registro/restaurante/registro-restaurante').then(
         (m) => m.RegistroRestaurante,
       ),
   },
   {
     path: 'login',
     title: 'Entrar · Komanda',
-    loadComponent: () => import('./features/login/login').then((m) => m.Login),
+    loadComponent: () => import('./pages/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'auth/recuperar-senha',
+    title: 'Recuperar senha · Komanda',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    path: 'dashboard',
+    title: 'Dashboard · Komanda',
+    loadComponent: () => import('./pages/dashboard/dashboard-page').then((m) => m.DashboardPage),
   },
   {
     path: '',
@@ -73,7 +65,6 @@ export const routes: Routes = [
     ],
   },
   {
-    // Curinga sempre por ultimo: o Router para no primeiro que casar.
     path: '**',
     redirectTo: 'registro',
   },

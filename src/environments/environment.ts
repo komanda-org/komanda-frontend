@@ -1,14 +1,12 @@
 /**
- * Configuracao de DESENVOLVIMENTO.
+ * Development configuration.
  *
- * `apiUrl` e '/api' — caminho relativo, nao URL absoluta. Isso e proposital:
- * o dev-server do Angular intercepta tudo que comeca com /api e repassa para
- * http://localhost:3000 (ver proxy.conf.json na raiz).
- *
- * Para o browser a requisicao sai para a MESMA origem (localhost:4200),
- * entao o CORS nao entra em cena.
+ * `apiUrl` is '/api' — a relative path, not an absolute URL. The Angular dev
+ * server proxies everything under /api to http://localhost:3000 (see
+ * proxy.conf.json), so the browser sees same-origin requests and CORS never
+ * comes into play.
  */
 export const environment = {
-  producao: false,
+  production: false,
   apiUrl: '/api',
 };

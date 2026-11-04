@@ -10,3 +10,8 @@
 @use 'styles/tokens';
 @use 'styles/reset';
 @use 'styles/ui';
+
+app-root {
+    display: block;
+    min-height: 100dvh;
+}

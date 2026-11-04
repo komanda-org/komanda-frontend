@@ -16,20 +16,9 @@
         <div class="etapa">
           <p class="eyebrow">Leva menos de 2 minutos</p>
           <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
-            Quem está criando
-            <span class="titulo__realce">a conta?</span>
-          </h1>
-          <p class="subtitulo">Dados de quem vai gerenciar as vagas e o restaurante.</p>
-        </div>
-      }
-
-      @case (2) {
-        <div class="etapa">
-          <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
             Sobre o seu
             <span class="titulo__realce">Restaurante</span>
           </h1>
-          <p class="subtitulo">Essas informações aparecem nas suas vagas e no perfil público.</p>
         </div>
 
         <div class="painel__midia">
@@ -37,13 +26,27 @@
             <span> e nao <label>: o alvo de clique e o proprio quadrado do
             app-previa-imagem, que ja e um role="button" com teclado. Um
             <label for> aqui criaria um segundo alvo apontando para nada.
+
+            O painel NAO some no celular (ele empilha acima dos campos), entao
+            o upload continua alcancavel abaixo de 1024px sem campo duplicado.
           -->
           <span class="painel__midia-rotulo">Adicionar logo (opcional)</span>
           <app-previa-imagem
+            [valor]="form.controls.logoUrl.value"
             alt="Logo do restaurante"
             legendaVazia="Upload"
             (arquivoChange)="form.controls.logoUrl.setValue($event ?? '')"
           />
+        </div>
+      }
+
+      @case (2) {
+        <div class="etapa">
+          <h1 class="titulo titulo--painel" tabindex="-1" #tituloEtapa>
+            Contato e
+            <span class="titulo__realce">endereço</span>
+          </h1>
+          <p class="subtitulo">Como os candidatos falam com você e o que eles leem sobre a casa.</p>
         </div>
       }
     }
@@ -75,29 +78,61 @@
         @case (1) {
           <section class="etapa">
             <div class="etapa__conteudo">
-            <app-campo rotulo="E-mail corporativo" para="email" [controle]="form.controls.email">
+            <app-campo rotulo="CNPJ" para="cnpj" [controle]="form.controls.cnpj">
+              <input
+                id="cnpj"
+                class="entrada"
+                type="text"
+                inputmode="numeric"
+                placeholder="00.000.000/0000-00"
+                formControlName="cnpj"
+                (input)="aplicarCnpj($event)"
+              />
+            </app-campo>
+
+            <app-campo
+              rotulo="Nome fantasia"
+              para="restaurantName"
+              [controle]="form.controls.restaurantName"
+            >
+              <input
+                id="restaurantName"
+                class="entrada"
+                type="text"
+                autocomplete="organization"
+                placeholder="Ex: Bistrô Maison"
+                formControlName="restaurantName"
+              />
+            </app-campo>
+
+            <app-campo rotulo="E-mail profissional" para="email" [controle]="form.controls.email">
               <input
                 id="email"
                 class="entrada"
                 type="email"
                 inputmode="email"
                 autocomplete="email"
-                placeholder="contato@restaurante.com.br"
+                placeholder="contato@restaurante.com"
                 formControlName="email"
               />
             </app-campo>
 
-            <app-campo rotulo="Telefone / WhatsApp" para="phone" [controle]="form.controls.phone">
-              <input
-                id="phone"
+            <app-campo
+              rotulo="Tipo de cozinha"
+              para="cuisineType"
+              [controle]="form.controls.cuisineType"
+            >
+              <select
+                id="cuisineType"
                 class="entrada"
-                type="tel"
-                inputmode="tel"
-                autocomplete="tel"
-                placeholder="(11) 99999-9999"
-                formControlName="phone"
-                (input)="aplicarTelefone($event)"
-              />
+                [class.entrada--vazio]="!form.controls.cuisineType.value"
+                formControlName="cuisineType"
+              >
+                <option value="" disabled>Selecione a culinária</option>
+                @for (cozinha of cozinhas; track cozinha) {
+                  <option [value]="cozinha">{{ cozinha }}</option>
+                }
+              </select>
             </app-campo>
 
             <app-campo
@@ -146,6 +181,65 @@
 
               <app-forca-senha [senha]="form.controls.password.value" />
             </app-campo>
+
+            <app-campo
+              rotulo="Confirmar senha"
+              para="confirmPassword"
+              [controle]="form.controls.confirmPassword"
+            >
+              <input
+                id="confirmPassword"
+                class="entrada"
+                [type]="mostrarSenha() ? 'text' : 'password'"
+                autocomplete="new-password"
+                placeholder="Repita a senha"
+                formControlName="confirmPassword"
+              />
+            </app-campo>
+
+            <div class="termo">
+              <label class="termo__label" for="acceptTerms">
+                <input
+                  id="acceptTerms"
+                  type="checkbox"
+                  class="termo__checkbox"
+                  formControlName="acceptTerms"
+                />
+                <span class="termo__check" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12l4 4 9-9"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span class="termo__texto">
+                  Concordo com os
+                  <a
+                    href="https://komandaatelier.com/termos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="termo__link"
+                    >Termos de Serviço</a
+                  >
+                  e
+                  <a
+                    href="https://komandaatelier.com/privacidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="termo__link"
+                    >Política de Privacidade</a
+                  >
+                  do Komanda Atelier.
+                </span>
+              </label>
+              @if (form.controls.acceptTerms.touched && form.controls.acceptTerms.invalid) {
+                <span class="termo__erro" role="alert">Aceite os termos para continuar.</span>
+              }
+            </div>
             </div>
           </section>
         }
@@ -153,49 +247,17 @@
         @case (2) {
           <section class="etapa">
             <div class="etapa__conteudo">
-            <app-campo
-              rotulo="Nome fantasia"
-              para="restaurantName"
-              [controle]="form.controls.restaurantName"
-            >
+            <app-campo rotulo="Telefone / WhatsApp" para="phone" [controle]="form.controls.phone">
               <input
-                id="restaurantName"
+                id="phone"
                 class="entrada"
-                type="text"
-                autocomplete="organization"
-                placeholder="Ex: Bistrô Maison"
-                formControlName="restaurantName"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                placeholder="(11) 99999-9999"
+                formControlName="phone"
+                (input)="aplicarTelefone($event)"
               />
-            </app-campo>
-
-            <app-campo rotulo="CNPJ" para="cnpj" [controle]="form.controls.cnpj">
-              <input
-                id="cnpj"
-                class="entrada"
-                type="text"
-                inputmode="numeric"
-                placeholder="00.000.000/0000-00"
-                formControlName="cnpj"
-                (input)="aplicarCnpj($event)"
-              />
-            </app-campo>
-
-            <app-campo
-              rotulo="Tipo de cozinha"
-              para="cuisineType"
-              [controle]="form.controls.cuisineType"
-            >
-              <select
-                id="cuisineType"
-                class="entrada"
-                [class.entrada--vazio]="!form.controls.cuisineType.value"
-                formControlName="cuisineType"
-              >
-                <option value="" disabled>Selecione a culinária</option>
-                @for (cozinha of cozinhas; track cozinha) {
-                  <option [value]="cozinha">{{ cozinha }}</option>
-                }
-              </select>
             </app-campo>
 
             <app-campo rotulo="Endereço completo" para="address" [controle]="form.controls.address">
