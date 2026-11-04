@@ -24,7 +24,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   template: `
     <div class="tags" [class.tags--desabilitado]="desabilitado()">
       @for (tag of tags(); track tag) {
-        <span class="tags__item">
+        <span class="tags__item k-tag">
           {{ tag }}
           <button
             type="button"
@@ -86,18 +86,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       opacity: 0.5;
     }
 
-    /* A etiqueta do prototipo: pilula escura de contorno, texto claro e o x. */
+    /* Visual vem da .k-tag global; aqui so o respiro menor a direita, por causa do x. */
     .tags__item {
-      display: inline-flex;
-      gap: var(--k-s-1);
-      align-items: center;
       padding: 3px var(--k-s-1) 3px var(--k-s-3);
-      font-size: var(--k-t-xs);
-      font-weight: 500;
-      color: var(--k-texto);
-      background: var(--k-superficie-2);
-      border: 1px solid var(--k-linha-forte);
-      border-radius: var(--k-raio-pilula);
     }
 
     .tags__remover {

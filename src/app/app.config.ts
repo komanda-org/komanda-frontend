@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { apiErrorInterceptor } from './core/http/api-error.interceptor';
+import { authInterceptor } from './core/http/auth.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -17,6 +18,6 @@ export const appConfig: ApplicationConfig = {
      * cosmetic: XHR doesn't exist in Node, so any request made during SSR
      * would fail without it.
      */
-    provideHttpClient(withFetch(), withInterceptors([apiErrorInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, apiErrorInterceptor])),
   ],
 };

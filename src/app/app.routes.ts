@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 import { AppLayout } from './layout/app-layout/app-layout';
 import { PlaceholderPage } from './pages/placeholder/placeholder-page';
 
@@ -53,7 +54,15 @@ export const routes: Routes = [
       { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
       { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
       { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
-      { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
+      {
+        path: 'perfil',
+        title: 'Meu perfil · Komanda',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/profile/professional-profile/professional-profile').then(
+            (m) => m.ProfessionalProfilePage,
+          ),
+      },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],
   },

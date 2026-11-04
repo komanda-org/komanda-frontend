@@ -42,6 +42,18 @@ export class AuthService {
     localStorage.removeItem(USER_KEY);
   }
 
+  getToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+
+    try {
+      return localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }
+
   getUser(): AuthUser | null {
     // localStorage doesn't exist during SSR: the page renders on the server
     // before ever reaching the browser.
