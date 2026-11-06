@@ -19,6 +19,10 @@
   position: relative;
   flex: 1;
   min-width: 0;
+  /* No mobile o shell vira coluna e este painel passa a crescer com o
+     conteudo: sem isto, chat cheio estoura o shell e o compositor sai
+     do lugar em vez de a lista rolar. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

@@ -28,8 +28,9 @@
 
   .btn-back {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+    /* 44px: alvo de toque minimo no celular */
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -95,6 +96,21 @@
 
   .chat-header-actions {
     flex-shrink: 0;
+  }
+
+  .user-avatar-small {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--k-ouro-fosco);
+    /* --k-fundo sobre o fosco dava 1.7:1 */
+    color: var(--k-ouro);
+    font-family: var(--k-sans);
+    font-size: var(--k-t-xs);
+    font-weight: 600;
   }
 }
 
@@ -234,7 +250,8 @@
   height: 28px;
   border-radius: 50%;
   background-color: var(--k-ouro-fosco);
-  color: var(--k-fundo);
+  /* --k-fundo sobre o fosco dava 1.7:1: as iniciais ficavam ilegiveis. */
+  color: var(--k-ouro);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,7 +266,9 @@
   gap: 0.125rem;
   padding: 0.5rem 1rem;
   border-radius: var(--k-raio-lg);
-  max-width: 80%;
+  /* 80% so no celular: em tela larga o balao passava de 90 caracteres por
+     linha e o olho perdia o retorno. */
+  max-width: min(80%, 34rem);
   box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
   border: 1px solid transparent;
 
@@ -263,21 +282,28 @@
     white-space: pre-wrap;
   }
 
-  .message-time {
-    align-self: flex-end;
-    font-family: var(--k-sans);
-    font-size: 0.6875rem;
-    color: var(--k-texto-placeholder);
+  /* Rodape do balao: hora e visto alinhados a direita, numa linha. */
+  .message-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
     margin-top: 0.125rem;
+  }
+
+  .message-time {
+    font-family: var(--k-sans);
+    font-size: var(--k-t-xs);
+    font-variant-numeric: tabular-nums;
+    /* --k-texto-placeholder passa 4.5:1 so sobre --k-fundo; sobre a superficie
+       do balao recebido cai para 4.1:1, entao o rodape usa o tom fraco. */
+    color: var(--k-texto-fraco);
   }
 
   .message-check {
     display: inline-flex;
     align-items: center;
-    font-size: 0.6875rem;
-    color: var(--k-texto-placeholder);
-    margin-top: 0.125rem;
-    align-self: flex-end;
+    color: var(--k-texto-fraco);
 
     svg {
       display: block;
@@ -293,12 +319,10 @@
       color: var(--k-fundo);
     }
 
-    .message-time {
-      color: rgb(19 19 19 / 60%);
-    }
-
+    /* 70% de --k-fundo sobre o dourado da 5.6:1; em 60% ficava em 4.2:1. */
+    .message-time,
     .message-check {
-      color: rgb(19 19 19 / 50%);
+      color: rgb(19 19 19 / 70%);
     }
   }
 
@@ -452,10 +476,6 @@
 
     .messages-container {
       padding: 0.75rem 1rem;
-    }
-
-    .message-wrapper {
-      max-width: 90%;
     }
 
     .chat-footer {
