@@ -48,7 +48,6 @@ const jobs: Job[] = [
     restaurantId: 'restaurant-3',
     restaurant: { restaurantName: 'Burguer House', logoUrl: null },
     createdAt: '2026-10-03T12:00:00.000Z',
-    hasApplied: true,
   },
 ];
 
@@ -77,9 +76,19 @@ describe('JobsFeed', () => {
   afterEach(() => http.verify());
 
   function loadJobs(data: JobsResponse = response): void {
-    const request = http.expectOne('/api/jobs');
-    expect(request.request.method).toBe('GET');
-    request.flush(data);
+    const jobsRequest = http.expectOne('/api/jobs');
+    expect(jobsRequest.request.method).toBe('GET');
+    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    expect(applicationsRequest.request.method).toBe('GET');
+    jobsRequest.flush(data);
+    applicationsRequest.flush([
+      {
+        id: 'application-existing',
+        jobId: 'job-applied',
+        professionalId: 'professional-1',
+        createdAt: '2026-10-03T12:00:00.000Z',
+      },
+    ]);
     fixture.detectChanges();
   }
 
@@ -198,7 +207,10 @@ describe('JobsFeed', () => {
   });
 
   it('shows a retry action without exposing an HTTP status on load failure', () => {
-    http.expectOne('/api/jobs').flush(
+    const jobsRequest = http.expectOne('/api/jobs');
+    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    applicationsRequest.flush([]);
+    jobsRequest.flush(
       { message: 'Internal Server Error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

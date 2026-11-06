@@ -12,4 +12,8 @@ export class ApplicationsService {
   apply(jobId: string): Observable<Application> {
     return this.http.post<Application>(`${this.base}/jobs/${jobId}/applications`, {});
   }
+
+  listMine(): Observable<Application[]> {
+    return this.http.get<Application[]>(`${this.base}/users/me/applications`);
+  }
 }

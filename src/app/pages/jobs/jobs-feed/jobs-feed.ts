@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Component, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { isApiError } from '../../../core/models/api-error.model';
 import { Job } from '../../../core/models/jobs.model';
 import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
@@ -70,23 +71,24 @@ export class JobsFeed {
   protected load(): void {
     this.loading.set(true);
     this.loadError.set(null);
-    this.jobsService
-      .list()
+    forkJoin({
+      jobs: this.jobsService.list(),
+      applications: this.applicationsService.listMine(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
-          this.jobs.set(response.data);
-          this.totalJobs.set(response.total);
+        next: ({ jobs, applications }) => {
+          this.jobs.set(jobs.data);
+          this.totalJobs.set(jobs.total);
           this.loading.set(false);
-          this.appliedIds.update((ids) => {
-            const updated = new Set(ids);
-            response.data.forEach((job) => {
-              if (job.hasApplied || job.application) {
-                updated.add(job.id);
-              }
-            });
-            return updated;
-          });
+          this.appliedIds.set(
+            new Set([
+              ...applications.map((application) => application.jobId),
+              ...jobs.data
+                .filter((job) => job.hasApplied || job.application)
+                .map((job) => job.id),
+            ]),
+          );
         },
         error: (error: unknown) => {
           this.loading.set(false);
