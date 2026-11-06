@@ -144,6 +144,7 @@ export class MessagingService {
 
     this.socket.on('chat:message', (message) => {
       this.upsertMessage(message);
+      this.markUnread(message);
     });
 
     this.socket.on('chat:error', (error) => {
@@ -210,6 +211,7 @@ export class MessagingService {
         if (response.ok && response.messages) {
           this._messages.set(response.messages);
           this._hasMore.set(response.hasMore ?? false);
+          this.updateChat(jobId, { unreadCount: 0 });
           resolve({ messages: response.messages, hasMore: response.hasMore ?? false });
         } else {
           this._error.set(response.error?.message || 'Erro ao entrar no chat');
@@ -312,6 +314,20 @@ export class MessagingService {
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     });
+  }
+
+  // Badge da lista: mensagem de outro em chat aberto nao conta; em chat
+  // fechado, conta na hora. Ceiling: volta a 0 no reload (sem leitura
+  // persistida no backend).
+  private markUnread(message: MessageResponse): void {
+    if (message.senderId === this.authService.getUser()?.id) return;
+    if (message.jobId === this._currentJobId()) return;
+
+    this._chats.update((chats) =>
+      chats.map((c) =>
+        c.jobId === message.jobId ? { ...c, unreadCount: c.unreadCount + 1 } : c,
+      ),
+    );
   }
 
   clearError(): void {

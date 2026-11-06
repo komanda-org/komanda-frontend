@@ -149,6 +149,40 @@
   color: var(--k-fundo);
 }
 
+.chat-avatar-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.online-dot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--k-superficie-2);
+  border-radius: 50%;
+  background-color: var(--k-ok);
+}
+
+/* o anel acompanha o fundo do cartao, senao aparece costura no hover */
+.chat-item:hover .online-dot,
+.chat-item.ativa .online-dot {
+  border-color: var(--k-linha);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .chat-info {
   display: flex;
   flex: 1;
@@ -178,7 +212,8 @@
   flex-shrink: 0;
   font-family: var(--k-sans);
   font-size: var(--k-t-2xs);
-  color: var(--k-texto-placeholder);
+  /* placeholder sobre a superficie do cartao ficava em 4.1:1 */
+  color: var(--k-texto-fraco);
   white-space: nowrap;
 
   &.hoje {

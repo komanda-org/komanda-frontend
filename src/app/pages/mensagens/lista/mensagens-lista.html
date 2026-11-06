@@ -51,7 +51,17 @@
             [class.nao-lida]="chat.unreadCount > 0"
             [routerLink]="['/mensagens', chat.jobId]"
           >
-            <span class="chat-avatar" aria-hidden="true">{{ getInitials(chat.otherPartyName) }}</span>
+            <span class="chat-avatar">
+              @if (chat.otherPartyPhoto) {
+                <img class="chat-avatar-photo" [src]="chat.otherPartyPhoto" alt="" aria-hidden="true" />
+              } @else {
+                <span aria-hidden="true">{{ getInitials(chat.otherPartyName) }}</span>
+              }
+              <!-- ponytail: presenca so chega para a conversa aberta; bolinha na lista toda exige evento por chat no backend -->
+              @if (isActive(chat) && messagingService.otherPartyOnline()) {
+                <span class="online-dot"><span class="sr-only">Online</span></span>
+              }
+            </span>
             <span class="chat-info">
               <span class="chat-header">
                 <span class="chat-title">{{ chat.otherPartyName }}</span>

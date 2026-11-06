@@ -14,6 +14,7 @@ export interface ChatListItem {
   jobId: string;
   jobTitle: string;
   otherPartyName: string;
+  otherPartyPhoto: string | null;
   otherPartyRole: 'PROFISSIONAL' | 'RESTAURANTE';
   lastMessageContent?: string;
   lastMessageTime?: Date | string;
