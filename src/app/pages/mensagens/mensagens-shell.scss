@@ -1,0 +1,81 @@
+/* O .main tem padding; a tela de mensagens ocupa a largura inteira. */
+.mensagens-shell {
+  display: flex;
+  height: calc(100dvh - var(--k-header-h));
+  margin: -32px;
+  background-color: var(--k-fundo);
+}
+
+.painel-lista {
+  flex-shrink: 0;
+  width: clamp(300px, 28vw, 440px);
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--k-bancada);
+  border-right: 1px solid var(--k-linha);
+}
+
+.painel-detalhe {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  /* No mobile o shell vira coluna e este painel passa a crescer com o
+     conteudo: sem isto, chat cheio estoura o shell e o compositor sai
+     do lugar em vez de a lista rolar. */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.selecionar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--k-texto-placeholder);
+
+  h2 {
+    margin: 0.5rem 0 0;
+    font-family: var(--k-sans);
+    font-size: var(--k-t-sm);
+    font-weight: 500;
+    color: var(--k-texto);
+  }
+
+  p {
+    margin: 0;
+    max-width: 320px;
+    font-size: var(--k-t-xs);
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 768px) {
+  .mensagens-shell {
+    flex-direction: column;
+  }
+
+  .painel-lista {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--k-linha);
+  }
+
+  .painel-detalhe {
+    display: none;
+  }
+
+  .mensagens-shell.com-chat {
+    .painel-lista {
+      display: none;
+    }
+
+    .painel-detalhe {
+      display: flex;
+    }
+  }
+}
