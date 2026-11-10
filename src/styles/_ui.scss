@@ -752,6 +752,46 @@ select.entrada option {
   margin: var(--k-s-1) 0 0;
 }
 
+/* ---------------------------------------------------------------- Feedback */
+
+/* Estado de tela inteira — carregando, vazio, erro — com uma acao opcional
+   ("Tentar de novo", "Ver vagas"). Mesmo bloco em candidaturas e perfis. */
+.k-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  margin: 0;
+  font-family: var(--k-sans);
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+
+  p {
+    margin: 0;
+  }
+}
+
+/* Serve em <button> e em <a>: por isso inline-flex e sem sublinhado. */
+.k-feedback__acao {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #3c2f00;
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+}
+
 /* ------------------------------------------------------------------ Secoes */
 
 .secao {
