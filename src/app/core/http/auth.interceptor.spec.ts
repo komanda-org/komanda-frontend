@@ -35,7 +35,12 @@ describe('authInterceptor', () => {
   });
 
   it('never sends the token outside the API', () => {
-    const urls = ['/icons/star.svg', '/apiary', 'https://cdn.example.com/x.json', '//cdn.example.com/y.json'];
+    const urls = [
+      '/icons/star.svg',
+      '/apiary',
+      'https://cdn.example.com/x.json',
+      '//cdn.example.com/y.json',
+    ];
     urls.forEach((url) => http.get(url).subscribe());
     for (const url of urls) {
       const req = backend.expectOne(url);
@@ -54,7 +59,9 @@ describe('authInterceptor', () => {
 
   it('drops the session when the API rejects the token', () => {
     http.get('/api/users/me').subscribe({ error: () => undefined });
-    backend.expectOne('/api/users/me').flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    backend
+      .expectOne('/api/users/me')
+      .flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
 
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
   });

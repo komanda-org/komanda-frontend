@@ -94,4 +94,16 @@ export class AuthService {
       // caller through rather than reporting a failure that didn't happen.
     }
   }
+
+  getToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  /** Verdadeiro apenas enquanto houver um token armazenado. */
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
 }

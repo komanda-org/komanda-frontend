@@ -53,7 +53,18 @@ export const routes: Routes = [
     children: [
       { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
       { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
-      { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
+      {
+        path: 'mensagens',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Mensagens · Komanda',
+      },
+      {
+        path: 'mensagens/:jobId',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Chat · Komanda',
+      },
       {
         path: 'perfil',
         title: 'Meu perfil · Komanda',
