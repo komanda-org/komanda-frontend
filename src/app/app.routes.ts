@@ -59,7 +59,18 @@ export const routes: Routes = [
             (m) => m.MyApplications,
           ),
       },
-      { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
+      {
+        path: 'mensagens',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Mensagens · Komanda',
+      },
+      {
+        path: 'mensagens/:jobId',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Chat · Komanda',
+      },
       { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],

@@ -1,0 +1,31 @@
+<div class="mensagens-shell" [class.com-chat]="jobId()">
+  <aside class="painel-lista">
+    <app-mensagens-lista />
+  </aside>
+
+  <section class="painel-detalhe">
+    @if (!jobId()) {
+      <div class="selecionar">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          width="44"
+          height="44"
+          aria-hidden="true"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <h2>Selecione uma conversa</h2>
+        <p>Escolha uma mensagem na lista lateral para visualizar os detalhes ou responder.</p>
+      </div>
+    }
+
+    @if (jobId()) {
+      <app-mensagens-chat />
+    }
+  </section>
+</div>
