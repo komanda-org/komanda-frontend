@@ -119,6 +119,33 @@
   margin-top: 0.75rem;
 }
 
+.filter-options {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.filter-control {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-2xs);
+
+  input,
+  select {
+    min-width: 10rem;
+    min-height: 36px;
+    padding: 0.35rem 0.6rem;
+    color: var(--k-texto);
+    background: var(--k-campo);
+    border: 1px solid var(--k-linha);
+    border-radius: var(--k-raio);
+    font: inherit;
+  }
+}
+
 .chip {
   min-height: 32px;
   padding: 0.35rem 0.9rem;
@@ -144,6 +171,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
+}
+
+.load-more {
+  display: block;
+  min-height: 42px;
+  margin: 1.5rem auto;
+  padding: 0.5rem 1rem;
+  color: var(--k-ouro);
+  background: transparent;
+  border: 1px solid var(--k-ouro-escuro);
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-xs);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.65;
+  }
 }
 
 .job-card {

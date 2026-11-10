@@ -6,6 +6,7 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Application, Job, JobsResponse } from '../../../core/models/jobs.model';
+import { LocationService } from '../../../core/services/location.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 import { JobsFeed } from './jobs-feed';
 
@@ -58,6 +59,13 @@ describe('JobsFeed', () => {
   const response: JobsResponse = { data: jobs, total: 12, skip: 0, take: 20 };
 
   beforeEach(async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+      clear: () => storage.clear(),
+    });
     localStorage.removeItem('komanda.user');
     localStorage.removeItem('komanda.professionalPreferences.joao@example.com');
     await TestBed.configureTestingModule({
@@ -65,6 +73,14 @@ describe('JobsFeed', () => {
       providers: [
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
+        {
+          provide: LocationService,
+          useValue: {
+            getUserCoordinates: vi.fn().mockResolvedValue(null),
+            getRestaurantCoordinates: vi.fn().mockResolvedValue(null),
+            calculateDistanceKm: vi.fn().mockReturnValue(null),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -73,11 +89,16 @@ describe('JobsFeed', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.verify();
+    vi.unstubAllGlobals();
+  });
 
   function loadJobs(data: JobsResponse = response): void {
-    const jobsRequest = http.expectOne('/api/jobs');
+    const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
     expect(jobsRequest.request.method).toBe('GET');
+    expect(jobsRequest.request.params.get('take')).toBe('20');
+    expect(jobsRequest.request.params.get('skip')).toBe('0');
     const applicationsRequest = http.expectOne('/api/users/me/applications');
     expect(applicationsRequest.request.method).toBe('GET');
     jobsRequest.flush(data);
@@ -102,6 +123,33 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.textContent).toContain('Urgente');
   });
 
+  it('loads the next server page and appends its jobs', () => {
+    const firstPage = Array.from({ length: 20 }, (_, index) => ({
+      ...jobs[index % jobs.length],
+      id: `page-${index}`,
+    }));
+    loadJobs({ data: firstPage, total: 25, skip: 0, take: 20 });
+
+    fixture.nativeElement.querySelector('.load-more').click();
+    const jobsRequest = http.expectOne(
+      (request) => request.url === '/api/jobs/search' && request.params.get('skip') === '20',
+    );
+    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    jobsRequest.flush({
+      data: Array.from({ length: 5 }, (_, index) => ({
+        ...jobs[index % jobs.length],
+        id: `page-${index + 20}`,
+      })),
+      total: 25,
+      skip: 20,
+      take: 20,
+    });
+    applicationsRequest.flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(25);
+  });
+
   it('filters by job title or restaurant after submitting the search', () => {
     loadJobs();
 
@@ -111,6 +159,12 @@ describe('JobsFeed', () => {
     fixture.nativeElement.querySelector('form').dispatchEvent(
       new Event('submit', { bubbles: true, cancelable: true }),
     );
+    const jobsRequest = http.expectOne(
+      (request) => request.url === '/api/jobs/search' && request.params.get('query') === 'napoli',
+    );
+    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    jobsRequest.flush({ data: [jobs[1]], total: 1, skip: 0, take: 20 });
+    applicationsRequest.flush([]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
@@ -129,12 +183,40 @@ describe('JobsFeed', () => {
       return;
     }
     cltChip.click();
+    const cltRequest = http.expectOne(
+      (request) =>
+        request.url === '/api/jobs/search' && request.params.get('contractType') === 'CLT',
+    );
+    const cltApplicationsRequest = http.expectOne('/api/users/me/applications');
+    cltRequest.flush({ data: [jobs[0], jobs[2]], total: 2, skip: 0, take: 20 });
+    cltApplicationsRequest.flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(2);
 
     cltChip.click();
+    const allJobsRequest = http.expectOne(
+      (request) => request.url === '/api/jobs/search' && !request.params.has('contractType'),
+    );
+    const allApplicationsRequest = http.expectOne('/api/users/me/applications');
+    allJobsRequest.flush(response);
+    allApplicationsRequest.flush([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
+  });
+
+  it('does not require a contract preference to match Para você', () => {
+    localStorage.setItem(
+      'komanda.user',
+      JSON.stringify({ id: 'professional-1', role: 'PROFISSIONAL', email: 'joao@example.com' }),
+    );
+    TestBed.inject(ProfessionalPreferencesService).saveForEmail('joao@example.com', {
+      mainRole: 'Cozinheiro',
+      interestedRoles: [],
+    });
+
+    loadJobs({ ...response, data: [{ ...jobs[0], contractType: 'PJ' }] });
+
+    expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
   });
 
   it('filters Para você by the professional role and contract preference', () => {
@@ -207,7 +289,7 @@ describe('JobsFeed', () => {
   });
 
   it('shows a retry action without exposing an HTTP status on load failure', () => {
-    const jobsRequest = http.expectOne('/api/jobs');
+    const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
     const applicationsRequest = http.expectOne('/api/users/me/applications');
     applicationsRequest.flush([]);
     jobsRequest.flush(

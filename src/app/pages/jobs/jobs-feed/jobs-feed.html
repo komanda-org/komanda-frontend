@@ -63,6 +63,62 @@
       >
         PJ
       </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--active]="activeFilter() === 'FREELANCER'"
+        [attr.aria-pressed]="activeFilter() === 'FREELANCER'"
+        (click)="selectFilter('FREELANCER')"
+      >
+        Freelancer
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--active]="activeFilter() === 'ESTAGIO'"
+        [attr.aria-pressed]="activeFilter() === 'ESTAGIO'"
+        (click)="selectFilter('ESTAGIO')"
+      >
+        Estágio
+      </button>
+      <div class="filter-options">
+        <label class="filter-control">
+          <span>Turno</span>
+          <select
+            name="jobShift"
+            [ngModel]="selectedShift() ?? ''"
+            (ngModelChange)="setShift($event)"
+          >
+            <option value="">Todos</option>
+            <option value="MANHA">Manhã</option>
+            <option value="TARDE">Tarde</option>
+            <option value="NOITE">Noite</option>
+            <option value="MADRUGADA">Madrugada</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          <span>Salário mínimo</span>
+          <input
+            type="number"
+            name="minSalary"
+            min="0"
+            step="100"
+            [ngModel]="minSalary()"
+            (ngModelChange)="setMinSalary($event)"
+          />
+        </label>
+        <label class="filter-control">
+          <span>Distância máxima (km)</span>
+          <input
+            type="number"
+            name="maxDistance"
+            min="0"
+            step="1"
+            [ngModel]="maxDistanceKm()"
+            (ngModelChange)="setMaxDistance($event)"
+          />
+        </label>
+      </div>
     </nav>
   }
 
@@ -86,13 +142,29 @@
       </span>
       <h2>Nenhuma vaga encontrada</h2>
       <p>Tente ajustar a busca ou os filtros para ver mais oportunidades.</p>
-      @if (submittedQuery() || activeFilter() !== 'para-voce') {
+      @if (
+        submittedQuery() ||
+        activeFilter() !== 'para-voce' ||
+        selectedShift() ||
+        minSalary() !== null ||
+        maxDistanceKm() !== null
+      ) {
         <button
           type="button"
           class="retry-button"
-          (click)="searchInput = ''; search(); activeFilter.set('para-voce')"
+          (click)="clearFilters()"
         >
           Limpar filtros
+        </button>
+      }
+      @if (jobs().length < totalJobs()) {
+        <button
+          class="load-more"
+          type="button"
+          [disabled]="loadingMore()"
+          (click)="loadMore()"
+        >
+          {{ loadingMore() ? 'Carregando...' : 'Carregar mais vagas' }}
         </button>
       }
     </div>
@@ -162,5 +234,15 @@
         </article>
       }
     </div>
+    @if (jobs().length < totalJobs()) {
+      <button
+        class="load-more"
+        type="button"
+        [disabled]="loadingMore()"
+        (click)="loadMore()"
+      >
+        {{ loadingMore() ? 'Carregando...' : 'Carregar mais vagas' }}
+      </button>
+    }
   }
 </section>

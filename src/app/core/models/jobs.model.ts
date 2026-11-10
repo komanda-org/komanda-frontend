@@ -1,8 +1,12 @@
-export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO' | 'EVENTO';
+export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO';
 
 export interface JobRestaurant {
   restaurantName: string;
   logoUrl: string | null;
+  address?: string;
+  zipCode?: string;
+  cuisineType?: string;
+  averageRating?: number | null;
 }
 
 export interface Job {

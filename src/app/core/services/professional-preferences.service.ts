@@ -62,8 +62,11 @@ export class ProfessionalPreferencesService {
       typeof preferences.mainRole === 'string' &&
       Array.isArray(preferences.interestedRoles) &&
       preferences.interestedRoles.every((role) => typeof role === 'string') &&
-      (preferences.contractType === 'CLT' ||
+      (preferences.contractType === undefined ||
+        preferences.contractType === 'CLT' ||
         preferences.contractType === 'PJ' ||
+        preferences.contractType === 'FREELANCER' ||
+        preferences.contractType === 'ESTAGIO' ||
         preferences.contractType === 'Freelancer')
     );
   }
