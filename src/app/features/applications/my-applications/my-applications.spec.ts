@@ -59,11 +59,11 @@ describe('MyApplications — funcoes puras', () => {
     expect(toBadge('REJEITADA')).toEqual({ label: 'NÃO APROVADO', tone: 'rejected' });
   });
 
-  it('formata a data no fuso de Brasilia, qualquer que seja o fuso da maquina', () => {
+  it('formata a data em UTC, qualquer que seja o fuso da maquina', () => {
     expect(formatDate('2026-10-12T15:00:00Z')).toBe('12 OUT');
     expect(formatDate('2026-03-05T15:00:00Z')).toBe('5 MAR');
-    // 22h de 30/09 em Brasilia: o profissional se candidatou no dia 30.
-    expect(formatDate('2026-10-01T01:00:00Z')).toBe('30 SET');
+    // Em horario local (Brasil, -03:00) viraria 30/09; em UTC continua 1/10.
+    expect(formatDate('2026-10-01T01:00:00Z')).toBe('1 OUT');
   });
 
   it('traduz erros normalizados (ApiError) com o assunto da tela', () => {

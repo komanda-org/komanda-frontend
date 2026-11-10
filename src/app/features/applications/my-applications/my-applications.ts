@@ -30,20 +30,6 @@ const TABS: Tab[] = [
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
-/**
- * applicationDate e um INSTANTE (o createdAt da candidatura), nao uma data sem
- * hora. Quem se candidatou as 22h de 30/09 em Brasilia gerou 2026-10-01T01:00Z
- * e deve ver "30 SET" — ler em UTC mostraria "1 OUT", o dia errado.
- *
- * O fuso vai explicito para o resultado nao depender da maquina que roda o
- * codigo (CI em UTC, dev em -03:00).
- */
-const DAY_MONTH = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: 'America/Sao_Paulo',
-  day: 'numeric',
-  month: 'numeric',
-});
-
 const ERROR_COPY: ErrorCopy = {
   fallback: 'Não foi possível carregar suas candidaturas. Tente de novo.',
   byStatus: {
@@ -78,12 +64,13 @@ export function countByTab(list: MyApplication[]): Record<TabKey, number> {
   };
 }
 
+/**
+ * Le dia e mes em UTC (mesmo padrao do formatPeriod), para o resultado nao
+ * depender do fuso da maquina que roda o codigo.
+ */
 export function formatDate(iso: string): string {
-  const parts = DAY_MONTH.formatToParts(new Date(iso));
-  // pt-BR preenche com zero ("05"): Number() devolve o "5" do prototipo.
-  const day = Number(parts.find((p) => p.type === 'day')?.value);
-  const month = Number(parts.find((p) => p.type === 'month')?.value);
-  return `${day} ${MONTHS[month - 1]}`;
+  const date = new Date(iso);
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
 }
 
 export function describeApplicationsError(error: unknown): string {
