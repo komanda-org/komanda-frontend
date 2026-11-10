@@ -95,13 +95,6 @@ export class AuthService {
     }
   }
 
-  getToken(): string | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
-    }
-    return localStorage.getItem(TOKEN_KEY);
-  }
-
   /** Verdadeiro apenas enquanto houver um token armazenado. */
   isAuthenticated(): boolean {
     return !!this.getToken();
