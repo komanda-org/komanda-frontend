@@ -17,13 +17,13 @@
 
   @switch (state()) {
     @case ('loading') {
-      <p class="feedback" role="status" data-testid="loading">Carregando suas candidaturas…</p>
+      <p class="k-feedback" role="status" data-testid="loading">Carregando suas candidaturas…</p>
     }
 
     @case ('error') {
-      <div class="feedback" role="alert" data-testid="error">
+      <div class="k-feedback" role="alert" data-testid="error">
         <p>{{ errorMessage() }}</p>
-        <button type="button" class="action" data-testid="retry-btn" (click)="load()">
+        <button type="button" class="k-feedback__acao" data-testid="retry-btn" (click)="load()">
           Tentar de novo
         </button>
       </div>
@@ -31,9 +31,9 @@
 
     @case ('ready') {
       @if (total() === 0) {
-        <div class="feedback" data-testid="empty">
+        <div class="k-feedback" data-testid="empty">
           <p>Você ainda não se candidatou a nenhuma vaga. Encontre a próxima oportunidade.</p>
-          <a class="action" routerLink="/vagas" data-testid="empty-cta">Ver vagas</a>
+          <a class="k-feedback__acao" routerLink="/vagas" data-testid="empty-cta">Ver vagas</a>
         </div>
       } @else {
         <div class="tabs" role="tablist" aria-label="Filtrar candidaturas por situação">
@@ -53,26 +53,20 @@
         </div>
 
         @if (visible().length === 0) {
-          <p class="feedback" data-testid="tab-empty">Nenhuma candidatura nesta situação.</p>
+          <p class="k-feedback" data-testid="tab-empty">Nenhuma candidatura nesta situação.</p>
         } @else {
           <ul class="list" role="tabpanel">
-            @for (app of visible(); track app.id) {
+            @for (app of visible(); track app.applicationId) {
               @let badge = toBadge(app.status);
               <li class="card card--{{ badge.tone }}" data-testid="application-card">
                 <div class="card-top">
-                  @if (app.job.restaurant.logoUrl) {
-                    <img class="logo" [src]="app.job.restaurant.logoUrl" alt="" width="44" height="44" />
-                  } @else {
-                    <span class="logo logo--fallback" aria-hidden="true">
-                      {{ initial(app.job.restaurant.restaurantName) }}
-                    </span>
-                  }
+                  <span class="logo" aria-hidden="true">{{ initials(app.restaurant.name, 1) }}</span>
 
                   <div class="info">
                     <p class="restaurant" data-testid="card-restaurant">
-                      {{ app.job.restaurant.restaurantName }}
+                      {{ app.restaurant.name }}
                     </p>
-                    <p class="role" [class.role--struck]="app.status === 'REJECTED'" data-testid="card-role">
+                    <p class="role" [class.role--struck]="badge.tone === 'rejected'" data-testid="card-role">
                       {{ app.job.title }}
                     </p>
                   </div>
@@ -86,13 +80,13 @@
                         </svg>
                       }
                     </span>
-                    <time class="date" [attr.datetime]="app.createdAt" data-testid="card-date">
-                      {{ formatDate(app.createdAt) }}
+                    <time class="date" [attr.datetime]="app.applicationDate" data-testid="card-date">
+                      {{ formatDate(app.applicationDate) }}
                     </time>
                   </div>
                 </div>
 
-                @if (app.status === 'MATCHED') {
+                @if (badge.tone === 'match') {
                   <button type="button" class="chat-btn" data-testid="open-chat-btn" (click)="openChat(app)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l.9-4.6A8 8 0 1 1 21 12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
@@ -101,7 +95,7 @@
                   </button>
                 }
 
-                @if (app.status === 'PENDING') {
+                @if (badge.tone === 'pending') {
                   <p class="waiting" data-testid="card-waiting">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" />

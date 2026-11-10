@@ -1,20 +1,35 @@
-// TODO API: valores de status e formato conferidos com o KMD-34 quando o endpoint estiver no ar.
-export type ApplicationStatus = 'PENDING' | 'MATCHED' | 'REJECTED';
+/**
+ * Contrato de GET /users/me/applications (komanda-api: MyApplicationsController,
+ * dto/my-application-response.dto.ts). Os nomes espelham a API: nao traduza
+ * aqui, traduza na tela (toBadge).
+ */
 
-export interface ApplicationRestaurant {
-  restaurantName: string;
-  logoUrl: string | null;
-}
+/** Enum CandidaturaStatus do Prisma. */
+export type ApplicationStatus = 'PENDENTE' | 'APROVADA' | 'REJEITADA';
 
-export interface ApplicationJob {
+export interface MyApplicationJob {
   id: string;
   title: string;
-  restaurant: ApplicationRestaurant;
+}
+
+export interface MyApplicationRestaurant {
+  id: string;
+  name: string;
 }
 
 export interface MyApplication {
-  id: string;
+  applicationId: string;
   status: ApplicationStatus;
-  createdAt: string;
-  job: ApplicationJob;
+  /** ISO 8601 — o `Date` do Nest vira string no JSON. */
+  applicationDate: string;
+  job: MyApplicationJob;
+  restaurant: MyApplicationRestaurant;
+}
+
+/** A resposta e paginada: a lista vem em `data`, nao na raiz. */
+export interface MyApplicationsPage {
+  data: MyApplication[];
+  total: number;
+  skip: number;
+  take: number;
 }

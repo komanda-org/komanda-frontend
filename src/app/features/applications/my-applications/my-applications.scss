@@ -102,17 +102,14 @@
   gap: 12px;
 }
 
+/* A API ainda nao expoe o logo (MyApplicationRestaurantDto: id, name): avatar com a inicial. */
 .logo {
+  display: grid;
   flex-shrink: 0;
+  place-items: center;
   width: 44px;
   height: 44px;
   border-radius: var(--k-raio);
-  object-fit: cover;
-}
-
-.logo--fallback {
-  display: grid;
-  place-items: center;
   background: var(--k-campo);
   border: 1px solid var(--k-linha-forte);
   font-family: var(--k-serif);
@@ -223,34 +220,4 @@
   font-family: var(--k-sans);
   font-size: 12px;
   color: var(--k-ouro);
-}
-
-.feedback {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  margin: 0;
-  font-family: var(--k-sans);
-  font-size: var(--k-t-base);
-  color: var(--k-texto-fraco);
-}
-
-.feedback p {
-  margin: 0;
-}
-
-.action {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
-  border: none;
-  border-radius: var(--k-raio);
-  font-family: var(--k-sans);
-  font-size: 13px;
-  font-weight: 700;
-  color: #3c2f00;
-  text-decoration: none;
-  cursor: pointer;
 }

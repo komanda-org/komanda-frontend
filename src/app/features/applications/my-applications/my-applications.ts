@@ -2,8 +2,9 @@ import { Component, DestroyRef, afterNextRender, computed, inject, signal } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { ApplicationStatus, MyApplication } from '../../../core/models/applications.model';
-import { ehErroApi } from '../../../core/models/erro-api.model';
 import { ApplicationsService } from '../../../core/services/applications.service';
+import { ErrorCopy, describeError } from '../../../core/utils/describe-error';
+import { initials } from '../../../core/utils/initials';
 
 export type TabKey = 'ALL' | 'MATCH' | 'PENDING' | 'REJECTED';
 type ViewState = 'loading' | 'error' | 'ready';
@@ -22,20 +23,43 @@ interface Tab {
 
 const TABS: Tab[] = [
   { key: 'ALL', label: 'TODOS', status: null },
-  { key: 'MATCH', label: 'MATCH', status: 'MATCHED' },
-  { key: 'PENDING', label: 'PENDENTE', status: 'PENDING' },
-  { key: 'REJECTED', label: 'RECUSADO', status: 'REJECTED' },
+  { key: 'MATCH', label: 'MATCH', status: 'APROVADA' },
+  { key: 'PENDING', label: 'PENDENTE', status: 'PENDENTE' },
+  { key: 'REJECTED', label: 'RECUSADO', status: 'REJEITADA' },
 ];
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
+/**
+ * applicationDate e um INSTANTE (o createdAt da candidatura), nao uma data sem
+ * hora. Quem se candidatou as 22h de 30/09 em Brasilia gerou 2026-10-01T01:00Z
+ * e deve ver "30 SET" — ler em UTC mostraria "1 OUT", o dia errado.
+ *
+ * O fuso vai explicito para o resultado nao depender da maquina que roda o
+ * codigo (CI em UTC, dev em -03:00).
+ */
+const DAY_MONTH = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  day: 'numeric',
+  month: 'numeric',
+});
+
+const ERROR_COPY: ErrorCopy = {
+  fallback: 'Não foi possível carregar suas candidaturas. Tente de novo.',
+  byStatus: {
+    401: 'Sua sessão expirou. Entre novamente para ver suas candidaturas.',
+    // A rota da API exige o papel PROFISSIONAL (@Roles): 403 = conta de restaurante.
+    403: 'Esta conta não tem candidaturas. Entre com sua conta de profissional.',
+  },
+};
+
 export function toBadge(status: ApplicationStatus): Badge {
   switch (status) {
-    case 'MATCHED':
+    case 'APROVADA':
       return { label: 'MATCH', tone: 'match' };
-    case 'PENDING':
+    case 'PENDENTE':
       return { label: 'PENDENTE', tone: 'pending' };
-    case 'REJECTED':
+    case 'REJEITADA':
       return { label: 'NÃO APROVADO', tone: 'rejected' };
   }
 }
@@ -55,26 +79,15 @@ export function countByTab(list: MyApplication[]): Record<TabKey, number> {
 }
 
 export function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+  const parts = DAY_MONTH.formatToParts(new Date(iso));
+  // pt-BR preenche com zero ("05"): Number() devolve o "5" do prototipo.
+  const day = Number(parts.find((p) => p.type === 'day')?.value);
+  const month = Number(parts.find((p) => p.type === 'month')?.value);
+  return `${day} ${MONTHS[month - 1]}`;
 }
 
-export function describeError(error: unknown): string {
-  const status = ehErroApi(error) ? error.status : -1;
-
-  switch (status) {
-    case 0:
-      return 'Não conseguimos conectar. Verifique sua internet e tente de novo.';
-    case 401:
-    case 403:
-      return 'Sua sessão expirou. Entre novamente para ver suas candidaturas.';
-    case 500:
-    case 502:
-    case 503:
-      return 'Nosso serviço está instável agora. Tente de novo em instantes.';
-    default:
-      return 'Não foi possível carregar suas candidaturas. Tente de novo.';
-  }
+export function describeApplicationsError(error: unknown): string {
+  return describeError(error, ERROR_COPY);
 }
 
 @Component({
@@ -91,6 +104,7 @@ export class MyApplications {
   protected readonly tabs = TABS;
   protected readonly toBadge = toBadge;
   protected readonly formatDate = formatDate;
+  protected readonly initials = initials;
 
   protected readonly state = signal<ViewState>('loading');
   protected readonly errorMessage = signal('');
@@ -109,16 +123,18 @@ export class MyApplications {
   protected load(): void {
     this.state.set('loading');
 
+    // Abas e contagens sao calculadas no cliente, entao pedimos a maior pagina
+    // (50). Paginacao de verdade ("carregar mais") fica para quando houver volume.
     this.service
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (list) => {
-          this.applications.set(list);
+        next: (page) => {
+          this.applications.set(page.data);
           this.state.set('ready');
         },
         error: (error: unknown) => {
-          this.errorMessage.set(describeError(error));
+          this.errorMessage.set(describeApplicationsError(error));
           this.state.set('error');
         },
       });
@@ -129,11 +145,7 @@ export class MyApplications {
   }
 
   protected openChat(application: MyApplication): void {
-    // TODO: destino final da conversa fecha com a Tarefa 5.
-    void this.router.navigate(['/mensagens'], { queryParams: { application: application.id } });
-  }
-
-  protected initial(name: string): string {
-    return name.trim().charAt(0).toUpperCase();
+    // A conversa e indexada pela vaga: rota mensagens/:jobId.
+    void this.router.navigate(['/mensagens', application.job.id]);
   }
 }
