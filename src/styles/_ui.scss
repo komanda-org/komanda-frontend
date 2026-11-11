@@ -416,7 +416,7 @@ router-outlet ~ * {
 .campo__cabecalho {
   display: flex;
   gap: var(--k-s-3);
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
 }
 
@@ -424,10 +424,19 @@ router-outlet ~ * {
   @include m.rotulo;
 
   display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
   gap: var(--k-s-2);
-  align-items: baseline;
+  align-items: flex-start;
   margin-bottom: var(--k-s-3);
   color: var(--k-ouro);
+}
+
+.campo__rotulo-texto {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Variante para a tela de entrar: ali o rotulo e conversa ("E-mail"), nao

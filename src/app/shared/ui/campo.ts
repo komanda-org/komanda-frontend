@@ -17,7 +17,7 @@ import { mensagemDoErro } from '../../core/validators/mensagens-de-erro';
           [class.campo__rotulo--suave]="suave()"
           [attr.for]="para()"
         >
-          {{ rotulo() }}
+          <span class="campo__rotulo-texto">{{ rotulo() }}</span>
           @if (opcional()) {
             <span class="campo__opcional">opcional</span>
           }

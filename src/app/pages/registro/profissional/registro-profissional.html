@@ -92,7 +92,7 @@
                 class="entrada"
                 type="text"
                 autocomplete="name"
-                placeholder="Seu nome"
+                placeholder="Nome completo"
                 formControlName="fullName"
               />
             </app-campo>
@@ -104,7 +104,7 @@
                 type="email"
                 inputmode="email"
                 autocomplete="email"
-                placeholder="chef@restaurante.com"
+                placeholder="E-mail profissional"
                 formControlName="email"
               />
             </app-campo>
@@ -164,7 +164,7 @@
                   class="entrada"
                   [type]="mostrarSenha() ? 'text' : 'password'"
                   autocomplete="new-password"
-                  placeholder="Crie uma senha"
+                  placeholder="Senha"
                   formControlName="password"
                 />
                 <button
@@ -209,7 +209,7 @@
                 class="entrada"
                 [type]="mostrarSenha() ? 'text' : 'password'"
                 autocomplete="new-password"
-                placeholder="Repita a senha"
+                placeholder="Confirmar senha"
                 formControlName="confirmPassword"
               />
             </app-campo>
@@ -327,7 +327,7 @@
                         class="entrada"
                         type="text"
                         autocomplete="organization"
-                        placeholder="Nome do estabelecimento"
+                        placeholder="Local de trabalho"
                         formControlName="workPlace"
                       />
                     </app-campo>
@@ -343,7 +343,7 @@
                         class="entrada"
                         type="text"
                         autocomplete="organization-title"
-                        placeholder="Seu cargo"
+                        placeholder="Cargo"
                         formControlName="role"
                       />
                     </app-campo>
@@ -456,7 +456,7 @@
           <section class="etapa">
             <div class="etapa__conteudo">
             <app-campo
-              rotulo="Localização (CEP)"
+              rotulo="CEP"
               para="zipCode"
               [controle]="form.controls.zipCode"
               [opcional]="true"
@@ -468,7 +468,7 @@
                   type="text"
                   inputmode="numeric"
                   autocomplete="postal-code"
-                  placeholder="00000-000"
+                  placeholder="CEP"
                   formControlName="zipCode"
                   (input)="aplicarCep($event)"
                 />
@@ -485,10 +485,43 @@
                   </svg>
                 </span>
               </div>
+              @if (cepConsultando()) {
+                <span class="campo__dica" role="status" aria-live="polite">Consultando CEP…</span>
+              } @else if (cepMensagem()) {
+                <span class="campo__erro" role="alert">{{ cepMensagem() }}</span>
+              }
             </app-campo>
 
             <app-campo
-              rotulo="Bairro"
+              rotulo="ESTADO (UF)"
+              para="state"
+              [controle]="form.controls.state"
+              [opcional]="true"
+            >
+              <input
+                id="state"
+                class="entrada"
+                type="text"
+                autocomplete="address-level1"
+                placeholder="Estado"
+                maxlength="2"
+                formControlName="state"
+              />
+            </app-campo>
+
+            <app-campo rotulo="CIDADE" para="city" [controle]="form.controls.city" [opcional]="true">
+              <input
+                id="city"
+                class="entrada"
+                type="text"
+                autocomplete="address-level2"
+                placeholder="Cidade"
+                formControlName="city"
+              />
+            </app-campo>
+
+            <app-campo
+              rotulo="BAIRRO"
               para="neighborhood"
               [controle]="form.controls.neighborhood"
               [opcional]="true"
@@ -497,7 +530,8 @@
                 id="neighborhood"
                 class="entrada"
                 type="text"
-                placeholder="Pinheiros"
+                autocomplete="address-level3"
+                placeholder="Bairro"
                 formControlName="neighborhood"
               />
             </app-campo>

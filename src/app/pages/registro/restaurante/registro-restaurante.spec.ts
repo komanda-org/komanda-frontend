@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
@@ -21,6 +21,7 @@ interface Interno {
   readonly etapa: () => number;
   avancar(): void;
   voltar(): void;
+  montarPayload(): { address: string };
 }
 
 /** Um conjunto valido da etapa 1, para cada teste estragar so o que interessa. */
@@ -37,6 +38,7 @@ const ETAPA_1_VALIDA = {
 describe('RegistroRestaurante — avanço da etapa 1', () => {
   let fixture: ComponentFixture<RegistroRestaurante>;
   let componente: Interno;
+  let http: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -53,8 +55,11 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
 
     fixture = TestBed.createComponent(RegistroRestaurante);
     componente = fixture.componentInstance as unknown as Interno;
+    http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
+
+  afterEach(() => http.verify());
 
   it('bloqueia o avanço com campo obrigatório vazio e marca só os campos da etapa 1', () => {
     componente.form.patchValue({ ...ETAPA_1_VALIDA, restaurantName: '' });
@@ -108,5 +113,74 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.form.controls['cnpj'].value).toBe(ETAPA_1_VALIDA.cnpj);
     expect(componente.form.controls['restaurantName'].value).toBe(ETAPA_1_VALIDA.restaurantName);
     expect(componente.form.controls['acceptTerms'].value).toBe(true);
+  });
+
+  it('consulta o CNPJ e preenche somente os dados ainda vazios', () => {
+    const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
+    input.value = '11222333000181';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const requisicao = http.expectOne(
+      'https://brasilapi.com.br/api/cnpj/v1/11222333000181',
+    );
+    expect(requisicao.request.method).toBe('GET');
+    requisicao.flush({
+      cnpj: '11222333000181',
+      razao_social: 'Bistrô Maison Ltda.',
+      nome_fantasia: 'Bistrô Maison',
+      descricao_situacao_cadastral: 'ATIVA',
+      situacao_cadastral: 2,
+      logradouro: 'Rua Exemplo',
+      numero: '123',
+      complemento: '',
+      bairro: 'Centro',
+      municipio: 'São Paulo',
+      uf: 'SP',
+      cep: '01310100',
+      ddd_telefone_1: '11987654321',
+    });
+    fixture.detectChanges();
+
+    expect(componente.form.controls['restaurantName'].value).toBe('Bistrô Maison');
+    expect(componente.form.controls['neighborhood'].value).toBe('Centro');
+    expect(componente.form.controls['city'].value).toBe('São Paulo');
+    expect(componente.form.controls['state'].value).toBe('SP');
+    expect(componente.form.controls['zipCode'].value).toBe('01310-100');
+    expect(componente.form.controls['phone'].value).toBe('(11) 98765-4321');
+    expect(componente.form.controls['cnpj'].valid).toBe(true);
+    expect(componente.montarPayload().address).toBe(
+      'Centro, São Paulo - SP, CEP 01310-100',
+    );
+  });
+
+  it('consulta o CEP e monta o endereço com os dados retornados', () => {
+    componente.form.patchValue(ETAPA_1_VALIDA);
+    componente.avancar();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#zipCode') as HTMLInputElement;
+    input.value = '01310100';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const requisicao = http.expectOne(
+      'https://brasilapi.com.br/api/cep/v2/01310100',
+    );
+    expect(requisicao.request.method).toBe('GET');
+    requisicao.flush({
+      cep: '01310-100',
+      state: 'SP',
+      city: 'São Paulo',
+      neighborhood: 'Bela Vista',
+      street: 'Rua Exemplo',
+    });
+    fixture.detectChanges();
+
+    expect(componente.form.controls['zipCode'].value).toBe('01310-100');
+    expect(componente.form.controls['neighborhood'].value).toBe('Bela Vista');
+    expect(componente.form.controls['city'].value).toBe('São Paulo');
+    expect(componente.form.controls['state'].value).toBe('SP');
+    expect(componente.montarPayload().address).toBe(
+      'Bela Vista, São Paulo - SP, CEP 01310-100',
+    );
   });
 });

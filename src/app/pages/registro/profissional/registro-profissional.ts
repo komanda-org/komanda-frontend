@@ -1,8 +1,9 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   ElementRef,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
@@ -11,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { CARGOS } from '../../../core/dados/opcoes';
 import { HABILIDADES } from '../../../core/dados/opcoes';
 import {
@@ -20,6 +22,7 @@ import {
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
+import { BrasilApiService } from '../../../core/services/brasil-api.service';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep } from '../../../core/utils/mascaras';
 import {
@@ -58,6 +61,8 @@ type CampoProfissional =
   | 'skills'
   | 'profilePhoto'
   | 'neighborhood'
+  | 'city'
+  | 'state'
   | 'zipCode'
   | 'acceptedTerms';
 
@@ -88,6 +93,8 @@ export class RegistroProfissional {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly brasilApi = inject(BrasilApiService);
 
   protected readonly cargos = CARGOS;
   protected readonly habilidades = HABILIDADES;
@@ -99,8 +106,11 @@ export class RegistroProfissional {
   protected readonly mostrarSenha = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly errosDetalhados = signal<string[]>([]);
+  protected readonly cepConsultando = signal(false);
+  protected readonly cepMensagem = signal<string | null>(null);
 
   private readonly tituloEtapa = viewChild<ElementRef<HTMLElement>>('tituloEtapa');
+  private cepConsulta?: Subscription;
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
@@ -152,6 +162,8 @@ export class RegistroProfissional {
     skills: this.fb.control<string[]>([], [itensAteTamanho(50)]),
     profilePhoto: this.fb.control(''),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
+    city: this.fb.control('', [Validators.maxLength(100)]),
+    state: this.fb.control('', [Validators.maxLength(2)]),
     zipCode: this.fb.control('', [cepValido()]),
     acceptedTerms: this.fb.control(false, [obrigatorioTrue()]),
   });
@@ -160,7 +172,7 @@ export class RegistroProfissional {
   private readonly camposPorEtapa: readonly (readonly CampoProfissional[])[] = [
     ['profilePhoto', 'fullName', 'email', 'mainRole', 'contractType', 'password', 'confirmPassword', 'acceptedTerms'],
     ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
-    ['zipCode', 'neighborhood'],
+    ['zipCode', 'neighborhood', 'city', 'state'],
   ];
 
   protected aplicarCep(evento: Event): void {
@@ -169,6 +181,43 @@ export class RegistroProfissional {
     // Escrever de volta evita o cursor "pular" quando a mascara insere o hifen.
     alvo.value = formatado;
     this.form.controls.zipCode.setValue(formatado);
+    this.consultarCep(formatado);
+  }
+
+  private consultarCep(valor: string): void {
+    this.cepConsulta?.unsubscribe();
+    this.cepConsultando.set(false);
+    this.cepMensagem.set(null);
+
+    const cep = valor.replace(/\D/g, '');
+    if (!isPlatformBrowser(this.platformId) || cep.length !== 8) {
+      return;
+    }
+
+    this.cepConsultando.set(true);
+    this.cepConsulta = this.brasilApi
+      .consultarCep(cep)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resposta) => {
+          this.cepConsultando.set(false);
+          if (!this.form.controls.neighborhood.value.trim() && resposta.neighborhood?.trim()) {
+            this.form.controls.neighborhood.setValue(resposta.neighborhood);
+          }
+          if (!this.form.controls.city.value.trim() && resposta.city?.trim()) {
+            this.form.controls.city.setValue(resposta.city);
+          }
+          if (!this.form.controls.state.value.trim() && resposta.state?.trim()) {
+            this.form.controls.state.setValue(resposta.state);
+          }
+        },
+        error: () => {
+          this.cepConsultando.set(false);
+          this.cepMensagem.set(
+            'Não encontramos esse CEP. Confira os números ou preencha o bairro manualmente.',
+          );
+        },
+      });
   }
 
   protected readonly experienceSummary = computed(() => {

@@ -1,8 +1,9 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   ElementRef,
+  PLATFORM_ID,
   computed,
   inject,
   signal,
@@ -11,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { TIPOS_DE_COZINHA } from '../../../core/dados/opcoes';
 import {
   aplicarConflito,
@@ -19,6 +21,10 @@ import {
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
+import {
+  BrasilApiCnpjResponse,
+  BrasilApiService,
+} from '../../../core/services/brasil-api.service';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep, mascararCnpj, mascararTelefone } from '../../../core/utils/mascaras';
 import {
@@ -45,6 +51,9 @@ type CampoRestaurante =
   | 'cuisineType'
   | 'description'
   | 'address'
+  | 'neighborhood'
+  | 'city'
+  | 'state'
   | 'zipCode'
   | 'logoUrl';
 
@@ -82,6 +91,8 @@ export class RegistroRestaurante {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly brasilApi = inject(BrasilApiService);
 
   protected readonly cozinhas = TIPOS_DE_COZINHA;
   protected readonly totalDeEtapas = 2;
@@ -91,8 +102,15 @@ export class RegistroRestaurante {
   protected readonly mostrarSenha = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly errosDetalhados = signal<string[]>([]);
+  protected readonly cepConsultando = signal(false);
+  protected readonly cepMensagem = signal<string | null>(null);
+  protected readonly cnpjConsultando = signal(false);
+  protected readonly cnpjMensagem = signal<string | null>(null);
+  private readonly cnpjApiErro = signal<string | null>(null);
 
   private readonly tituloEtapa = viewChild<ElementRef<HTMLElement>>('tituloEtapa');
+  private cepConsulta?: Subscription;
+  private cnpjConsulta?: Subscription;
 
   protected readonly ultimaEtapa = computed(() => this.etapa() === this.totalDeEtapas);
 
@@ -126,7 +144,11 @@ export class RegistroRestaurante {
       minimoAparado(3),
       Validators.maxLength(255),
     ]),
-    cnpj: this.fb.control('', [Validators.required, cnpjValido()]),
+    cnpj: this.fb.control('', [
+      Validators.required,
+      cnpjValido(),
+      () => (this.cnpjApiErro() ? { cnpjApi: true } : null),
+    ]),
     cuisineType: this.fb.control('', [
       Validators.required,
       minimoAparado(3),
@@ -142,6 +164,9 @@ export class RegistroRestaurante {
       minimoAparado(5),
       Validators.maxLength(255),
     ]),
+    neighborhood: this.fb.control('', [Validators.maxLength(100)]),
+    city: this.fb.control('', [Validators.maxLength(100)]),
+    state: this.fb.control('', [Validators.maxLength(2)]),
     zipCode: this.fb.control('', [
       Validators.required,
       Validators.maxLength(10),
@@ -169,7 +194,7 @@ export class RegistroRestaurante {
       'confirmPassword',
       'acceptTerms',
     ],
-    ['phone', 'address', 'zipCode', 'description'],
+    ['phone', 'zipCode', 'address', 'state', 'city', 'neighborhood', 'description'],
   ];
 
   constructor() {
@@ -185,10 +210,145 @@ export class RegistroRestaurante {
 
   protected aplicarCnpj(evento: Event): void {
     this.formatar(evento, mascararCnpj, 'cnpj');
+    this.consultarCnpj(this.form.controls.cnpj.value);
   }
 
   protected aplicarCep(evento: Event): void {
     this.formatar(evento, mascararCep, 'zipCode');
+    this.consultarCep(this.form.controls.zipCode.value);
+  }
+
+  protected mensagemErroCnpj(): string | undefined {
+    return this.form.controls.cnpj.errors?.['cnpjApi']
+      ? this.cnpjApiErro() ?? undefined
+      : undefined;
+  }
+
+  private consultarCep(valor: string): void {
+    this.cepConsulta?.unsubscribe();
+    this.cepConsultando.set(false);
+    this.cepMensagem.set(null);
+
+    const cep = valor.replace(/\D/g, '');
+    if (!isPlatformBrowser(this.platformId) || cep.length !== 8) {
+      return;
+    }
+
+    this.cepConsultando.set(true);
+    this.cepConsulta = this.brasilApi
+      .consultarCep(cep)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resposta) => {
+          this.cepConsultando.set(false);
+          if (!this.form.controls.address.value.trim() && resposta.street?.trim()) {
+            this.form.controls.address.setValue(resposta.street);
+          }
+          this.preencherLocalidade(
+            resposta.neighborhood,
+            resposta.city,
+            resposta.state,
+          );
+          this.cepMensagem.set('Dados de localização preenchidos. Você pode complementá-los.');
+        },
+        error: () => {
+          this.cepConsultando.set(false);
+          this.cepMensagem.set(
+            'Não encontramos esse CEP. Você pode preencher o endereço manualmente.',
+          );
+        },
+      });
+  }
+
+  private consultarCnpj(valor: string): void {
+    this.cnpjConsulta?.unsubscribe();
+    this.cnpjConsultando.set(false);
+    this.cnpjMensagem.set(null);
+    this.cnpjApiErro.set(null);
+    this.form.controls.cnpj.updateValueAndValidity({ emitEvent: false });
+
+    const cnpj = valor.replace(/\D/g, '');
+    if (!isPlatformBrowser(this.platformId) || cnpj.length !== 14) {
+      return;
+    }
+
+    this.cnpjConsultando.set(true);
+    this.cnpjConsulta = this.brasilApi
+      .consultarCnpj(cnpj)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resposta) => {
+          this.cnpjConsultando.set(false);
+          this.preencherRestaurante(resposta);
+
+          const ativo =
+            resposta.situacao_cadastral === 2 ||
+            resposta.situacao_cadastral === '2' ||
+            resposta.descricao_situacao_cadastral?.trim().toLocaleUpperCase('pt-BR') === 'ATIVA';
+          if (!ativo) {
+            this.cnpjApiErro.set('Este CNPJ não consta como ativo na Receita Federal.');
+            this.cnpjMensagem.set(null);
+          } else {
+            this.cnpjMensagem.set('CNPJ encontrado e ativo. Dados disponíveis foram preenchidos.');
+          }
+          this.form.controls.cnpj.updateValueAndValidity({ emitEvent: false });
+        },
+        error: (erro: unknown) => {
+          this.cnpjConsultando.set(false);
+          const status =
+            typeof erro === 'object' && erro !== null && 'status' in erro
+              ? erro.status
+              : undefined;
+          if (status === 404) {
+            this.cnpjApiErro.set('Não encontramos esse CNPJ na Receita Federal.');
+            this.cnpjMensagem.set(null);
+            this.form.controls.cnpj.updateValueAndValidity({ emitEvent: false });
+            return;
+          }
+
+          this.cnpjMensagem.set(
+            'Não foi possível consultar o CNPJ agora. Você pode continuar preenchendo manualmente.',
+          );
+        },
+      });
+  }
+
+  private preencherRestaurante(resposta: BrasilApiCnpjResponse): void {
+    const nome = resposta.nome_fantasia?.trim() || resposta.razao_social?.trim();
+    if (!this.form.controls.restaurantName.value.trim() && nome) {
+      this.form.controls.restaurantName.setValue(nome);
+    }
+
+    const cep = resposta.cep?.replace(/\D/g, '');
+    if (!this.form.controls.zipCode.value.trim() && cep?.length === 8) {
+      this.form.controls.zipCode.setValue(mascararCep(cep));
+    }
+
+    if (!this.form.controls.address.value.trim() && resposta.logradouro?.trim()) {
+      this.form.controls.address.setValue(resposta.logradouro);
+    }
+
+    this.preencherLocalidade(resposta.bairro, resposta.municipio, resposta.uf);
+
+    if (!this.form.controls.phone.value.trim() && resposta.ddd_telefone_1?.trim()) {
+      this.form.controls.phone.setValue(mascararTelefone(resposta.ddd_telefone_1));
+    }
+  }
+
+  private preencherLocalidade(
+    neighborhood: string | null,
+    city: string | null,
+    state: string | null,
+  ): void {
+    if (!this.form.controls.neighborhood.value.trim() && neighborhood?.trim()) {
+      this.form.controls.neighborhood.setValue(neighborhood);
+    }
+    if (!this.form.controls.city.value.trim() && city?.trim()) {
+      this.form.controls.city.setValue(city);
+    }
+    if (!this.form.controls.state.value.trim() && state?.trim()) {
+      this.form.controls.state.setValue(state);
+    }
   }
 
   protected aplicarTelefone(evento: Event): void {
@@ -334,7 +494,13 @@ export class RegistroRestaurante {
       cnpj: valores.cnpj,
       cuisineType: valores.cuisineType.trim(),
       description: valores.description.trim(),
-      address: valores.address.trim(),
+      address: [
+        valores.address.trim(),
+        valores.neighborhood.trim(),
+        [valores.city.trim(), valores.state.trim()].filter(Boolean).join(' - '),
+      ]
+        .filter(Boolean)
+        .join(', '),
       phone: valores.phone,
       zipCode: valores.zipCode,
     };
