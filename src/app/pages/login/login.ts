@@ -77,9 +77,10 @@ export class Login {
       .login(this.form.getRawValue())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.submitting.set(false);
-          void this.router.navigateByUrl('/dashboard');
+          const destination = response.user.role === 'RESTAURANTE' ? '/dashboard' : '/vagas';
+          void this.router.navigateByUrl(destination);
         },
         error: (error: unknown) => {
           this.submitting.set(false);
