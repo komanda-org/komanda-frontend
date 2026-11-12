@@ -21,6 +21,13 @@ export class DashboardPage {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
+  constructor() {
+    // Sessao invalida ou ausente: nao mostra o dashboard como se estivesse conectado.
+    if (!this.authService.isAuthenticated()) {
+      void this.router.navigate(['/login']);
+    }
+  }
+
   protected user() {
     return this.authService.getUser();
   }

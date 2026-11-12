@@ -1,4 +1,6 @@
-.sidebar {
+/* O host recebe as regras de fora (grid-area) da app-layout; o que e daqui
+   precisa ir em :host, senao o encapsulamento do Angular ignora. */
+:host {
   display: flex;
   height: 100%;
   min-height: 100%;

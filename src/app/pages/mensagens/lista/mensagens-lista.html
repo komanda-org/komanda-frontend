@@ -1,0 +1,123 @@
+<div class="lista">
+  <header class="lista-topo">
+    <h1>Mensagens</h1>
+  </header>
+
+  <div class="busca">
+    <svg
+      class="icone-busca"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.35-4.35" />
+    </svg>
+    <input
+      type="search"
+      name="busca"
+      placeholder="Buscar conversa..."
+      aria-label="Buscar conversa"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+    />
+  </div>
+
+  @if (error()) {
+    <div class="alert" role="alert">
+      {{ error() }}
+      <button type="button" class="btn-fechar" (click)="messagingService.clearError()">
+        Fechar
+      </button>
+    </div>
+  }
+
+  @if (loading() && chats().length === 0) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Carregando conversas...</p>
+    </div>
+  } @else {
+    @if (conversasAtivas().length > 0) {
+      <p class="secao">Conversas ativas</p>
+      <ul class="chat-list" role="list">
+        @for (chat of conversasAtivas(); track chat.jobId) {
+          <li
+            class="chat-item"
+            [class.ativa]="isActive(chat)"
+            [class.nao-lida]="chat.unreadCount > 0"
+            [routerLink]="['/mensagens', chat.jobId]"
+          >
+            <span class="chat-avatar">
+              @if (chat.otherPartyPhoto) {
+                <img class="chat-avatar-photo" [src]="chat.otherPartyPhoto" alt="" aria-hidden="true" />
+              } @else {
+                <span aria-hidden="true">{{ getInitials(chat.otherPartyName) }}</span>
+              }
+              <!-- ponytail: presenca so chega para a conversa aberta; bolinha na lista toda exige evento por chat no backend -->
+              @if (isActive(chat) && messagingService.otherPartyOnline()) {
+                <span class="online-dot"><span class="sr-only">Online</span></span>
+              }
+            </span>
+            <span class="chat-info">
+              <span class="chat-header">
+                <span class="chat-title">{{ chat.otherPartyName }}</span>
+                <time class="chat-time" [class.hoje]="isToday(chat.lastMessageTime)">{{
+                  formatTime(chat.lastMessageTime)
+                }}</time>
+              </span>
+              <span class="chat-preview">
+                {{ chat.lastMessageContent || 'Inicie a conversa' }}
+              </span>
+            </span>
+            @if (chat.unreadCount > 0) {
+              <span class="unread-badge" [attr.aria-label]="'Mensagens não lidas: ' + chat.unreadCount">
+                {{ chat.unreadCount > 9 ? '9+' : chat.unreadCount }}
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (pendentes().length > 0) {
+      <p class="secao">Aguardando aprovação</p>
+      <ul class="pendentes">
+        @for (app of pendentes(); track app.applicationId) {
+          <li class="pendente">
+            <svg
+              class="cadeado"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="4" y="11" width="16" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            <span class="pendente-info">
+              <span class="pendente-titulo">{{ app.restaurant.name }} • {{ app.job.title }}</span>
+              <span class="pendente-sub">Candidatura enviada • aguardando resposta</span>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (conversasAtivas().length === 0 && pendentes().length === 0) {
+      <div class="vazio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        <h2>Nenhuma conversa ainda</h2>
+        <p>Suas conversas aparecerão aqui quando você tiver matches aprovados.</p>
+      </div>
+    }
+  }
+</div>

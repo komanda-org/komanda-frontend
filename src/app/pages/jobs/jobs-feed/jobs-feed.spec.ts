@@ -94,22 +94,32 @@ describe('JobsFeed', () => {
     vi.unstubAllGlobals();
   });
 
+  function applicationsPage(...jobIds: string[]) {
+    return {
+      data: jobIds.map((jobId, index) => ({
+        applicationId: `application-${index}`,
+        status: 'PENDENTE' as const,
+        applicationDate: '2026-10-03T12:00:00.000Z',
+        job: { id: jobId, title: 'Vaga' },
+        restaurant: { id: 'restaurant-1', name: 'Restaurante' },
+      })),
+      total: jobIds.length,
+      skip: 0,
+      take: 50,
+    };
+  }
+
   function loadJobs(data: JobsResponse = response): void {
     const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
     expect(jobsRequest.request.method).toBe('GET');
     expect(jobsRequest.request.params.get('take')).toBe('20');
     expect(jobsRequest.request.params.get('skip')).toBe('0');
-    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    const applicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
     expect(applicationsRequest.request.method).toBe('GET');
     jobsRequest.flush(data);
-    applicationsRequest.flush([
-      {
-        id: 'application-existing',
-        jobId: 'job-applied',
-        professionalId: 'professional-1',
-        createdAt: '2026-10-03T12:00:00.000Z',
-      },
-    ]);
+    applicationsRequest.flush(applicationsPage('job-applied'));
     fixture.detectChanges();
   }
 
@@ -134,7 +144,9 @@ describe('JobsFeed', () => {
     const jobsRequest = http.expectOne(
       (request) => request.url === '/api/jobs/search' && request.params.get('skip') === '20',
     );
-    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    const applicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
     jobsRequest.flush({
       data: Array.from({ length: 5 }, (_, index) => ({
         ...jobs[index % jobs.length],
@@ -144,7 +156,7 @@ describe('JobsFeed', () => {
       skip: 20,
       take: 20,
     });
-    applicationsRequest.flush([]);
+    applicationsRequest.flush(applicationsPage());
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(25);
@@ -162,9 +174,11 @@ describe('JobsFeed', () => {
     const jobsRequest = http.expectOne(
       (request) => request.url === '/api/jobs/search' && request.params.get('query') === 'napoli',
     );
-    const applicationsRequest = http.expectOne('/api/users/me/applications');
+    const applicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
     jobsRequest.flush({ data: [jobs[1]], total: 1, skip: 0, take: 20 });
-    applicationsRequest.flush([]);
+    applicationsRequest.flush(applicationsPage());
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
@@ -187,9 +201,11 @@ describe('JobsFeed', () => {
       (request) =>
         request.url === '/api/jobs/search' && request.params.get('contractType') === 'CLT',
     );
-    const cltApplicationsRequest = http.expectOne('/api/users/me/applications');
+    const cltApplicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
     cltRequest.flush({ data: [jobs[0], jobs[2]], total: 2, skip: 0, take: 20 });
-    cltApplicationsRequest.flush([]);
+    cltApplicationsRequest.flush(applicationsPage());
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(2);
 
@@ -197,9 +213,11 @@ describe('JobsFeed', () => {
     const allJobsRequest = http.expectOne(
       (request) => request.url === '/api/jobs/search' && !request.params.has('contractType'),
     );
-    const allApplicationsRequest = http.expectOne('/api/users/me/applications');
+    const allApplicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
     allJobsRequest.flush(response);
-    allApplicationsRequest.flush([]);
+    allApplicationsRequest.flush(applicationsPage());
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
   });
@@ -290,8 +308,10 @@ describe('JobsFeed', () => {
 
   it('shows a retry action without exposing an HTTP status on load failure', () => {
     const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
-    const applicationsRequest = http.expectOne('/api/users/me/applications');
-    applicationsRequest.flush([]);
+    const applicationsRequest = http.expectOne(
+      (request) => request.url === '/api/users/me/applications',
+    );
+    applicationsRequest.flush(applicationsPage());
     jobsRequest.flush(
       { message: 'Internal Server Error' },
       { status: 500, statusText: 'Internal Server Error' },

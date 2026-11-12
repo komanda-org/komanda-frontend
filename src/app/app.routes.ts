@@ -56,8 +56,26 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/jobs/jobs-feed/jobs-feed').then((m) => m.JobsFeed),
       },
-      { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
-      { path: 'mensagens', component: PlaceholderPage, data: { title: 'Mensagens' } },
+      {
+        path: 'matches',
+        title: 'Minhas candidaturas · Komanda',
+        loadComponent: () =>
+          import('./features/applications/my-applications/my-applications').then(
+            (m) => m.MyApplications,
+          ),
+      },
+      {
+        path: 'mensagens',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Mensagens · Komanda',
+      },
+      {
+        path: 'mensagens/:jobId',
+        loadComponent: () =>
+          import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
+        title: 'Chat · Komanda',
+      },
       { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],

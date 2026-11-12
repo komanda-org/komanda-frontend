@@ -242,7 +242,7 @@ export class JobsFeed {
         skip: pageSkip,
         take: this.take(),
       }),
-      applications: this.applicationsService.listMine(),
+      applications: this.applicationsService.list(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -262,7 +262,7 @@ export class JobsFeed {
             (current) =>
               new Set([
                 ...current,
-                ...applications.map((application) => application.jobId),
+                ...applications.data.map((application) => application.job.id),
                 ...jobs.data
                   .filter((job) => job.hasApplied || job.application)
                   .map((job) => job.id),
