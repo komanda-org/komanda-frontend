@@ -149,7 +149,7 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.form.controls['phone'].value).toBe('(11) 98765-4321');
     expect(componente.form.controls['cnpj'].valid).toBe(true);
     expect(componente.montarPayload().address).toBe(
-      'Centro, São Paulo - SP, CEP 01310-100',
+      'Rua Exemplo, Centro, São Paulo - SP',
     );
   });
 
@@ -180,7 +180,7 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.form.controls['city'].value).toBe('São Paulo');
     expect(componente.form.controls['state'].value).toBe('SP');
     expect(componente.montarPayload().address).toBe(
-      'Bela Vista, São Paulo - SP, CEP 01310-100',
+      'Rua Exemplo, Bela Vista, São Paulo - SP',
     );
   });
 });
