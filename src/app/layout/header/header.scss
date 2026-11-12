@@ -18,6 +18,12 @@
   color: var(--k-ouro);
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .bell {
   position: relative;
   background: none;
@@ -25,6 +31,16 @@
   cursor: pointer;
   padding: 0.25rem;
   line-height: 0;
+}
+
+.logout {
+  padding: 8px 14px;
+  color: var(--k-ouro);
+  background: transparent;
+  border: 1px solid var(--k-ouro);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
 }
 
 .badge {
