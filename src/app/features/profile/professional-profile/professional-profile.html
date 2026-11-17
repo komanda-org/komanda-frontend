@@ -103,7 +103,7 @@
             } @else {
               <ol class="timeline">
                 @for (exp of experiences(); track exp.id) {
-                  <li class="step" [class.step--current]="$first" data-testid="experience">
+                  <li class="step" [class.step--current]="exp.endDate === null" data-testid="experience">
                     <p class="exp-role" data-testid="experience-role">{{ exp.role }}</p>
                     <p class="exp-meta">
                       <span data-testid="experience-company">{{ exp.company }}</span>

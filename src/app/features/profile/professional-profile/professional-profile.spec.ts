@@ -190,6 +190,14 @@ describe('ProfessionalProfilePage', () => {
     expect(steps[1].classList).not.toContain('step--current');
   });
 
+  it('does not mark any position as current when all of them have ended', async () => {
+    await render(profile({ experiences: [ORIGEM, BOEUF] }));
+
+    const steps = Array.from(el().querySelectorAll('[data-testid="experience"]'));
+    expect(steps).toHaveLength(2);
+    expect(steps.some((step) => step.classList.contains('step--current'))).toBe(false);
+  });
+
   it('shows an actionable empty state without positions, not an error', async () => {
     await render(profile({ experiences: [] }));
 
