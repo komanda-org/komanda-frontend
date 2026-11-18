@@ -1,6 +1,8 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
+  // Rota com authGuard tem que ficar em Client: no prerender o guard nao ve
+  // sessao, redireciona para /login e o HTML gerado seria o da tela de entrar.
   {
     path: 'dashboard',
     renderMode: RenderMode.Client,

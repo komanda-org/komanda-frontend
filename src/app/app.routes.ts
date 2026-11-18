@@ -51,7 +51,6 @@ export const routes: Routes = [
   {
     path: '',
     component: AppLayout,
-    canActivate: [authGuard],
     canActivateChild: [authChildGuard],
     children: [
       { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },

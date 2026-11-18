@@ -21,7 +21,7 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--k-s-5);
 }
 
 .bell {
@@ -34,13 +34,24 @@
 }
 
 .logout {
-  padding: 8px 14px;
+  padding: var(--k-s-2) var(--k-s-3);
   color: var(--k-ouro);
   background: transparent;
-  border: 1px solid var(--k-ouro);
-  border-radius: 6px;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
   cursor: pointer;
   font: inherit;
+  transition: background-color 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    background: var(--k-superficie-2);
+    border-color: var(--k-ouro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
 }
 
 .badge {
