@@ -53,7 +53,12 @@ export const routes: Routes = [
     component: AppLayout,
     canActivateChild: [authChildGuard],
     children: [
-      { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
+      {
+        path: 'vagas',
+        title: 'Vagas · Komanda',
+        loadComponent: () =>
+          import('./pages/jobs/jobs-feed/jobs-feed').then((m) => m.JobsFeed),
+      },
       {
         path: 'matches',
         title: 'Minhas candidaturas · Komanda',
