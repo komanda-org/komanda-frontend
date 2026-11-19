@@ -134,6 +134,12 @@
                   <a class="btn btn--gold-outline" [routerLink]="['/mensagens', selectedJobId()]" data-testid="chat-link">
                     Abrir chat
                   </a>
+                  <app-review-button
+                    label="Avaliar profissional"
+                    [jobId]="selectedJobId()!"
+                    [receiverId]="applicant.professional.id"
+                    [receiverName]="applicant.professional.fullName"
+                  />
                 }
               }
             </div>

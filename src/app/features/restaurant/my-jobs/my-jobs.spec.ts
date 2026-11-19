@@ -1,7 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { RestaurantJob } from '../../../core/models/restaurant-jobs.model';
 import { MyJobs } from './my-jobs';
@@ -75,6 +75,30 @@ describe('MyJobs', () => {
     expect(cards()).toHaveLength(1);
     expect(cards()[0].textContent).toContain('Encerrada');
     expect(cards()[0].querySelector('[data-testid="close-job"]')).toBeNull();
+    expect(cards()[0].querySelector('[data-testid="edit-job"]')).toBeNull();
+  });
+
+  it('offers "Editar" on open jobs, pointing to the edit route', () => {
+    const edit = cards()[0].querySelector('[data-testid="edit-job"]');
+
+    expect(edit?.textContent).toContain('Editar');
+    expect(edit?.getAttribute('href')).toBe('/my-jobs/j1/edit');
+  });
+
+  it('offers "Ver vaga" on every status, carrying the job in the navigation state', async () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const view = cards()[0].querySelector<HTMLAnchorElement>('[data-testid="view-job"]')!;
+
+    expect(view.textContent).toContain('Ver vaga');
+    expect(view.getAttribute('href')).toBe('/my-jobs/j1/preview');
+    view.click();
+    expect(navigate.mock.calls[0][1]?.state).toEqual({ job: job('j1', { urgent: true }) });
+
+    (el().querySelector('[data-testid="tab-closed"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(cards()[0].querySelector('[data-testid="view-job"]')?.getAttribute('href')).toBe(
+      '/my-jobs/j2/preview',
+    );
   });
 
   it('explains a failed close without exposing the HTTP status', async () => {

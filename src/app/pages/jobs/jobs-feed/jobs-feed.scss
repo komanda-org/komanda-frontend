@@ -230,6 +230,7 @@
   border-radius: var(--k-raio);
   font-family: var(--k-serif);
   font-size: 1.35rem;
+  text-decoration: none;
 
   &--1 {
     color: #e9b4a0;
@@ -252,10 +253,12 @@
 }
 
 .restaurant__name {
+  display: block;
   overflow: hidden;
   margin: 0 0 0.25rem;
   color: var(--k-texto-fraco);
   font-size: var(--k-t-xs);
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

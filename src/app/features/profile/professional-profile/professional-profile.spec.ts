@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
-import { Experience, ProfessionalProfile, Review } from '../../../core/models/profile.model';
+import { Experience, ProfessionalMe, Review } from '../../../core/models/profile.model';
 import {
   ProfessionalProfilePage,
   averageRating,
@@ -44,8 +44,9 @@ const BOEUF: Experience = {
 
 const SPECIALTIES = ['Parrilla', 'Carnes Especiais', 'Cozinha Autoral', 'Gestão de Equipe'];
 
-function profile(overrides: Partial<ProfessionalProfile> = {}): ProfessionalProfile {
+function profile(overrides: Partial<ProfessionalMe> = {}): ProfessionalMe {
   return {
+    role: 'PROFISSIONAL',
     id: 'u1',
     fullName: 'João Alberto',
     mainRole: 'Chef de Cuisine Especialista em Carnes',
@@ -138,7 +139,7 @@ describe('ProfessionalProfilePage', () => {
     await fixture.whenStable();
   }
 
-  async function render(me: ProfessionalProfile = profile(), reviews: Review[] = REVIEWS): Promise<void> {
+  async function render(me: ProfessionalMe = profile(), reviews: Review[] = REVIEWS): Promise<void> {
     await start();
     http.expectOne('/api/users/me').flush(me);
     await settle();

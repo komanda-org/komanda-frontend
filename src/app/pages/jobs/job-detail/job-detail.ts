@@ -5,13 +5,7 @@ import { isApiError } from '../../../core/models/api-error.model';
 import { Job } from '../../../core/models/jobs.model';
 import { APPLICATIONS_MAX_TAKE, ApplicationsService } from '../../../core/services/applications.service';
 import { JobsService } from '../../../core/services/jobs.service';
-import { contractLabel, formatSalary, shiftLabel } from '../../../core/utils/job-labels';
-
-export function formatPublishedAt(iso: string): string {
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
-    new Date(iso),
-  );
-}
+import { JobView } from '../../../shared/jobs/job-view/job-view';
 
 export function describeLoadError(error: unknown): string {
   switch (isApiError(error) ? error.status : -1) {
@@ -48,7 +42,7 @@ export function describeApplyError(error: unknown): string {
 
 @Component({
   selector: 'app-job-detail',
-  imports: [RouterLink],
+  imports: [RouterLink, JobView],
   templateUrl: './job-detail.html',
   styleUrl: './job-detail.scss',
 })
@@ -65,11 +59,6 @@ export class JobDetail {
   protected readonly applying = signal(false);
   protected readonly applyError = signal<string | null>(null);
   protected readonly shareMessage = signal<string | null>(null);
-
-  protected readonly formatSalary = formatSalary;
-  protected readonly shiftLabel = shiftLabel;
-  protected readonly contractLabel = contractLabel;
-  protected readonly formatPublishedAt = formatPublishedAt;
 
   constructor() {
     // history.state e a sessao so existem no navegador.
@@ -140,10 +129,6 @@ export class JobDetail {
         this.shareMessage.set('Não foi possível copiar o link. Copie pela barra de endereço.');
       }
     }
-  }
-
-  protected restaurantInitial(job: Job): string {
-    return job.restaurant.restaurantName.trim().charAt(0).toLocaleUpperCase('pt-BR');
   }
 
   private show(job: Job): void {

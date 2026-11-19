@@ -1,0 +1,64 @@
+@use '../restaurant-ui';
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-5);
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-5);
+  padding: var(--k-s-4);
+  color: var(--k-texto-muted);
+  background: var(--k-ouro-fosco);
+  border: 1px solid rgb(242 202 80 / 35%);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+
+  svg {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    color: var(--k-ouro);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  strong {
+    color: var(--k-ouro);
+  }
+}
+
+.banner__warning {
+  display: block;
+  margin-top: var(--k-s-1);
+  color: var(--k-texto);
+  font-weight: 600;
+}
+
+.preview-edit {
+  width: 100%;
+  margin-top: var(--k-s-3);
+}

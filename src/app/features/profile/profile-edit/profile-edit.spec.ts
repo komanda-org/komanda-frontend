@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Router, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
-import { ProfessionalProfile } from '../../../core/models/profile.model';
+import { ProfessionalMe } from '../../../core/models/profile.model';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   ProfileEdit,
@@ -16,7 +16,8 @@ import {
   trimmedLength,
 } from './profile-edit';
 
-const ME: ProfessionalProfile = {
+const ME: ProfessionalMe = {
+  role: 'PROFISSIONAL',
   id: 'u1',
   fullName: 'Jose Ravani',
   mainRole: 'Sushiman',
@@ -155,7 +156,7 @@ describe('ProfileEdit', () => {
     fixture.detectChanges();
   }
 
-  async function render(me: ProfessionalProfile = ME): Promise<void> {
+  async function render(me: ProfessionalMe = ME): Promise<void> {
     fixture = TestBed.createComponent(ProfileEdit);
     fixture.detectChanges();
     await fixture.whenStable();

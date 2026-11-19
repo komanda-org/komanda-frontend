@@ -11,6 +11,7 @@ import {
   JobStatus,
   RestaurantJob,
   RestaurantJobsPage,
+  UpdateJobPayload,
 } from '../models/restaurant-jobs.model';
 
 /** Maior `take` aceito pela API nas listas paginadas. */
@@ -29,6 +30,10 @@ export class RestaurantJobsService {
 
   create(payload: CreateJobPayload): Observable<RestaurantJob> {
     return this.http.post<RestaurantJob>(`${this.base}/jobs`, payload);
+  }
+
+  updateJob(jobId: string, changes: UpdateJobPayload): Observable<RestaurantJob> {
+    return this.http.patch<RestaurantJob>(`${this.base}/jobs/${jobId}`, changes);
   }
 
   updateStatus(jobId: string, status: JobStatus): Observable<RestaurantJob> {

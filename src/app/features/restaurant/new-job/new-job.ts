@@ -1,28 +1,12 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { ContractType } from '../../../core/models/jobs.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { CreateJobPayload } from '../../../core/models/restaurant-jobs.model';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
-import {
-  CONTRACT_OPTIONS,
-  SHIFT_OPTIONS,
-  contractLabel,
-  formatSalary,
-  shiftLabel,
-} from '../../../core/utils/job-labels';
+import { JobForm, JobFormValue } from '../job-form/job-form';
 import { describeRestaurantError } from '../restaurant-errors';
 
-export function toPayload(value: {
-  title: string;
-  shift: string;
-  contractType: ContractType;
-  salary: number | null;
-  description: string;
-  requirements: string;
-  urgent: boolean;
-}): CreateJobPayload {
+export function toPayload(value: JobFormValue): CreateJobPayload {
   const payload: CreateJobPayload = {
     title: value.title.trim(),
     description: value.description.trim(),
@@ -45,7 +29,7 @@ export function toPayload(value: {
 
 @Component({
   selector: 'app-new-job',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [JobForm],
   templateUrl: './new-job.html',
   styleUrl: './new-job.scss',
 })
@@ -54,51 +38,14 @@ export class NewJob {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly shiftOptions = SHIFT_OPTIONS;
-  protected readonly contractOptions = CONTRACT_OPTIONS;
-  protected readonly shiftLabel = shiftLabel;
-  protected readonly contractLabel = contractLabel;
-  protected readonly formatSalary = formatSalary;
-
-  protected readonly form = inject(NonNullableFormBuilder).group({
-    title: ['', [Validators.required, Validators.maxLength(120)]],
-    shift: [''],
-    contractType: ['CLT' as ContractType, Validators.required],
-    salary: [null as number | null, Validators.min(0)],
-    description: ['', [Validators.required, Validators.minLength(20)]],
-    requirements: [''],
-    urgent: [false],
-  });
-
-  protected readonly preview = toSignal(this.form.valueChanges, {
-    initialValue: this.form.getRawValue(),
-  });
   protected readonly submitting = signal(false);
   protected readonly submitError = signal<string | null>(null);
 
-  protected showError(control: 'title' | 'description' | 'salary'): boolean {
-    const field = this.form.controls[control];
-    return field.invalid && (field.touched || field.dirty);
-  }
-
-  protected setShift(value: string): void {
-    const current = this.form.controls.shift.value;
-    this.form.controls.shift.setValue(current === value ? '' : value);
-  }
-
-  protected setContract(value: ContractType): void {
-    this.form.controls.contractType.setValue(value);
-  }
-
-  protected submit(): void {
-    this.form.markAllAsTouched();
-    if (this.form.invalid || this.submitting()) {
-      return;
-    }
+  protected submit(value: JobFormValue): void {
     this.submitting.set(true);
     this.submitError.set(null);
     this.jobsService
-      .create(toPayload(this.form.getRawValue()))
+      .create(toPayload(value))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

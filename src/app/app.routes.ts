@@ -115,7 +115,7 @@ export const routes: Routes = [
           import('./features/profile/profile-edit/profile-edit').then((m) => m.ProfileEdit),
       },
       {
-        path: 'restaurantes/:slug',
+        path: 'restaurantes/:id',
         title: 'Restaurante · Komanda',
         loadComponent: () =>
           import('./features/restaurants/restaurant-profile/restaurant-profile').then(
@@ -144,6 +144,20 @@ export const routes: Routes = [
         canActivate: restaurantOnly,
         loadComponent: () =>
           import('./features/restaurant/new-job/new-job').then((m) => m.NewJob),
+      },
+      {
+        path: 'my-jobs/:id/edit',
+        title: 'Editar vaga · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/edit-job/edit-job').then((m) => m.EditJob),
+      },
+      {
+        path: 'my-jobs/:id/preview',
+        title: 'Visualizar vaga · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/job-preview/job-preview').then((m) => m.JobPreview),
       },
       {
         path: 'pipeline',

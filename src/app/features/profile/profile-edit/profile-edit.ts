@@ -11,6 +11,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { ApiError, isApiError } from '../../../core/models/api-error.model';
 import {
   Experience,
@@ -18,6 +19,7 @@ import {
   ProfessionalProfile,
   UpdateProfilePayload,
   WorkModel,
+  requireProfessional,
 } from '../../../core/models/profile.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
@@ -247,7 +249,7 @@ export class ProfileEdit {
     this.loadState.set('loading');
     this.service
       .getMe()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(map(requireProfessional), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (profile) => {
           this.fill(toFormValue(profile));

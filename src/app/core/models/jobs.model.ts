@@ -4,7 +4,8 @@ export interface JobRestaurant {
   restaurantName: string;
   logoUrl: string | null;
   address: string;
-  zipCode: string;
+  /** `null` = restaurante itinerante (so eventos). */
+  zipCode: string | null;
   cuisineType: string;
   averageRating: number | null;
 }

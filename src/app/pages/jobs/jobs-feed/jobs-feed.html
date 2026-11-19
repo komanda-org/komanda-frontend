@@ -217,17 +217,25 @@
         <article class="job-card">
           <div class="job-card__topline">
             <div class="restaurant">
-              <span
+              <a
                 class="restaurant__initial"
                 [class.restaurant__initial--1]="index % 4 === 1"
                 [class.restaurant__initial--2]="index % 4 === 2"
                 [class.restaurant__initial--3]="index % 4 === 3"
+                [routerLink]="['/restaurantes', job.restaurantId]"
+                tabindex="-1"
                 aria-hidden="true"
               >
                 {{ restaurantInitial(job) }}
-              </span>
+              </a>
               <div class="restaurant__details">
-                <p class="restaurant__name">{{ job.restaurant.restaurantName }}</p>
+                <a
+                  class="restaurant__name"
+                  [routerLink]="['/restaurantes', job.restaurantId]"
+                  data-testid="restaurant-link"
+                >
+                  {{ job.restaurant.restaurantName }}
+                </a>
                 <h2 class="job-card__title">{{ job.title }}</h2>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { ApplicationStatus, MyApplication } from '../../../core/models/applicati
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ErrorCopy, describeError } from '../../../core/utils/describe-error';
 import { initials } from '../../../core/utils/initials';
+import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 
 export type TabKey = 'ALL' | 'MATCH' | 'PENDING' | 'REJECTED';
 type ViewState = 'loading' | 'error' | 'ready';
@@ -79,7 +80,7 @@ export function describeApplicationsError(error: unknown): string {
 
 @Component({
   selector: 'app-my-applications',
-  imports: [RouterLink],
+  imports: [RouterLink, ReviewButton],
   templateUrl: './my-applications.html',
   styleUrl: './my-applications.scss',
 })

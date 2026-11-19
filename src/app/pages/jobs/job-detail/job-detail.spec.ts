@@ -92,6 +92,7 @@ describe('JobDetail', () => {
     expect(byTestId('job-description')?.textContent).toContain('Segundo parágrafo.');
     expect(byTestId('job-requirements')?.textContent).toContain('praças quentes');
     expect(byTestId('restaurant-link')?.getAttribute('href')).toBe('/restaurantes/rest-1');
+    expect(byTestId('restaurant-hero-link')?.getAttribute('href')).toBe('/restaurantes/rest-1');
     expect(el().textContent).toContain('Noite');
   });
 

@@ -6,8 +6,9 @@
 
     @case ('not-found') {
       <div class="feedback" role="alert" data-testid="not-found">
-        <p>Não encontramos este restaurante. O link pode estar incorreto ou o perfil saiu do ar.</p>
-        <a class="action" routerLink="/vagas" data-testid="back-to-jobs">Voltar para as vagas</a>
+        <p class="feedback-title">Restaurante não encontrado</p>
+        <p>O link pode estar incorreto ou o perfil saiu do ar.</p>
+        <a class="action" [routerLink]="backLink" data-testid="back-link">Voltar ao início</a>
       </div>
     }
 
@@ -24,12 +25,6 @@
       @if (restaurant(); as r) {
         <div class="columns">
           <article class="identity" aria-labelledby="restaurant-name">
-            <div class="cover" data-testid="restaurant-cover">
-              @if (r.coverUrl) {
-                <img [src]="r.coverUrl" alt="" width="640" height="320" />
-              }
-            </div>
-
             <div class="logo" data-testid="restaurant-logo">
               @if (r.logoUrl) {
                 <img [src]="r.logoUrl" [alt]="'Logotipo de ' + r.restaurantName" width="88" height="88" />
@@ -42,25 +37,44 @@
 
             <ul class="badges" aria-label="Destaques" data-testid="restaurant-badges">
               <li class="badge badge--gold" data-testid="restaurant-category">{{ r.cuisineType }}</li>
-              @if (r.averageRating !== null) {
-                <li class="badge" data-testid="restaurant-rating" [attr.aria-label]="'Nota ' + formatRating(r.averageRating) + ' de 5'">
-                  <span class="star star--full" aria-hidden="true"></span>
-                  <span aria-hidden="true">{{ formatRating(r.averageRating) }}</span>
-                </li>
+              @if (r.zipCode === null) {
+                <li class="badge" data-testid="restaurant-events">Atende em eventos</li>
               }
             </ul>
 
             <h1 class="name" id="restaurant-name" data-testid="restaurant-name">{{ r.restaurantName }}</h1>
 
-            @if (location(); as place) {
-              <p class="location" data-testid="restaurant-location">
+            @if (r.averageRating !== null) {
+              <p class="rating" data-testid="restaurant-rating">
+                <span class="stars" role="img" [attr.aria-label]="'Nota ' + formatRating(r.averageRating) + ' de 5'">
+                  @for (fill of starFills(r.averageRating); track $index) {
+                    <span class="star star--{{ fill }}"></span>
+                  }
+                </span>
+                <strong aria-hidden="true">{{ formatRating(r.averageRating) }}</strong>
+                <span class="rating-count" data-testid="restaurant-reviews-count">{{ reviewsCountLabel(r.reviewsCount) }}</span>
+              </p>
+            } @else {
+              <p class="rating rating--none" data-testid="restaurant-rating">Sem avaliações ainda</p>
+            }
+
+            <ul class="contact" aria-label="Contato">
+              <li class="contact-item" data-testid="restaurant-address">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
                   <circle cx="12" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.6" />
                 </svg>
-                {{ place }}
-              </p>
-            }
+                {{ r.address }}
+              </li>
+              @if (r.phone) {
+                <li class="contact-item" data-testid="restaurant-phone">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                  </svg>
+                  <a class="contact-link" [href]="'tel:' + r.phone">{{ r.phone }}</a>
+                </li>
+              }
+            </ul>
 
             @if (r.description) {
               <section class="card about" aria-labelledby="about-title" data-testid="restaurant-about">
@@ -68,84 +82,45 @@
                 <p>{{ r.description }}</p>
               </section>
             }
-
-            @if (r.payHighlight) {
-              <p class="pay" data-testid="restaurant-pay">
-                <span class="pay-label">Remuneração</span>
-                <strong class="pay-value">{{ r.payHighlight }}</strong>
-              </p>
-            }
           </article>
 
           <div class="side">
             <section class="section" aria-labelledby="jobs-title">
               <header class="section-head">
                 <h2 class="section-title" id="jobs-title">Vagas Abertas</h2>
-                <!-- aria-disabled (e nao disabled) mantem o foco e o motivo acessiveis ate a listagem completa existir -->
-                <span class="see-all">
-                  <button
-                    type="button"
-                    class="see-all-btn"
-                    aria-disabled="true"
-                    aria-describedby="see-all-reason"
-                    data-testid="see-all"
-                  >
-                    Ver Todas →
-                  </button>
-                  <span class="see-all-reason" id="see-all-reason" data-testid="see-all-reason">
-                    Lista completa em breve
-                  </span>
-                </span>
               </header>
 
-              @switch (jobsState()) {
-                @case ('loading') {
-                  <p class="empty" role="status">Carregando vagas…</p>
-                }
-                @case ('error') {
-                  <div class="empty" role="alert" data-testid="jobs-error">
-                    <p>Não foi possível carregar as vagas deste restaurante.</p>
-                    <button type="button" class="link" (click)="loadJobs()">Tentar de novo</button>
-                  </div>
-                }
-                @case ('ready') {
-                  @if (jobs().length === 0) {
-                    <div class="empty" data-testid="jobs-empty">
-                      <p>Nenhuma vaga aberta no momento. Volte em breve ou explore outras oportunidades.</p>
-                      <a class="link" routerLink="/vagas">Ver outras vagas</a>
-                    </div>
-                  } @else {
-                    <ul class="jobs">
-                      @for (job of jobs(); track job.id) {
-                        <li class="card job" data-testid="job">
-                          <div class="job-head">
-                            <h3 class="job-title" data-testid="job-title">{{ job.title }}</h3>
-                            @if (job.urgent) {
-                              <span class="urgent" data-testid="job-urgent">Urgente</span>
-                            }
-                          </div>
-                          <p class="job-meta" data-testid="job-meta">
-                            {{ job.sector }} • {{ job.shift }}
-                          </p>
-                          <p class="job-description" data-testid="job-description">{{ job.description }}</p>
-                          <div class="job-foot">
-                            @if (job.salary) {
-                              <p class="job-salary" data-testid="job-salary">{{ job.salary }}</p>
-                            }
-                            <a
-                              class="apply"
-                              [routerLink]="['/vagas', job.id]"
-                              [attr.aria-label]="'Aplicar agora para ' + job.title"
-                              data-testid="job-apply"
-                            >
-                              Aplicar Agora
-                            </a>
-                          </div>
-                        </li>
-                      }
-                    </ul>
+              @if (r.openJobs.length === 0) {
+                <p class="empty" data-testid="jobs-empty">Nenhuma vaga aberta no momento</p>
+              } @else {
+                <ul class="jobs">
+                  @for (job of r.openJobs; track job.id) {
+                    @let link = jobLink(job);
+                    <li class="card job" data-testid="job">
+                      <div class="job-head">
+                        <h3 class="job-title" data-testid="job-title">{{ job.title }}</h3>
+                        @if (job.urgent) {
+                          <span class="urgent" data-testid="job-urgent">Urgente</span>
+                        }
+                      </div>
+                      <p class="job-meta" data-testid="job-meta">{{ jobMetaLine(job) }}</p>
+                      <div class="job-foot">
+                        <p class="job-salary" data-testid="job-salary">{{ formatSalary(job.salary) }}</p>
+                        @if (link) {
+                          <a
+                            class="apply"
+                            [routerLink]="link.commands"
+                            [queryParams]="link.queryParams"
+                            [attr.aria-label]="link.label + ': ' + job.title"
+                            data-testid="job-link"
+                          >
+                            {{ link.label }}
+                          </a>
+                        }
+                      </div>
+                    </li>
                   }
-                }
+                </ul>
               }
             </section>
 

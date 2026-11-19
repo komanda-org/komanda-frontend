@@ -48,6 +48,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'my-jobs/:id/edit',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'my-jobs/:id/preview',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'pipeline',
     renderMode: RenderMode.Client,
   },
@@ -60,9 +68,9 @@ export const serverRoutes: ServerRoute[] = [
     path: 'auth/redefinir-senha',
     renderMode: RenderMode.Client,
   },
-  // Slug dinamico: o build nao sabe quais restaurantes pre-renderizar.
+  // Id dinamico: o build nao sabe quais restaurantes pre-renderizar.
   {
-    path: 'restaurantes/:slug',
+    path: 'restaurantes/:id',
     renderMode: RenderMode.Client,
   },
   {

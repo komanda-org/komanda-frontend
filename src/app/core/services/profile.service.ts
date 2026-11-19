@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  Me,
   ProfessionalProfile,
   Review,
   ReviewsPage,
@@ -15,8 +16,8 @@ export class ProfileService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl;
 
-  getMe(): Observable<ProfessionalProfile> {
-    return this.http.get<ProfessionalProfile>(`${this.base}/users/me`);
+  getMe(): Observable<Me> {
+    return this.http.get<Me>(`${this.base}/users/me`);
   }
 
   updateMe(payload: UpdateProfilePayload): Observable<ProfessionalProfile> {

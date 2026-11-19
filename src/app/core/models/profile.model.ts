@@ -1,4 +1,6 @@
-export type WorkModel = 'CLT' | 'PJ' | 'FREELANCER' | 'TEMPORARIO';
+import { ApiError } from './api-error.model';
+
+export type WorkModel ='CLT' | 'PJ' | 'FREELANCER' | 'TEMPORARIO';
 export type Mobility = 'LOCAL' | 'REGIONAL' | 'NACIONAL' | 'INTERNACIONAL';
 
 export interface Experience {
@@ -29,6 +31,39 @@ export interface ProfessionalProfile {
   state: string | null;
   experiences: Experience[];
   availability: Availability | null;
+}
+
+export type ProfessionalMe = ProfessionalProfile & { role: 'PROFISSIONAL' };
+
+export type RestaurantPlan = 'FREE' | 'ESSENTIAL' | 'PRO';
+
+export interface RestaurantMe {
+  role: 'RESTAURANTE';
+  /** users.id; e o mesmo id de /restaurantes/:id. */
+  id: string;
+  email: string;
+  restaurantName: string;
+  cnpj: string;
+  cuisineType: string;
+  description: string;
+  address: string;
+  phone: string;
+  /** `null` = restaurante itinerante (so eventos). */
+  zipCode: string | null;
+  logoUrl: string | null;
+  averageRating: number | null;
+  plan: RestaurantPlan;
+}
+
+/** GET /users/me responde os dois papeis; `role` diferencia. */
+export type Me = ProfessionalMe | RestaurantMe;
+
+/** Para telas so do profissional: um restaurante vira o mesmo 403 que a API daria. */
+export function requireProfessional(me: Me): ProfessionalMe {
+  if (me.role !== 'PROFISSIONAL') {
+    throw { status: 403, messages: [] } satisfies ApiError;
+  }
+  return me;
 }
 
 export interface ExperiencePayload {
@@ -69,6 +104,15 @@ export interface Review {
   jobId: string;
   reviewerId: string;
   createdAt: string;
+}
+
+/** Corpo de POST /users/reviews. A API rejeita campo extra (forbidNonWhitelisted). */
+export interface CreateReviewPayload {
+  jobId: string;
+  receiverId: string;
+  /** Inteiro de 1 a 5. */
+  rating: number;
+  comment?: string;
 }
 
 export interface ReviewsPage {

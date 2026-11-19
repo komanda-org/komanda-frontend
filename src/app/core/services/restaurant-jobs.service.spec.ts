@@ -60,6 +60,15 @@ describe('RestaurantJobsService', () => {
     request.flush(job('j1'));
   });
 
+  it('edits a job sending only the changed fields', () => {
+    service.updateJob('j1', { title: 'Chef de cozinha', salary: null }).subscribe();
+
+    const request = http.expectOne('/api/jobs/j1');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ title: 'Chef de cozinha', salary: null });
+    request.flush(job('j1'));
+  });
+
   it('updates an applicant status', () => {
     service.updateApplicantStatus('j1', 'a1', 'APROVADA').subscribe();
 

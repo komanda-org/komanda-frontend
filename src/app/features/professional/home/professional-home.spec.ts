@@ -96,6 +96,29 @@ describe('ProfessionalHome', () => {
     expect(rows[1].querySelector('a')).toBeNull();
   });
 
+  it('offers "Avaliar restaurante" on the approved application with job and restaurant ids', async () => {
+    await render([
+      application('a1', 'PENDENTE', '2026-11-18T10:00:00Z'),
+      application('a2', 'APROVADA', '2026-11-19T10:00:00Z'),
+    ]);
+    const rows = el().querySelectorAll('[data-testid="application-row"]');
+    expect(rows[1].querySelector('[data-testid="review-btn"]')).toBeNull();
+
+    (rows[0].querySelector('[data-testid="review-btn"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (el().querySelector('[data-testid="star-3"]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    (el().querySelector('[data-testid="review-submit"]') as HTMLButtonElement).click();
+
+    const request = http.expectOne('/api/users/reviews');
+    expect(request.request.body).toEqual({ jobId: 'job-a2', receiverId: 'r1', rating: 3 });
+    request.flush({ id: 'rev1' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(text('reviewed')).toContain('Avaliado ✓');
+  });
+
   it('still renders without the profile name when the profile fails', async () => {
     await render([], { status: 404 });
 

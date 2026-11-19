@@ -1,7 +1,7 @@
 import { Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ProfessionalProfile } from '../../core/models/profile.model';
+import { Me } from '../../core/models/profile.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { initials } from '../../core/utils/text';
@@ -30,6 +30,10 @@ const RESTAURANT_NAV: NavItem[] = [
   { path: '/plans', label: 'Planos', testid: 'nav-plans', icon: '/icons/planos.svg', exact: true },
 ];
 
+function restaurantProfileItem(id: string): NavItem {
+  return { path: `/restaurantes/${id}`, label: 'Perfil', testid: 'nav-perfil', icon: '/icons/perfil.svg', exact: true };
+}
+
 @Component({
   selector: 'app-sidebar',
   imports: [RouterLink, RouterLinkActive],
@@ -41,26 +45,47 @@ export class Sidebar {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly role = signal(inject(AuthService).getUser()?.role ?? null);
-  protected readonly profile = signal<ProfessionalProfile | null>(null);
-  protected readonly initials = computed(() => initials(this.profile()?.fullName ?? ''));
-  protected readonly nav = computed(() =>
-    this.role() === 'RESTAURANTE' ? RESTAURANT_NAV : PROFESSIONAL_NAV,
-  );
+  protected readonly me = signal<Me | null>(null);
+
+  protected readonly displayName = computed(() => {
+    const me = this.me();
+    if (!me) return null;
+    return me.role === 'RESTAURANTE' ? me.restaurantName : me.fullName;
+  });
+  protected readonly subtitle = computed(() => {
+    const me = this.me();
+    if (me?.role === 'PROFISSIONAL') return me.mainRole;
+    return this.role() === 'RESTAURANTE' ? 'Restaurante' : null;
+  });
+  protected readonly photo = computed(() => {
+    const me = this.me();
+    if (!me) return null;
+    return me.role === 'RESTAURANTE' ? me.logoUrl : me.profilePhoto;
+  });
+  protected readonly initials = computed(() => initials(this.displayName() ?? ''));
+
+  // O perfil do restaurante depende do id do /me: sem ele o item fica fora, nunca como link quebrado.
+  protected readonly nav = computed(() => {
+    if (this.role() !== 'RESTAURANTE') {
+      return PROFESSIONAL_NAV;
+    }
+    const me = this.me();
+    return me?.role === 'RESTAURANTE' ? [...RESTAURANT_NAV, restaurantProfileItem(me.id)] : RESTAURANT_NAV;
+  });
 
   constructor() {
     // Token so existe no navegador; no servidor a chamada sairia sem Authorization.
     afterNextRender(() => {
-      // TODO API: restaurante nao tem GET do proprio cadastro; /users/me so atende profissional.
-      if (this.role() !== 'PROFISSIONAL') {
+      if (!this.role()) {
         return;
       }
       this.profileService
         .getMe()
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (profile) => this.profile.set(profile),
+          next: (me) => this.me.set(me),
           // Sem perfil (rede fora, cadastro incompleto) o painel so fica sem nome.
-          error: () => this.profile.set(null),
+          error: () => this.me.set(null),
         });
     });
   }

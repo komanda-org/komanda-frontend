@@ -1,17 +1,17 @@
 <aside class="sidebar" data-testid="sidebar">
   <div class="user">
     <div class="avatar" data-testid="user-avatar">
-      @if (profile()?.profilePhoto; as photo) {
-        <img [src]="photo" [alt]="'Foto de ' + profile()?.fullName" width="80" height="80">
+      @if (photo(); as src) {
+        <img [src]="src" [alt]="(role() === 'RESTAURANTE' ? 'Logotipo de ' : 'Foto de ') + displayName()" width="80" height="80">
       } @else {
-        <span class="avatar-initials" aria-hidden="true">{{ role() === 'RESTAURANTE' ? 'R' : initials() }}</span>
+        <span class="avatar-initials" aria-hidden="true">{{ initials() || (role() === 'RESTAURANTE' ? 'R' : '') }}</span>
       }
     </div>
-    @if (profile(); as me) {
-      <p class="name" data-testid="user-name">{{ me.fullName }}</p>
-      <p class="role" data-testid="user-role">{{ me.mainRole }}</p>
-    } @else if (role() === 'RESTAURANTE') {
-      <p class="role" data-testid="user-role">Restaurante</p>
+    @if (displayName(); as name) {
+      <p class="name" data-testid="user-name">{{ name }}</p>
+    }
+    @if (subtitle(); as text) {
+      <p class="role" data-testid="user-role">{{ text }}</p>
     }
   </div>
   <nav class="nav" aria-label="Navegação principal">

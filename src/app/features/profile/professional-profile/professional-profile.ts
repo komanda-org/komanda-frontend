@@ -2,7 +2,13 @@ import { Component, DestroyRef, afterNextRender, computed, inject, signal } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
-import { Experience, ProfessionalProfile, Review } from '../../../core/models/profile.model';
+import { map } from 'rxjs';
+import {
+  Experience,
+  ProfessionalProfile,
+  Review,
+  requireProfessional,
+} from '../../../core/models/profile.model';
 import { ProfileService } from '../../../core/services/profile.service';
 import { mobilityLabel, workModelLabel } from '../profile-labels';
 
@@ -119,7 +125,7 @@ export class ProfessionalProfilePage {
 
     this.service
       .getMe()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(map(requireProfessional), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (profile) => {
           this.profile.set(profile);

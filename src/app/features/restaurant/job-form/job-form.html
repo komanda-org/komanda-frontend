@@ -1,0 +1,183 @@
+<div class="layout">
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2 class="group-title">Essencial</h2>
+
+    <label class="field">
+      <span class="field__label">Cargo</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="title"
+        placeholder="Ex.: Cozinheiro de Linha"
+        [attr.maxlength]="limits.TITLE_MAX"
+        [attr.aria-invalid]="showError('title')"
+        aria-describedby="title-error"
+        data-testid="title-input"
+      />
+      @if (showError('title')) {
+        <span class="field__error" id="title-error">
+          @if (form.controls.title.hasError('required')) {
+            Informe o cargo da vaga.
+          } @else {
+            O cargo deve ter entre {{ limits.TITLE_MIN }} e {{ limits.TITLE_MAX }} caracteres.
+          }
+        </span>
+      }
+    </label>
+
+    <fieldset class="field">
+      <legend class="field__label">Turno</legend>
+      @if (mode() === 'edit') {
+        <p class="readonly" data-testid="shift-readonly">
+          {{ shiftLabel(form.controls.shift.value) ?? 'Não informado' }}
+        </p>
+        <span class="field__hint">O turno não pode ser alterado depois que a vaga é publicada.</span>
+      } @else {
+        <div class="chips">
+          @for (option of shiftOptions; track option.value) {
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="form.controls.shift.value === option.value"
+              [attr.aria-pressed]="form.controls.shift.value === option.value"
+              (click)="setShift(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      }
+    </fieldset>
+
+    <fieldset class="field">
+      <legend class="field__label">Tipo de contrato</legend>
+      <div class="chips">
+        @for (option of contractOptions; track option.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="form.controls.contractType.value === option.value"
+            [attr.aria-pressed]="form.controls.contractType.value === option.value"
+            [attr.data-testid]="'contract-' + option.value"
+            (click)="setContract(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <h2 class="group-title">Opcional e detalhes</h2>
+
+    <label class="field">
+      <span class="field__label">Salário</span>
+      <span class="money">
+        <span class="money__prefix" aria-hidden="true">R$</span>
+        <input
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          inputmode="decimal"
+          formControlName="salary"
+          placeholder="2400"
+          [attr.aria-invalid]="showError('salary')"
+          data-testid="salary-input"
+        />
+      </span>
+      @if (showError('salary')) {
+        <span class="field__error">O salário não pode ser negativo.</span>
+      } @else {
+        <span class="field__hint">Deixe em branco para mostrar “A combinar”.</span>
+      }
+    </label>
+
+    <label class="field">
+      <span class="field__label">Descrição da vaga</span>
+      <textarea
+        class="input textarea"
+        rows="6"
+        formControlName="description"
+        placeholder="Conte o dia a dia da função, a equipe e o que você espera do candidato."
+        [attr.maxlength]="limits.DESCRIPTION_MAX"
+        [attr.aria-invalid]="showError('description')"
+        data-testid="description-input"
+      ></textarea>
+      @if (showError('description')) {
+        <span class="field__error">
+          @if (tooLong('description')) {
+            A descrição pode ter no máximo {{ limits.DESCRIPTION_MAX }} caracteres.
+          } @else {
+            Escreva uma descrição com pelo menos 20 caracteres.
+          }
+        </span>
+      }
+    </label>
+
+    <label class="field">
+      <span class="field__label">Requisitos</span>
+      <textarea
+        class="input textarea"
+        rows="3"
+        formControlName="requirements"
+        placeholder="Ex.: experiência em praças quentes, disponibilidade aos fins de semana."
+        [attr.maxlength]="limits.REQUIREMENTS_MAX"
+        [attr.aria-invalid]="showError('requirements')"
+        data-testid="requirements-input"
+      ></textarea>
+      @if (showError('requirements')) {
+        <span class="field__error">Os requisitos podem ter no máximo {{ limits.REQUIREMENTS_MAX }} caracteres.</span>
+      }
+    </label>
+
+    <label class="check">
+      <input type="checkbox" formControlName="urgent" data-testid="urgent-input" />
+      <span>Marcar como urgente</span>
+    </label>
+
+    @if (submitError(); as message) {
+      <p class="inline-error" role="alert" data-testid="submit-error">{{ message }}</p>
+    }
+
+    <div class="form__actions">
+      <a class="btn btn--ghost" routerLink="/my-jobs">Cancelar</a>
+      <button type="submit" class="btn btn--primary" [disabled]="submitting()" data-testid="publish-btn">
+        @if (mode() === 'edit') {
+          {{ submitting() ? 'Salvando...' : 'Salvar alterações' }}
+        } @else {
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
+          {{ submitting() ? 'Publicando...' : 'Publicar vaga' }}
+        }
+      </button>
+    </div>
+  </form>
+
+  <aside class="preview" aria-label="Prévia da vaga">
+    <h2 class="group-title">Prévia da vaga</h2>
+    <div class="preview__card card" data-testid="preview">
+      <div class="preview__top">
+        <span class="preview__logo" aria-hidden="true">R</span>
+        @if (preview().urgent) {
+          <span class="tag tag--urgent">Urgente</span>
+        }
+      </div>
+      <p class="preview__title">{{ preview().title || 'Cargo da vaga' }}</p>
+      <div class="preview__tags">
+        @if (shiftLabel(preview().shift); as shift) {
+          <span class="tag tag--muted">{{ shift }}</span>
+        }
+        <span class="tag tag--muted">{{ contractLabel(preview().contractType ?? 'CLT') }}</span>
+      </div>
+      <p class="preview__label">Salário</p>
+      <p class="preview__salary">{{ formatSalary(preview().salary) }}</p>
+    </div>
+    <p class="note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v.01M12 11v5"></path></svg>
+      @if (mode() === 'edit') {
+        As alterações aparecem para os profissionais assim que você salvar.
+      } @else {
+        A vaga aparece para os profissionais assim que for publicada. Você pode encerrá-la a qualquer momento em Minhas vagas.
+      }
+    </p>
+  </aside>
+</div>

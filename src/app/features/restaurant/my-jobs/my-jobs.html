@@ -96,7 +96,23 @@
               <a class="btn btn--gold-outline" [routerLink]="['/pipeline']" [queryParams]="{ job: item.job.id }">
                 Ver pipeline
               </a>
-              @if (item.job.status !== 'ENCERRADA') {
+              <a
+                class="btn btn--ghost"
+                [routerLink]="['/my-jobs', item.job.id, 'preview']"
+                [state]="{ job: item.job }"
+                data-testid="view-job"
+              >
+                Ver vaga
+              </a>
+              @if (item.job.status === 'ABERTA' || item.job.status === 'PAUSADA') {
+                <a
+                  class="btn btn--ghost"
+                  [routerLink]="['/my-jobs', item.job.id, 'edit']"
+                  [state]="{ job: item.job }"
+                  data-testid="edit-job"
+                >
+                  Editar
+                </a>
                 <button type="button" class="btn btn--ghost" (click)="askClose(item.job.id)" data-testid="close-job">
                   Encerrar vaga
                 </button>

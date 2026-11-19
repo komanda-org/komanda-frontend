@@ -8,6 +8,7 @@ import { ApplicationsService } from '../../../core/services/applications.service
 import { JobsService } from '../../../core/services/jobs.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import { greetingFor } from '../../../core/utils/greeting';
+import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 
 const RECENT_LIMIT = 5;
 
@@ -37,7 +38,7 @@ export function describeHomeError(error: unknown): string {
 
 @Component({
   selector: 'app-professional-home',
-  imports: [RouterLink],
+  imports: [RouterLink, ReviewButton],
   templateUrl: './professional-home.html',
   styleUrl: './professional-home.scss',
 })
@@ -89,7 +90,7 @@ export class ProfessionalHome {
       openJobs: this.jobsService.search({ take: 1 }).pipe(map((page) => page.total)),
       // O nome so enfeita a saudacao: sem perfil o painel continua.
       name: this.profileService.getMe().pipe(
-        map((profile) => firstName(profile.fullName)),
+        map((me) => (me.role === 'RESTAURANTE' ? null : firstName(me.fullName))),
         catchError(() => of(null)),
       ),
     })

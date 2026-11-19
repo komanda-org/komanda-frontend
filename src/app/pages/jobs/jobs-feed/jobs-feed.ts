@@ -370,7 +370,7 @@ export class JobsFeed {
         let distance: number | null = null;
         try {
           const destination = await this.locationService.getRestaurantCoordinates(
-            job.restaurant.zipCode,
+            job.restaurant.zipCode ?? undefined,
             job.restaurant.address,
           );
           distance = destination ? this.locationService.calculateDistanceKm(origin, destination) : null;

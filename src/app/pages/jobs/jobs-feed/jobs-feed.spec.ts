@@ -294,6 +294,16 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.textContent).toContain('Urgente');
   });
 
+  it('links the restaurant name to its public profile', () => {
+    loadJobs();
+
+    const hrefs = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="restaurant-link"]'),
+    ).map((link) => link.getAttribute('href'));
+    expect(hrefs[0]).toMatch(/^\/restaurantes\/restaurant-\d$/);
+    expect(hrefs).toHaveLength(3);
+  });
+
   it('loads the next server page and appends its jobs', () => {
     const firstPage = Array.from({ length: 20 }, (_, index) => ({
       ...jobs[index % jobs.length],

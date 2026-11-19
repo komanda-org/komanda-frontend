@@ -4,17 +4,54 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Review } from '../../../core/models/profile.model';
-import { RestaurantsService } from '../../../core/services/restaurants.service';
-import { RestaurantProfile } from './restaurant-profile';
+import { RestaurantPublicProfile } from '../../../core/models/restaurant.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { RestaurantProfile, jobMetaLine, reviewsCountLabel } from './restaurant-profile';
 
 @Component({ template: '' })
-class JobDetailStub {}
+class StubPage {}
 
-const SLUG = 'l-atelier-des-sens';
-const REVIEWS_URL = `/api/users/${SLUG}/reviews`;
+const ID = '701cce5e-1cc4-45e5-8e6a-4d5751ee259f';
+const PROFILE_URL = `/api/restaurants/${ID}`;
+const REVIEWS_URL = `/api/users/${ID}/reviews`;
+
+function restaurant(overrides: Partial<RestaurantPublicProfile> = {}): RestaurantPublicProfile {
+  return {
+    id: ID,
+    restaurantName: 'Cantina Bella Massa',
+    cuisineType: 'Italiana',
+    description: 'Cantina italiana tradicional com massas artesanais e forno a lenha.',
+    address: 'Rua das Flores, 123 - Centro, São Paulo - SP',
+    phone: '(11) 98765-4321',
+    zipCode: '01001-000',
+    logoUrl: null,
+    averageRating: 4.5,
+    reviewsCount: 12,
+    openJobs: [
+      {
+        id: 'job-1',
+        title: 'Cozinheiro(a) de massas',
+        contractType: 'CLT',
+        salary: 3200,
+        shift: 'NOITE',
+        urgent: true,
+        createdAt: '2026-11-19T09:20:05.590Z',
+      },
+      {
+        id: 'job-2',
+        title: 'Barista para fins de semana',
+        contractType: 'FREELANCER',
+        salary: null,
+        shift: null,
+        urgent: false,
+        createdAt: '2026-11-18T09:20:05.590Z',
+      },
+    ],
+    ...overrides,
+  };
+}
 
 const REVIEWS: Review[] = [
   {
@@ -27,181 +64,220 @@ const REVIEWS: Review[] = [
   },
 ];
 
-function page(data: Review[]) {
+function reviewsPage(data: Review[]) {
   return { data, total: data.length, skip: 0, take: 20, averageRating: 5 };
 }
+
+describe('restaurant profile helpers', () => {
+  it('pluralises the reviews count', () => {
+    expect(reviewsCountLabel(1)).toBe('(1 avaliação)');
+    expect(reviewsCountLabel(12)).toBe('(12 avaliações)');
+  });
+
+  it('joins contract and shift labels, skipping a missing shift', () => {
+    expect(jobMetaLine(restaurant().openJobs[0])).toBe('CLT • Noite');
+    expect(jobMetaLine(restaurant().openJobs[1])).toBe('Freelancer');
+  });
+});
 
 describe('RestaurantProfile', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;
-  let service: RestaurantsService;
+  let user: { id: string; role: 'PROFISSIONAL' | 'RESTAURANTE' };
 
   const el = () => harness.routeNativeElement as HTMLElement;
   const node = (testid: string) => el().querySelector<HTMLElement>(`[data-testid="${testid}"]`);
-  const text = (testid: string) => node(testid)?.textContent?.trim();
+  const text = (testid: string) => node(testid)?.textContent?.trim().replace(/\s+/g, ' ');
   const all = (testid: string) =>
-    Array.from(el().querySelectorAll(`[data-testid="${testid}"]`)).map((n) => n.textContent?.trim());
+    Array.from(el().querySelectorAll(`[data-testid="${testid}"]`)).map((n) =>
+      n.textContent?.trim().replace(/\s+/g, ' '),
+    );
 
   async function settle(): Promise<void> {
     await harness.fixture.whenStable();
     harness.detectChanges();
   }
 
-  async function open(slug = SLUG): Promise<void> {
+  async function open(id = ID): Promise<void> {
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl(`/restaurantes/${slug}`);
+    await harness.navigateByUrl(`/restaurantes/${id}`);
     await settle();
   }
 
-  async function render(reviews: Review[] = REVIEWS): Promise<void> {
+  async function render(
+    profile: RestaurantPublicProfile = restaurant(),
+    reviews: Review[] = REVIEWS,
+  ): Promise<void> {
     await open();
-    http.expectOne(REVIEWS_URL).flush(page(reviews));
+    http.expectOne(PROFILE_URL).flush(profile);
+    await settle();
+    http.expectOne(REVIEWS_URL).flush(reviewsPage(reviews));
     await settle();
   }
 
   beforeEach(() => {
+    user = { id: 'prof-1', role: 'PROFISSIONAL' };
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: 'restaurantes/:slug', component: RestaurantProfile },
-          { path: 'vagas/:id', component: JobDetailStub },
-          { path: 'vagas', component: JobDetailStub },
+          { path: 'restaurantes/:id', component: RestaurantProfile },
+          { path: 'vagas/:id', component: StubPage },
+          { path: 'pipeline', component: StubPage },
+          { path: 'my-jobs/:id/preview', component: StubPage },
+          { path: 'home', component: StubPage },
         ]),
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
+        { provide: AuthService, useValue: { getUser: () => user } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    service = TestBed.inject(RestaurantsService);
   });
 
   afterEach(() => http.verify());
 
-  it('shows cover, logo, badges, name, location, about and pay, in this order', async () => {
+  it('renders the restaurant data from a single GET', async () => {
     await render();
 
-    const order = [
-      'restaurant-cover',
-      'restaurant-logo',
-      'restaurant-badges',
-      'restaurant-name',
-      'restaurant-location',
-      'restaurant-about',
-      'restaurant-pay',
-    ];
-    const nodes = order.map((id) => node(id)!);
-    nodes.forEach((current, i) => {
-      expect(current).not.toBeNull();
-      if (i > 0) {
-        expect(nodes[i - 1].compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      }
-    });
-
-    expect(text('restaurant-category')).toBe('Alta Gastronomia');
-    expect(text('restaurant-rating')).toBe('4,9');
-    expect(text('restaurant-name')).toBe("L'Atelier des Sens");
-    expect(text('restaurant-location')).toBe('São Paulo, SP');
-    expect(text('restaurant-about')).toContain('Sobre Nós');
-    expect(text('restaurant-pay')).toContain('R$ 5.000 + Gorjetas');
+    expect(text('restaurant-name')).toBe('Cantina Bella Massa');
+    expect(text('restaurant-category')).toBe('Italiana');
+    expect(text('restaurant-logo')).toBe('CM');
+    expect(node('restaurant-rating')?.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      'Nota 4,5 de 5',
+    );
+    expect(text('restaurant-reviews-count')).toBe('(12 avaliações)');
+    expect(text('restaurant-about')).toContain('massas artesanais');
+    expect(text('restaurant-address')).toBe('Rua das Flores, 123 - Centro, São Paulo - SP');
+    expect(node('restaurant-phone')?.querySelector('a')?.getAttribute('href')).toBe('tel:(11) 98765-4321');
+    expect(node('restaurant-events')).toBeNull();
   });
 
-  it('lists each job with title, sector • shift, description, salary and Aplicar Agora', async () => {
+  it('uses the logo image when there is one', async () => {
+    await render(restaurant({ logoUrl: '/logo.png' }));
+
+    expect(node('restaurant-logo')?.querySelector('img')?.getAttribute('src')).toBe('/logo.png');
+  });
+
+  it('says "Sem avaliações ainda" without a rating', async () => {
+    await render(restaurant({ averageRating: null, reviewsCount: 0 }), []);
+
+    expect(text('restaurant-rating')).toBe('Sem avaliações ainda');
+  });
+
+  it('shows the events badge for a restaurant without zip code', async () => {
+    await render(restaurant({ zipCode: null }));
+
+    expect(text('restaurant-events')).toBe('Atende em eventos');
+  });
+
+  it('lists open jobs with contract, shift, salary in R$ or "A combinar" and the urgent badge', async () => {
     await render();
 
-    expect(all('job-title')).toEqual(['Chef de Partie', 'Sommelier Pleno']);
-    expect(all('job-meta')).toEqual(['Cozinha Quente • Integral', 'Salão • Noturno']);
-    expect(all('job-salary')).toEqual(['R$ 4.500 - R$ 6.000', 'R$ 5.000 + Gorjetas']);
-    expect(all('job-description')[0]).toContain('Buscamos um Chef de Partie');
-    expect(all('job-apply')).toEqual(['Aplicar Agora', 'Aplicar Agora']);
+    expect(all('job-title')).toEqual(['Cozinheiro(a) de massas', 'Barista para fins de semana']);
+    expect(all('job-meta')).toEqual(['CLT • Noite', 'Freelancer']);
+    expect(all('job-salary')[0]).toMatch(/^R\$\s3\.200,00$/);
+    expect(all('job-salary')[1]).toBe('A combinar');
     expect(all('job-urgent')).toEqual(['Urgente']);
-    expect(el().querySelectorAll('[data-testid="job"]')[0].querySelector('[data-testid="job-urgent"]')).not.toBeNull();
   });
 
-  it('Aplicar Agora opens the job detail', async () => {
+  it('a professional opens the job detail from the card', async () => {
     await render();
 
-    const apply = node('job-apply') as HTMLAnchorElement;
-    expect(apply.getAttribute('href')).toBe('/vagas/chef-de-partie');
-
-    apply.click();
+    const link = node('job-link') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/vagas/job-1');
+    link.click();
     await settle();
 
-    expect(TestBed.inject(Router).url).toBe('/vagas/chef-de-partie');
+    expect(TestBed.inject(Router).url).toBe('/vagas/job-1');
   });
 
-  it('keeps Ver Todas disabled with a visible reason, not a dead link', async () => {
+  it('the owner opens the job preview from "Ver vaga"', async () => {
+    user = { id: ID, role: 'RESTAURANTE' };
     await render();
 
-    const seeAll = node('see-all')!;
-    expect(seeAll.tagName).toBe('BUTTON');
-    expect(seeAll.getAttribute('aria-disabled')).toBe('true');
-    expect(text('see-all-reason')).toBeTruthy();
+    const link = node('job-link') as HTMLAnchorElement;
+    expect(link.textContent?.trim()).toBe('Ver vaga');
+    expect(link.getAttribute('href')).toBe('/my-jobs/job-1/preview');
+    link.click();
+    await settle();
+
+    expect(TestBed.inject(Router).url).toBe('/my-jobs/job-1/preview');
   });
 
-  it('shows an actionable empty state without open jobs', async () => {
-    vi.spyOn(service, 'listOpenJobs').mockReturnValue(of([]));
+  it('another restaurant sees the jobs without a link it could not open', async () => {
+    user = { id: 'other', role: 'RESTAURANTE' };
     await render();
 
-    expect(text('jobs-empty')).toContain('Nenhuma vaga aberta no momento.');
-    expect(el().querySelector('[data-testid="job"]')).toBeNull();
+    expect(all('job')).toHaveLength(2);
+    expect(node('job-link')).toBeNull();
   });
 
-  it('renders the recent reviews with avatar, name, stars and testimonial', async () => {
+  it('shows the empty message without open jobs', async () => {
+    await render(restaurant({ openJobs: [] }));
+
+    expect(text('jobs-empty')).toBe('Nenhuma vaga aberta no momento');
+    expect(node('job')).toBeNull();
+  });
+
+  it('renders the recent reviews with the fixed "Profissional" label', async () => {
     await render();
 
     expect(all('review')).toHaveLength(1);
-    expect(text('review-avatar')).toBe('P');
     expect(text('review-author')).toBe('Profissional');
     expect(node('review-stars')?.getAttribute('aria-label')).toBe('Nota 5,0 de 5');
-    expect(el().querySelectorAll('[data-testid="review-stars"] .star--full')).toHaveLength(5);
     expect(text('review-text')).toBe('“Um ambiente de trabalho excepcional.”');
-  });
-
-  it('skips reviews without a testimonial', async () => {
-    await render([{ ...REVIEWS[0], id: 'r2', comment: null }, REVIEWS[0]]);
-
-    expect(all('review')).toHaveLength(1);
-  });
-
-  it('shows an empty state without reviews', async () => {
-    await render([]);
-
-    expect(text('reviews-empty')).toContain('ainda não recebeu avaliações');
   });
 
   it('a reviews failure keeps the restaurant on screen', async () => {
     await open();
+    http.expectOne(PROFILE_URL).flush(restaurant());
+    await settle();
     http.expectOne(REVIEWS_URL).flush(null, { status: 503, statusText: 'Unavailable' });
     await settle();
 
-    expect(text('restaurant-name')).toBe("L'Atelier des Sens");
+    expect(text('restaurant-name')).toBe('Cantina Bella Massa');
     expect(text('reviews-error')).toContain('Tentar de novo');
   });
 
-  it('an unknown restaurant offers the way back to /vagas, without HTTP status', async () => {
-    await open('nao-existe');
+  it('404 shows "Restaurante não encontrado" without the HTTP status', async () => {
+    await open();
+    http
+      .expectOne(PROFILE_URL)
+      .flush({ message: 'Restaurante não encontrado' }, { status: 404, statusText: 'Not Found' });
+    await settle();
 
-    expect(text('not-found')).toContain('Não encontramos este restaurante');
+    expect(text('not-found')).toContain('Restaurante não encontrado');
     expect(text('not-found')).not.toMatch(/404/);
-    expect(node('back-to-jobs')?.getAttribute('href')).toBe('/vagas');
+    expect(node('back-link')?.getAttribute('href')).toBe('/home');
     expect(node('restaurant-name')).toBeNull();
   });
 
+  it('treats an id that is not a UUID (400) as not found', async () => {
+    await open('nao-existe');
+    http
+      .expectOne('/api/restaurants/nao-existe')
+      .flush({ message: 'Validation failed (uuid is expected)' }, { status: 400, statusText: 'Bad Request' });
+    await settle();
+
+    expect(text('not-found')).toContain('Restaurante não encontrado');
+    expect(el().textContent).not.toContain('uuid');
+  });
+
   it('shows actionable copy on failure and retries', async () => {
-    const getBySlug = service.getBySlug.bind(service);
-    vi.spyOn(service, 'getBySlug')
-      .mockReturnValueOnce(throwError(() => ({ status: 500, messages: ['boom'] })))
-      .mockImplementation(getBySlug);
     await open();
+    http.expectOne(PROFILE_URL).flush(null, { status: 500, statusText: 'Error' });
+    await settle();
 
     expect(text('error')).toContain('Tente de novo');
     expect(text('error')).not.toMatch(/500|api/i);
 
     node('retry-btn')!.click();
     await settle();
-    http.expectOne(REVIEWS_URL).flush(page(REVIEWS));
+    http.expectOne(PROFILE_URL).flush(restaurant());
+    await settle();
+    http.expectOne(REVIEWS_URL).flush(reviewsPage([]));
     await settle();
 
-    expect(text('restaurant-name')).toBe("L'Atelier des Sens");
+    expect(text('restaurant-name')).toBe('Cantina Bella Massa');
   });
 });

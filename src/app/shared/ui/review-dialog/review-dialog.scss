@@ -1,0 +1,142 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgb(0 0 0 / 60%);
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 151;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding: var(--k-s-6);
+  color: var(--k-texto);
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio-lg);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 55%);
+  transform: translate(-50%, -50%);
+  text-align: left;
+}
+
+.dialog__title {
+  margin: 0;
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  font-weight: 400;
+}
+
+.dialog__who {
+  margin: var(--k-s-1) 0 var(--k-s-5);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+.dialog__label {
+  display: block;
+  margin: 0 0 var(--k-s-2);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-sm);
+}
+
+.stars {
+  display: flex;
+  gap: var(--k-s-1);
+  margin-bottom: var(--k-s-5);
+}
+
+.star {
+  position: relative;
+  color: var(--k-linha-forte);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &--on {
+    color: var(--k-ouro);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+// Radio nativo invisivel: mantem setas do teclado e leitor de tela sem desenhar a bolinha.
+.star__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dialog__comment {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 0.9rem;
+  color: var(--k-texto);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+  font: inherit;
+  resize: vertical;
+
+  &:focus-visible {
+    border-color: var(--k-ouro);
+    outline: none;
+  }
+}
+
+.dialog__error {
+  margin: var(--k-s-3) 0 0;
+  color: var(--k-erro);
+  font-size: var(--k-t-sm);
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--k-s-3);
+  margin-top: var(--k-s-5);
+}
+
+.action {
+  min-height: 40px;
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
+
+  &--primary {
+    color: #1a160d;
+    background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  }
+
+  &--ghost {
+    color: var(--k-texto-fraco);
+    background: transparent;
+    border-color: var(--k-linha);
+  }
+}

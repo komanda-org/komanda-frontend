@@ -41,6 +41,12 @@ export function jobStatusLabel(status: JobStatus): string {
   return JOB_STATUS_LABELS[status] ?? status;
 }
 
+export function formatPublishedAt(iso: string): string {
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
+    new Date(iso),
+  );
+}
+
 export function formatSalary(salary: number | string | null | undefined): string {
   if (salary === null || salary === undefined || salary === '') {
     return 'A combinar';

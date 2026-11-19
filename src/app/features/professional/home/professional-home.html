@@ -80,7 +80,15 @@
                 <p class="meta">{{ application.restaurant.name }} · {{ appliedAt(application) }}</p>
               </div>
               @if (application.status === 'APROVADA') {
-                <a class="btn btn--gold-outline" [routerLink]="['/mensagens', application.job.id]">Abrir chat</a>
+                <div class="row__actions">
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', application.job.id]">Abrir chat</a>
+                  <app-review-button
+                    label="Avaliar restaurante"
+                    [jobId]="application.job.id"
+                    [receiverId]="application.restaurant.id"
+                    [receiverName]="application.restaurant.name"
+                  />
+                </div>
               }
             </li>
           }

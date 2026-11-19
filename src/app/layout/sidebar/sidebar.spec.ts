@@ -3,11 +3,28 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { ProfessionalProfile } from '../../core/models/profile.model';
+import { ProfessionalMe, RestaurantMe } from '../../core/models/profile.model';
 import { AuthService } from '../../core/services/auth.service';
 import { Sidebar } from './sidebar';
 
-const ME: ProfessionalProfile = {
+const RESTAURANT_ME: RestaurantMe = {
+  role: 'RESTAURANTE',
+  id: 'r1',
+  email: 'restaurante.teste@komanda.dev',
+  restaurantName: 'Cantina Bella Massa',
+  cnpj: '11222333000181',
+  cuisineType: 'Italiana',
+  description: 'Cantina italiana',
+  address: 'Rua das Flores, 123',
+  phone: '(11) 98765-4321',
+  zipCode: '01001-000',
+  logoUrl: null,
+  averageRating: null,
+  plan: 'FREE',
+};
+
+const ME: ProfessionalMe = {
+  role: 'PROFISSIONAL',
   id: 'u1',
   fullName: 'Jose Ravani',
   mainRole: 'Sushiman',
@@ -22,7 +39,13 @@ const ME: ProfessionalProfile = {
 };
 
 describe('Sidebar (restaurante)', () => {
-  it('shows the restaurant navigation without asking for a professional profile', async () => {
+  let fixture: ComponentFixture<Sidebar>;
+  let http: HttpTestingController;
+  const el = () => fixture.nativeElement as HTMLElement;
+  const labels = () =>
+    Array.from(el().querySelectorAll('.nav-link')).map((link) => link.textContent?.trim());
+
+  beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Sidebar],
       providers: [
@@ -32,20 +55,51 @@ describe('Sidebar (restaurante)', () => {
         { provide: AuthService, useValue: { getUser: () => ({ id: 'r1', role: 'RESTAURANTE' }) } },
       ],
     }).compileComponents();
-    const http = TestBed.inject(HttpTestingController);
-    const fixture = TestBed.createComponent(Sidebar);
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(Sidebar);
     fixture.detectChanges();
     await fixture.whenStable();
+  });
 
-    const labels = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.nav-link'),
-    ).map((link) => link.textContent?.trim());
-    expect(labels).toEqual(['Início', 'Vagas', 'Mensagens', 'Pipeline', 'Planos']);
-    expect(fixture.nativeElement.querySelector('[data-testid="user-role"]')?.textContent).toContain(
-      'Restaurante',
-    );
-    http.expectNone('/api/users/me');
-    http.verify();
+  afterEach(() => http.verify());
+
+  it('hides Perfil until /me answers, then points it at the restaurant public profile', async () => {
+    expect(labels()).toEqual(['Início', 'Vagas', 'Mensagens', 'Pipeline', 'Planos']);
+    expect(el().querySelector('[data-testid="nav-perfil"]')).toBeNull();
+
+    http.expectOne('/api/users/me').flush(RESTAURANT_ME);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(labels()).toEqual(['Início', 'Vagas', 'Mensagens', 'Pipeline', 'Planos', 'Perfil']);
+    expect(el().querySelector('[data-testid="nav-perfil"]')?.getAttribute('href')).toBe('/restaurantes/r1');
+  });
+
+  it('shows the restaurant name, initials and logo', async () => {
+    http.expectOne('/api/users/me').flush({ ...RESTAURANT_ME, logoUrl: '/logo.png' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el().querySelector('[data-testid="user-name"]')?.textContent).toContain('Cantina Bella Massa');
+    expect(el().querySelector('[data-testid="user-role"]')?.textContent).toContain('Restaurante');
+    expect(el().querySelector('[data-testid="user-avatar"] img')?.getAttribute('src')).toBe('/logo.png');
+  });
+
+  it('falls back to initials without a logo', async () => {
+    http.expectOne('/api/users/me').flush(RESTAURANT_ME);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el().querySelector('.avatar-initials')?.textContent).toContain('CM');
+  });
+
+  it('keeps the navigation without Perfil when /me fails', async () => {
+    http.expectOne('/api/users/me').flush(null, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(labels()).toHaveLength(5);
+    expect(el().querySelector('[data-testid="user-role"]')?.textContent).toContain('Restaurante');
   });
 });
 
@@ -84,6 +138,7 @@ describe('Sidebar', () => {
       (link.nativeElement as HTMLElement).textContent?.trim(),
     );
     expect(labels).toEqual(['Início', 'Vagas', 'Matches', 'Mensagens', 'Perfil']);
+    expect(el().querySelector('[data-testid="nav-perfil"]')?.getAttribute('href')).toBe('/perfil');
   });
 
   it('uses the profile photo when there is one', async () => {

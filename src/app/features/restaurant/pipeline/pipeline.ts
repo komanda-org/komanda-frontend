@@ -6,6 +6,7 @@ import { Applicant, RestaurantJob } from '../../../core/models/restaurant-jobs.m
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
 import { contractLabel, shiftLabel } from '../../../core/utils/job-labels';
 import { initials } from '../../../core/utils/text';
+import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 import { describeRestaurantError } from '../restaurant-errors';
 
 export const PIPELINE_TABS: readonly { status: ApplicationStatus; label: string }[] = [
@@ -24,7 +25,7 @@ export function appliedAtLabel(iso: string, now: Date): string {
 
 @Component({
   selector: 'app-pipeline',
-  imports: [RouterLink],
+  imports: [RouterLink, ReviewButton],
   templateUrl: './pipeline.html',
   styleUrl: './pipeline.scss',
 })

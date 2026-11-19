@@ -33,119 +33,13 @@
       </div>
     </div>
   } @else if (job(); as job) {
-    <div class="layout">
-      <div class="main">
-        <article class="hero" data-testid="job-hero">
-          <div class="hero__top">
-            <div class="restaurant">
-              @if (job.restaurant.logoUrl) {
-                <img class="restaurant__logo" [src]="job.restaurant.logoUrl" alt="" width="56" height="56">
-              } @else {
-                <span class="restaurant__logo restaurant__logo--initial" aria-hidden="true">{{ restaurantInitial(job) }}</span>
-              }
-              <div>
-                <p class="restaurant__name" data-testid="restaurant-name">{{ job.restaurant.restaurantName }}</p>
-                @if (job.restaurant.cuisineType) {
-                  <p class="restaurant__cuisine">{{ job.restaurant.cuisineType }}</p>
-                }
-              </div>
-            </div>
-            @if (job.urgent) {
-              <span class="urgent" data-testid="urgent-badge">Urgente</span>
-            }
-          </div>
-
-          <h1 class="hero__title" data-testid="job-title">{{ job.title }}</h1>
-
-          <ul class="badges" aria-label="Características da vaga">
-            @if (shiftLabel(job.shift); as shift) {
-              <li class="badge">{{ shift }}</li>
-            }
-            <li class="badge">{{ contractLabel(job.contractType) }}</li>
-          </ul>
-
-          <p class="salary" data-testid="job-salary">{{ formatSalary(job.salary) }}</p>
-        </article>
-
-        <section class="block" aria-labelledby="about-title">
-          <h2 class="block__title" id="about-title">Sobre a vaga</h2>
-          <p class="block__text" data-testid="job-description">{{ job.description }}</p>
-        </section>
-
-        @if (job.requirements) {
-          <section class="block" aria-labelledby="requirements-title">
-            <h2 class="block__title" id="requirements-title">Requisitos</h2>
-            <p class="block__text" data-testid="job-requirements">{{ job.requirements }}</p>
-          </section>
-        }
-
-        <section class="establishment" aria-labelledby="establishment-title">
-          <div>
-            <h2 class="establishment__title" id="establishment-title">O Estabelecimento</h2>
-            <p class="establishment__meta">
-              @if (job.restaurant.averageRating) {
-                <span class="rating">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"></path></svg>
-                  {{ job.restaurant.averageRating }}
-                </span>
-              }
-              <span>{{ job.restaurant.cuisineType || job.restaurant.restaurantName }}</span>
-            </p>
-            @if (job.restaurant.address) {
-              <p class="establishment__address">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
-                {{ job.restaurant.address }}
-              </p>
-            }
-          </div>
-          <a class="establishment__link" [routerLink]="['/restaurantes', job.restaurantId]" data-testid="restaurant-link">
-            Ver perfil completo <span aria-hidden="true">→</span>
-          </a>
-        </section>
-      </div>
-
-      <aside class="side">
-        <div class="side__card">
-          @if (applied()) {
-            <button type="button" class="apply apply--done" disabled data-testid="apply-btn">
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"></path></svg>
-              Candidatura enviada
-            </button>
-          } @else {
-            <button type="button" class="apply" [disabled]="applying()" (click)="apply()" data-testid="apply-btn">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
-              {{ applying() ? 'Enviando...' : 'Candidatar-se' }}
-            </button>
-          }
-          @if (applyError(); as message) {
-            <p class="apply-error" role="alert">{{ message }}</p>
-          }
-
-          <h2 class="side__title">Informações rápidas</h2>
-          <ul class="facts">
-            @if (job.urgent) {
-              <li class="fact">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M9 3v4m6-4v4"></path></svg>
-                <div><p class="fact__label">Início imediato</p><p class="fact__hint">Vaga marcada como urgente</p></div>
-              </li>
-            }
-            @if (shiftLabel(job.shift); as shift) {
-              <li class="fact">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
-                <div><p class="fact__label">Turno</p><p class="fact__hint">{{ shift }}</p></div>
-              </li>
-            }
-            <li class="fact">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5M10 13h6m-6 4h6"></path></svg>
-              <div><p class="fact__label">Contrato</p><p class="fact__hint">{{ contractLabel(job.contractType) }}</p></div>
-            </li>
-            <li class="fact">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8 12h8"></path></svg>
-              <div><p class="fact__label">Publicada em</p><p class="fact__hint">{{ formatPublishedAt(job.createdAt) }}</p></div>
-            </li>
-          </ul>
-        </div>
-      </aside>
-    </div>
+    <app-job-view
+      [job]="job"
+      mode="professional"
+      [applied]="applied()"
+      [applying]="applying()"
+      [applyError]="applyError()"
+      (apply)="apply()"
+    />
   }
 </section>

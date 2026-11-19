@@ -137,3 +137,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}

@@ -59,6 +59,16 @@ export interface CreateJobPayload {
   urgent?: boolean;
 }
 
+/** Corpo de PATCH /jobs/:id: so o que mudou; null apaga o campo. Turno e status ficam fora. */
+export interface UpdateJobPayload {
+  title?: string;
+  description?: string;
+  requirements?: string | null;
+  salary?: number | null;
+  contractType?: ContractType;
+  urgent?: boolean;
+}
+
 export interface JobOverview {
   job: RestaurantJob;
   applicants: Applicant[];

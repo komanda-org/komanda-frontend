@@ -118,4 +118,31 @@ describe('Pipeline', () => {
     expect(rows()).toHaveLength(1);
     expect(el().querySelector('[data-testid="chat-link"]')?.getAttribute('href')).toBe('/mensagens/j1');
   });
+
+  it('reviews the approved professional with the open job and the professional id', async () => {
+    await render('j2');
+    http
+      .expectOne((r) => r.url === '/api/jobs/j2/applications')
+      .flush(page([applicant('a1', 'PENDENTE'), applicant('a2', 'APROVADA')]));
+    await settle();
+
+    expect(rows()[0].querySelector('[data-testid="review-btn"]')).toBeNull();
+    (el().querySelector('[data-testid="tab-APROVADA"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const review = el().querySelector('[data-testid="review-btn"]') as HTMLButtonElement;
+    expect(review.textContent).toContain('Avaliar profissional');
+
+    review.click();
+    fixture.detectChanges();
+    (el().querySelector('[data-testid="star-5"]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    (el().querySelector('[data-testid="review-submit"]') as HTMLButtonElement).click();
+
+    const request = http.expectOne('/api/users/reviews');
+    expect(request.request.body).toEqual({ jobId: 'j2', receiverId: 'p-a2', rating: 5 });
+    request.flush({ id: 'rev1' });
+    await settle();
+
+    expect(el().querySelector('[data-testid="reviewed"]')?.textContent).toContain('Avaliado ✓');
+  });
 });
