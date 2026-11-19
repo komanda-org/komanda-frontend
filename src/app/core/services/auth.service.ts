@@ -33,6 +33,20 @@ export class AuthService {
       .pipe(tap((response) => this.storeSession(response, payload.email)));
   }
 
+  /** Responde 200 exista a conta ou nao: a API nunca revela quem tem cadastro. */
+  recoverPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/auth/recover-password`, {
+      email: email.trim(),
+    });
+  }
+
+  resetPassword(token: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/auth/reset-password`, {
+      token,
+      password,
+    });
+  }
+
   logout(): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;

@@ -55,6 +55,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'plans',
     renderMode: RenderMode.Client,
   },
+  // O token vem na query: pre-renderizar geraria o HTML de "Link invalido".
+  {
+    path: 'auth/redefinir-senha',
+    renderMode: RenderMode.Client,
+  },
   // Slug dinamico: o build nao sabe quais restaurantes pre-renderizar.
   {
     path: 'restaurantes/:slug',

@@ -46,6 +46,12 @@ export const routes: Routes = [
       import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
+    path: 'auth/redefinir-senha',
+    title: 'Criar nova senha · Komanda',
+    loadComponent: () =>
+      import('./pages/reset-password/reset-password').then((m) => m.ResetPassword),
+  },
+  {
     path: '',
     component: AppLayout,
     canActivateChild: [authChildGuard],
