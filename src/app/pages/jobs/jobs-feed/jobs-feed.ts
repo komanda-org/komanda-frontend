@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { ApiError, isApiError } from '../../../core/models/api-error.model';
-import { Job } from '../../../core/models/jobs.model';
+import { ContractType, Job } from '../../../core/models/jobs.model';
 import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -13,6 +13,20 @@ import { Coordinates, LocationService } from '../../../core/services/location.se
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 
 type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO' | null;
+
+const SHIFT_LABELS: Record<string, string> = {
+  MANHA: 'Manhã',
+  TARDE: 'Tarde',
+  NOITE: 'Noite',
+  MADRUGADA: 'Madrugada',
+};
+
+const CONTRACT_LABELS: Record<ContractType, string> = {
+  CLT: 'CLT',
+  PJ: 'PJ',
+  FREELANCER: 'Freelancer',
+  ESTAGIO: 'Estágio',
+};
 
 @Component({
   selector: 'app-jobs-feed',
@@ -73,9 +87,7 @@ export class JobsFeed {
       const matchesPreferences =
         filter !== 'para-voce' || this.matchesPreferences(job, preferences);
       const matchesDistance =
-        maxDistance === null || (job.distanceKm !== null &&
-          job.distanceKm !== undefined &&
-          job.distanceKm <= maxDistance);
+        maxDistance === null || job.distanceKm == null || job.distanceKm <= maxDistance;
 
       return matchesQuery && matchesContract && matchesPreferences && matchesDistance;
     });
@@ -219,7 +231,15 @@ export class JobsFeed {
   }
 
   protected formatDistance(distanceKm: number): string {
-    return `${distanceKm.toFixed(1)} KM`;
+    return `${distanceKm.toFixed(1).replace('.', ',')} km`;
+  }
+
+  protected shiftLabel(shift: string): string {
+    return SHIFT_LABELS[shift] ?? shift;
+  }
+
+  protected contractLabel(contractType: ContractType): string {
+    return CONTRACT_LABELS[contractType] ?? contractType;
   }
 
   private requestPage(pageSkip: number, append: boolean): void {

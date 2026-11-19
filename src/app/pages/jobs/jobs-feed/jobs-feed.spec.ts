@@ -126,10 +126,11 @@ describe('JobsFeed', () => {
   it('renders the greeting and total returned by the API', () => {
     loadJobs();
 
-    expect(fixture.nativeElement.textContent).toContain('Olá, João');
+    expect(fixture.nativeElement.textContent).toContain('Olá!');
     expect(fixture.nativeElement.textContent).toContain('12 vagas perto de você');
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
-    expect(fixture.nativeElement.textContent).toContain('1.2 KM');
+    expect(fixture.nativeElement.textContent).toContain('1,2 km');
+    expect(fixture.nativeElement.textContent).toContain('Noite');
     expect(fixture.nativeElement.textContent).toContain('Urgente');
   });
 
@@ -235,6 +236,20 @@ describe('JobsFeed', () => {
     loadJobs({ ...response, data: [{ ...jobs[0], contractType: 'PJ' }] });
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
+  });
+
+  it('keeps jobs without distance when a maximum distance is set', () => {
+    loadJobs();
+
+    const input: HTMLInputElement = fixture.nativeElement.querySelector(
+      'input[name="maxDistance"]',
+    );
+    input.value = '1';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(2);
+    expect(fixture.nativeElement.textContent).not.toContain('Le Petit Bistro');
   });
 
   it('filters Para você by the professional role and contract preference', () => {

@@ -1,6 +1,6 @@
 <section class="feed" aria-labelledby="greeting">
   <header class="feed__header">
-    <h1 id="greeting">Olá, João</h1>
+    <h1 id="greeting">Olá!</h1>
     <p>
       {{ totalJobs() }} {{ totalJobs() === 1 ? 'vaga' : 'vagas' }} perto de você
     </p>
@@ -195,9 +195,9 @@
 
           <ul class="badges" aria-label="Detalhes da vaga">
             @if (job.shift) {
-              <li class="badge">{{ job.shift }}</li>
+              <li class="badge">{{ shiftLabel(job.shift) }}</li>
             }
-            <li class="badge">{{ job.contractType }}</li>
+            <li class="badge">{{ contractLabel(job.contractType) }}</li>
             @if (job.distanceKm !== null && job.distanceKm !== undefined) {
               <li class="badge">{{ formatDistance(job.distanceKm) }}</li>
             }
