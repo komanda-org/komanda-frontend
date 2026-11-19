@@ -12,6 +12,7 @@ export type UserRole = 'PROFISSIONAL' | 'RESTAURANTE';
 export interface AuthUser {
   id: string;
   role: UserRole;
+  email?: string;
 }
 
 export interface LoginResponse {

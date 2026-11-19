@@ -2,6 +2,9 @@
    precisa ir em :host, senao o encapsulamento do Angular ignora. */
 :host {
   display: flex;
+  height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
   flex-direction: column;
   background: var(--k-superficie);
   overflow-y: auto;
