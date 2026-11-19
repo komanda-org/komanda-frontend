@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authChildGuard, authGuard } from './core/guards/auth.guard';
 import { AppLayout } from './layout/app-layout/app-layout';
 import { PlaceholderPage } from './pages/placeholder/placeholder-page';
 
@@ -44,11 +45,13 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     title: 'Dashboard · Komanda',
+    canActivate: [authGuard],
     loadComponent: () => import('./pages/dashboard/dashboard-page').then((m) => m.DashboardPage),
   },
   {
     path: '',
     component: AppLayout,
+    canActivateChild: [authChildGuard],
     children: [
       {
         path: 'vagas',
