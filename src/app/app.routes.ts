@@ -80,6 +80,14 @@ export const routes: Routes = [
         title: 'Chat · Komanda',
       },
       { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
+      {
+        path: 'restaurantes/:slug',
+        title: 'Restaurante · Komanda',
+        loadComponent: () =>
+          import('./features/restaurants/restaurant-profile/restaurant-profile').then(
+            (m) => m.RestaurantProfile,
+          ),
+      },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],
   },
