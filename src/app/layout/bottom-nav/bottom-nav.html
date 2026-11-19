@@ -1,0 +1,15 @@
+<nav class="bottom-nav" aria-label="Navegação principal" data-testid="bottom-nav">
+  @for (item of nav; track item.path) {
+    <a
+      class="item"
+      [attr.data-testid]="'bottom-' + item.testid"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+    >
+      <span class="icon" [style.--icon-url]="'url(' + item.icon + ')'" aria-hidden="true"></span>
+      <span class="label">{{ item.label }}</span>
+    </a>
+  }
+</nav>

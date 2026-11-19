@@ -50,8 +50,10 @@ e para renomes que ja estiverem acontecendo.
 ## 5. HTTP
 
 - Tela nunca chama `HttpClient` direto: passa pelo service da feature.
-- Erro chega normalizado em `ErroApi` (ver `erro-api.interceptor.ts`); traduzir
-  `status` em frase acionavel na tela, em `switch` de status explicito.
+- Erro chega normalizado em `ApiError` (ver `api-error.interceptor.ts`, o unico
+  registrado em `app.config.ts`); checar com `isApiError` e traduzir `status` em
+  frase acionavel na tela, em `switch` de status explicito. `ErroApi`/`ehErroApi`
+  sao legado e nao batem com o erro que chega.
 - `Authorization: Bearer` vem so do `auth.interceptor.ts` e so em URL relativa.
 
 ## 6. Git

@@ -79,7 +79,15 @@ export const routes: Routes = [
           import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
         title: 'Chat · Komanda',
       },
-      { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
+      {
+        path: 'perfil',
+        title: 'Meu perfil · Komanda',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/profile/professional-profile/professional-profile').then(
+            (m) => m.ProfessionalProfilePage,
+          ),
+      },
       {
         path: 'restaurantes/:slug',
         title: 'Restaurante · Komanda',
