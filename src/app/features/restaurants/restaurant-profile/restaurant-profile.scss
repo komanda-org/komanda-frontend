@@ -1,0 +1,453 @@
+:host {
+  display: block;
+  --urgente: #e5533d;
+  --estrela-vazia: #3a3a3a;
+}
+
+p,
+h1,
+h2,
+h3,
+ul,
+blockquote {
+  margin: 0;
+}
+
+.page {
+  max-width: 72rem;
+  margin-inline: auto;
+  font-family: var(--k-sans);
+  color: var(--k-texto);
+}
+
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* --- Coluna do restaurante: capa, logo, selos, nome, local, sobre, remuneracao --- */
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Sem foto, a capa vira um gradiente escuro: o frame pede "tons escuros", nunca um buraco cinza. */
+.cover {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border-radius: var(--k-raio-lg);
+  background:
+    radial-gradient(120% 90% at 20% 10%, rgb(242 202 80 / 14%), transparent 60%),
+    linear-gradient(160deg, #2a2418, #121212 70%);
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6);
+}
+
+/* Logo sobreposto a capa: sobe metade da propria altura. */
+.logo {
+  width: 88px;
+  height: 88px;
+  margin: -56px 0 4px 20px;
+  overflow: hidden;
+  border: 2px solid var(--k-ouro);
+  border-radius: var(--k-raio-lg);
+  background: var(--k-superficie);
+}
+
+.logo img,
+.logo-initials {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-initials {
+  font-family: var(--k-serif);
+  font-size: 32px;
+  color: var(--k-ouro);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--k-texto);
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-pilula);
+}
+
+.badge--gold {
+  color: var(--k-ouro);
+  background: var(--k-ouro-fosco);
+  border-color: transparent;
+}
+
+.name {
+  font-family: var(--k-serif);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--k-texto-muted);
+}
+
+.location svg {
+  flex-shrink: 0;
+  color: var(--k-ouro);
+}
+
+.card {
+  padding: 20px;
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--k-texto-muted);
+}
+
+.card-title {
+  font-family: var(--k-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--k-ouro);
+}
+
+.pay {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 20px;
+  border-left: 2px solid var(--k-ouro);
+}
+
+.pay-label {
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--k-texto-fraco);
+}
+
+.pay-value {
+  font-family: var(--k-serif);
+  font-size: 22px;
+  color: var(--k-ouro);
+}
+
+/* --- Coluna direita: vagas e avaliacoes --- */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--k-linha);
+}
+
+.section-title {
+  font-family: var(--k-serif);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.section-title--caps {
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.see-all {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.see-all-btn {
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--k-ouro);
+  cursor: not-allowed;
+}
+
+.see-all-btn[aria-disabled='true'] {
+  opacity: 0.6;
+}
+
+.see-all-reason {
+  font-size: var(--k-t-xs);
+  color: var(--k-texto-fraco);
+}
+
+.jobs,
+.reviews {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.job-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-title {
+  font-family: var(--k-serif);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.urgent {
+  padding: 2px 8px;
+  font-size: var(--k-t-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--urgente);
+  border: 1px solid var(--urgente);
+  border-radius: var(--k-raio-pilula);
+}
+
+.job-meta {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--k-texto-fraco);
+}
+
+/* O frame corta a descricao com reticencias em 2 linhas. */
+.job-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--k-texto-muted);
+}
+
+.job-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--k-linha);
+}
+
+.job-salary {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--k-ouro);
+}
+
+.apply {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--k-texto);
+  text-decoration: underline;
+  text-decoration-color: var(--k-ouro);
+  text-underline-offset: 4px;
+}
+
+.apply:hover {
+  color: var(--k-ouro);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: 50%;
+  background: var(--k-campo);
+  font-family: var(--k-serif);
+  font-size: 16px;
+  color: var(--k-ouro);
+}
+
+.review-who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.review-author {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.review-text {
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--k-texto-muted);
+}
+
+/* --- Estados de lista e estrelas: blocos locais enquanto nao existem no _ui.scss --- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--k-texto-fraco);
+}
+
+.link {
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font-family: var(--k-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--k-ouro);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+}
+
+.action {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #3c2f00;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Estrela por mascara: o gradiente pinta 100%, 50% ou 0% de dourado — meia estrela sem SVG duplicado. */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  --fill: 0%;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--k-ouro) var(--fill), var(--estrela-vazia) var(--fill));
+  mask: url('/icons/star.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/star.svg') center / contain no-repeat;
+}
+
+.star--full {
+  --fill: 100%;
+}
+
+.star--half {
+  --fill: 50%;
+}
+
+/* --- Desktop: restaurante a esquerda, vagas e avaliacoes a direita --- */
+@media (min-width: 1024px) {
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: 48px;
+  }
+
+  .name {
+    font-size: 36px;
+  }
+}

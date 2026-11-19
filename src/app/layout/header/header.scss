@@ -18,13 +18,46 @@
   color: var(--k-ouro);
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-5);
+}
+
 .bell {
   position: relative;
+  padding: 0.25rem;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.25rem;
   line-height: 0;
+}
+
+.bell:focus-visible {
+  border-radius: var(--k-raio);
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 3px;
+}
+
+.logout {
+  padding: var(--k-s-2) var(--k-s-3);
+  color: var(--k-ouro);
+  background: transparent;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  cursor: pointer;
+  font: inherit;
+  transition: background-color 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    background: var(--k-superficie-2);
+    border-color: var(--k-ouro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
 }
 
 .badge {
@@ -33,8 +66,8 @@
   right: 1px;
   width: 9.5px;
   height: 9.5px;
+  border: 2px solid #09090b;
   border-radius: 50%;
   background: #ffb4ab;
-  border: 2px solid #09090b;
   box-shadow: 0 0 8px 0 rgb(255 180 171 / 50%);
 }

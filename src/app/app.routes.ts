@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authChildGuard, authGuard } from './core/guards/auth.guard';
 import { AppLayout } from './layout/app-layout/app-layout';
 import { PlaceholderPage } from './pages/placeholder/placeholder-page';
 
@@ -45,14 +45,28 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     title: 'Dashboard · Komanda',
+    canActivate: [authGuard],
     loadComponent: () => import('./pages/dashboard/dashboard-page').then((m) => m.DashboardPage),
   },
   {
     path: '',
     component: AppLayout,
+    canActivateChild: [authChildGuard],
     children: [
-      { path: 'vagas', component: PlaceholderPage, data: { title: 'Vagas' } },
-      { path: 'matches', component: PlaceholderPage, data: { title: 'Matches' } },
+      {
+        path: 'vagas',
+        title: 'Vagas · Komanda',
+        loadComponent: () =>
+          import('./pages/jobs/jobs-feed/jobs-feed').then((m) => m.JobsFeed),
+      },
+      {
+        path: 'matches',
+        title: 'Minhas candidaturas · Komanda',
+        loadComponent: () =>
+          import('./features/applications/my-applications/my-applications').then(
+            (m) => m.MyApplications,
+          ),
+      },
       {
         path: 'mensagens',
         loadComponent: () =>
@@ -72,6 +86,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/profile/professional-profile/professional-profile').then(
             (m) => m.ProfessionalProfilePage,
+          ),
+      },
+      {
+        path: 'restaurantes/:slug',
+        title: 'Restaurante · Komanda',
+        loadComponent: () =>
+          import('./features/restaurants/restaurant-profile/restaurant-profile').then(
+            (m) => m.RestaurantProfile,
           ),
       },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },

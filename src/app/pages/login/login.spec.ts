@@ -58,7 +58,7 @@ describe('Login', () => {
     httpTestingController.expectNone('/api/auth/login');
   });
 
-  it('sends valid credentials and navigates to the dashboard after success', () => {
+  it('sends valid professional credentials and navigates to vacancies after success', () => {
     const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     component.form.setValue({ email: 'person@example.com', password: 'password123' });
 
@@ -73,6 +73,20 @@ describe('Login', () => {
     request.flush({
       access_token: 'token',
       user: { id: 'user-id', role: 'PROFISSIONAL' },
+    });
+
+    expect(navigateSpy).toHaveBeenCalledWith('/vagas');
+  });
+
+  it('navigates restaurant accounts to the dashboard after success', () => {
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    component.form.setValue({ email: 'restaurant@example.com', password: 'password123' });
+
+    component.submit();
+
+    httpTestingController.expectOne('/api/auth/login').flush({
+      access_token: 'token',
+      user: { id: 'restaurant-id', role: 'RESTAURANTE' },
     });
 
     expect(navigateSpy).toHaveBeenCalledWith('/dashboard');
