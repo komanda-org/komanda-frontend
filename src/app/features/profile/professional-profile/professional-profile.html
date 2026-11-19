@@ -51,6 +51,7 @@
             @if (rating(); as score) {
               <p
                 class="rating"
+                role="img"
                 data-testid="profile-rating"
                 [attr.aria-label]="'Nota ' + formatRating(score) + ' de 5 em ' + reviews().length + (reviews().length === 1 ? ' recomendação' : ' recomendações')"
               >

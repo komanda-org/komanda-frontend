@@ -50,9 +50,11 @@ export function averageRating(reviews: readonly Review[]): number | null {
 }
 
 export function starFills(rating: number): StarFill[] {
+  // Meia estrela e a mais proxima: 4,8 desenha 5 cheias, igual ao numero mostrado.
+  const rounded = Math.round(rating * 2) / 2;
   return [1, 2, 3, 4, 5].map((position) => {
-    if (rating >= position) return 'full';
-    if (rating >= position - 0.5) return 'half';
+    if (rounded >= position) return 'full';
+    if (rounded >= position - 0.5) return 'half';
     return 'empty';
   });
 }
@@ -67,6 +69,8 @@ export function workModelLabel(model: WorkModel): string {
       return 'Freelance';
     case 'TEMPORARIO':
       return 'Temporário';
+    default:
+      return model;
   }
 }
 
@@ -80,6 +84,8 @@ export function mobilityLabel(mobility: Mobility): string {
       return 'Nacional';
     case 'INTERNACIONAL':
       return 'Internacional';
+    default:
+      return mobility;
   }
 }
 

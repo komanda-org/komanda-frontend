@@ -29,6 +29,14 @@ describe('authGuard', () => {
     expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/login');
   });
 
+  it('redirects to /login when the stored token is empty', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    localStorage.setItem(TOKEN_KEY, '');
+
+    const result = run();
+    expect(result instanceof UrlTree).toBe(true);
+  });
+
   it('never redirects during server rendering', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: PLATFORM_ID, useValue: 'server' }],

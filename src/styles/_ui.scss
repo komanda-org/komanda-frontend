@@ -780,6 +780,77 @@ select.entrada option {
   border-radius: var(--k-raio-pilula);
 }
 
+/* ------------------------------------------------- Avaliacao e estados de tela */
+
+/* Estrela por mascara: o gradiente pinta 100%, 50% ou 0% de dourado — meia estrela sem SVG duplicado. */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  --fill: 0%;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--k-ouro) var(--fill), var(--k-star-empty) var(--fill));
+  mask: url('/icons/star.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/star.svg') center / contain no-repeat;
+}
+
+.star--full {
+  --fill: 100%;
+}
+
+.star--half {
+  --fill: 50%;
+}
+
+/* Vazio: texto de estado sem lista (sem carga, sem resultado). */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--k-texto-fraco);
+}
+
+/* Link de comando: recarrega, editar, continuar. */
+.link {
+  padding: 4px 0;
+  font-family: var(--k-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--k-ouro);
+  cursor: pointer;
+}
+
+/* Mensagem de carregamento ou erro da tela. */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+}
+
+/* CTA de recuperacao: so aparece quando algo deu errado. */
+.action {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #3c2f00;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 /* Animacao de troca de etapa: o unico momento de movimento na tela. */
 .etapa {
   display: block;

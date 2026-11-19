@@ -1,6 +1,7 @@
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   height: var(--k-bottom-nav-h);
   padding-bottom: env(safe-area-inset-bottom);
   box-sizing: content-box;
@@ -38,9 +39,4 @@
 
 .item.active .icon {
   background-color: var(--k-ouro);
-}
-
-.item:focus-visible {
-  outline: 2px solid var(--k-ouro);
-  outline-offset: -4px;
 }
