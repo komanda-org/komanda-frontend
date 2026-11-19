@@ -3,10 +3,10 @@ export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO';
 export interface JobRestaurant {
   restaurantName: string;
   logoUrl: string | null;
-  address?: string;
-  zipCode?: string;
-  cuisineType?: string;
-  averageRating?: number | null;
+  address: string;
+  zipCode: string;
+  cuisineType: string;
+  averageRating: number | null;
 }
 
 export interface Job {
@@ -21,6 +21,7 @@ export interface Job {
   restaurant: JobRestaurant;
   createdAt: string;
   shift?: string | null;
+  /** Calculada no navegador: `undefined` = ainda calculando; `null` = nao foi possivel. */
   distanceKm?: number | null;
   urgent?: boolean;
   hasApplied?: boolean;

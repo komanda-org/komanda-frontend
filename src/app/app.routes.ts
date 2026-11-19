@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
-import { authChildGuard, authGuard } from './core/guards/auth.guard';
+import { authChildGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 import { AppLayout } from './layout/app-layout/app-layout';
-import { PlaceholderPage } from './pages/placeholder/placeholder-page';
+
+const professionalOnly = [roleGuard('PROFISSIONAL')];
+const restaurantOnly = [roleGuard('RESTAURANTE')];
 
 export const routes: Routes = [
   {
@@ -43,25 +46,35 @@ export const routes: Routes = [
       import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
   },
   {
-    path: 'dashboard',
-    title: 'Dashboard · Komanda',
-    canActivate: [authGuard],
-    loadComponent: () => import('./pages/dashboard/dashboard-page').then((m) => m.DashboardPage),
-  },
-  {
     path: '',
     component: AppLayout,
     canActivateChild: [authChildGuard],
     children: [
       {
+        path: 'home',
+        title: 'Início · Komanda',
+        canActivate: professionalOnly,
+        loadComponent: () =>
+          import('./features/professional/home/professional-home').then((m) => m.ProfessionalHome),
+      },
+      {
         path: 'vagas',
         title: 'Vagas · Komanda',
+        canActivate: professionalOnly,
         loadComponent: () =>
           import('./pages/jobs/jobs-feed/jobs-feed').then((m) => m.JobsFeed),
       },
       {
+        path: 'vagas/:id',
+        title: 'Detalhes da vaga · Komanda',
+        canActivate: professionalOnly,
+        loadComponent: () =>
+          import('./pages/jobs/job-detail/job-detail').then((m) => m.JobDetail),
+      },
+      {
         path: 'matches',
         title: 'Minhas candidaturas · Komanda',
+        canActivate: professionalOnly,
         loadComponent: () =>
           import('./features/applications/my-applications/my-applications').then(
             (m) => m.MyApplications,
@@ -79,7 +92,66 @@ export const routes: Routes = [
           import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
         title: 'Chat · Komanda',
       },
-      { path: 'perfil', component: PlaceholderPage, data: { title: 'Perfil' } },
+      {
+        path: 'perfil',
+        title: 'Meu perfil · Komanda',
+        canActivate: professionalOnly,
+        loadComponent: () =>
+          import('./features/profile/professional-profile/professional-profile').then(
+            (m) => m.ProfessionalProfilePage,
+          ),
+      },
+      {
+        path: 'perfil/editar',
+        title: 'Editar perfil · Komanda',
+        canActivate: professionalOnly,
+        loadComponent: () =>
+          import('./features/profile/profile-edit/profile-edit').then((m) => m.ProfileEdit),
+      },
+      {
+        path: 'restaurantes/:slug',
+        title: 'Restaurante · Komanda',
+        loadComponent: () =>
+          import('./features/restaurants/restaurant-profile/restaurant-profile').then(
+            (m) => m.RestaurantProfile,
+          ),
+      },
+      {
+        path: 'dashboard',
+        title: 'Início · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/dashboard/restaurant-dashboard').then(
+            (m) => m.RestaurantDashboard,
+          ),
+      },
+      {
+        path: 'my-jobs',
+        title: 'Minhas vagas · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/my-jobs/my-jobs').then((m) => m.MyJobs),
+      },
+      {
+        path: 'my-jobs/new',
+        title: 'Nova vaga · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/new-job/new-job').then((m) => m.NewJob),
+      },
+      {
+        path: 'pipeline',
+        title: 'Pipeline · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/pipeline/pipeline').then((m) => m.Pipeline),
+      },
+      {
+        path: 'plans',
+        title: 'Planos · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () => import('./features/restaurant/plans/plans').then((m) => m.Plans),
+      },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],
   },

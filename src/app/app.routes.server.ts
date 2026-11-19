@@ -8,7 +8,15 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'home',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'vagas',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'vagas/:id',
     renderMode: RenderMode.Client,
   },
   {
@@ -20,11 +28,36 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'perfil/editar',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'mensagens',
     renderMode: RenderMode.Client,
   },
   {
     path: 'mensagens/:jobId',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'my-jobs',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'my-jobs/new',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'pipeline',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'plans',
+    renderMode: RenderMode.Client,
+  },
+  // Slug dinamico: o build nao sabe quais restaurantes pre-renderizar.
+  {
+    path: 'restaurantes/:slug',
     renderMode: RenderMode.Client,
   },
   {

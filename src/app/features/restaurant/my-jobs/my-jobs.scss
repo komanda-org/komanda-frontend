@@ -1,0 +1,113 @@
+@use '../restaurant-ui';
+
+.tabs {
+  display: flex;
+  gap: var(--k-s-5);
+  margin-bottom: var(--k-s-5);
+  border-bottom: 1px solid var(--k-linha);
+}
+
+.tab {
+  margin-bottom: -1px;
+  padding: var(--k-s-3) 0;
+  color: var(--k-texto-fraco);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &--active {
+    color: var(--k-ouro);
+    border-bottom-color: var(--k-ouro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--k-s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: flex;
+  flex-direction: column;
+  padding: var(--k-s-5);
+}
+
+.job__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+  min-height: 22px;
+}
+
+.job__title {
+  margin: var(--k-s-3) 0 var(--k-s-1);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.job__meta {
+  margin: 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+.job__numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-s-3);
+  margin: var(--k-s-5) 0 var(--k-s-4);
+
+  div {
+    padding: var(--k-s-3);
+    background: #121212;
+    border-radius: var(--k-raio);
+    text-align: center;
+  }
+
+  dt {
+    color: var(--k-texto-fraco);
+    font-size: var(--k-t-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: var(--k-s-1) 0 0;
+    color: var(--k-ouro);
+    font-family: var(--k-serif);
+    font-size: var(--k-t-lg);
+  }
+}
+
+.job__salary {
+  margin: 0 0 var(--k-s-4);
+  color: var(--k-ok);
+  font-weight: 700;
+}
+
+.job__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--k-s-2);
+  margin-top: auto;
+}

@@ -8,6 +8,10 @@ export interface Coordinates {
   lng: number;
 }
 
+export type UserLocation =
+  | { status: 'granted'; coordinates: Coordinates }
+  | { status: 'denied' | 'unavailable' };
+
 interface BrasilApiCepResponse {
   location?: {
     coordinates?: {
@@ -22,32 +26,35 @@ interface NominatimResult {
   lon?: string;
 }
 
+// v2: a v1 gravava `null` de buscas que falhavam e travava a distancia para sempre.
+const CACHE_PREFIX = 'komanda_geo_v2_';
+// Politica de uso do Nominatim: no maximo 1 requisicao por segundo.
+export const NOMINATIM_INTERVAL_MS = 1100;
+
 @Injectable({ providedIn: 'root' })
 export class LocationService {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly inFlightLookups = new Map<string, Promise<Coordinates | null>>();
+  // Falha fica so na memoria da sessao: um F5 tenta de novo.
+  private readonly failedLookups = new Set<string>();
+  private nominatimQueue: Promise<unknown> = Promise.resolve();
+  private lastNominatimAt = 0;
 
-  async getUserCoordinates(fallbackZipCode?: string): Promise<Coordinates | null> {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
+  getUserLocation(): Promise<UserLocation> {
+    if (!isPlatformBrowser(this.platformId) || !navigator.geolocation) {
+      return Promise.resolve({ status: 'unavailable' });
     }
 
-    const geolocation = navigator.geolocation;
-    if (geolocation) {
-      const coordinates = await new Promise<Coordinates | null>((resolve) => {
-        geolocation.getCurrentPosition(
-          ({ coords }) => resolve({ lat: coords.latitude, lng: coords.longitude }),
-          () => resolve(null),
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-        );
-      });
-      if (coordinates) {
-        return coordinates;
-      }
-    }
-
-    return fallbackZipCode ? this.getBrasilApiCoordinates(fallbackZipCode) : null;
+    return new Promise<UserLocation>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) =>
+          resolve({ status: 'granted', coordinates: { lat: coords.latitude, lng: coords.longitude } }),
+        (error) =>
+          resolve({ status: error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable' }),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+      );
+    });
   }
 
   getRestaurantCoordinates(zipCode?: string, address?: string): Promise<Coordinates | null> {
@@ -55,9 +62,12 @@ export class LocationService {
       return Promise.resolve(null);
     }
 
-    const cacheKey = `komanda_geo_${zipCode ?? ''}_${address ?? ''}`;
+    const cacheKey = `${CACHE_PREFIX}${zipCode ?? ''}_${address ?? ''}`;
+    if (this.failedLookups.has(cacheKey)) {
+      return Promise.resolve(null);
+    }
     const cachedCoordinates = this.readCache(cacheKey);
-    if (cachedCoordinates !== undefined) {
+    if (cachedCoordinates) {
       return Promise.resolve(cachedCoordinates);
     }
 
@@ -68,7 +78,11 @@ export class LocationService {
 
     const lookup = this.lookupRestaurant(zipCode, address)
       .then((coordinates) => {
-        this.writeCache(cacheKey, coordinates);
+        if (coordinates) {
+          this.writeCache(cacheKey, coordinates);
+        } else {
+          this.failedLookups.add(cacheKey);
+        }
         return coordinates;
       })
       .finally(() => this.inFlightLookups.delete(cacheKey));
@@ -98,7 +112,7 @@ export class LocationService {
     address?: string,
   ): Promise<Coordinates | null> {
     const normalizedZipCode = zipCode?.replace(/\D/g, '');
-    if (normalizedZipCode?.length === 8 && !normalizedZipCode.endsWith('000')) {
+    if (normalizedZipCode?.length === 8) {
       const coordinates = await this.getBrasilApiCoordinates(normalizedZipCode);
       if (coordinates) {
         return coordinates;
@@ -106,20 +120,15 @@ export class LocationService {
     }
 
     const normalizedAddress = address?.trim();
-    return normalizedAddress ? this.getNominatimCoordinates(normalizedAddress) : null;
+    return normalizedAddress
+      ? this.throttleNominatim(() => this.getNominatimCoordinates(normalizedAddress))
+      : null;
   }
 
   private async getBrasilApiCoordinates(zipCode: string): Promise<Coordinates | null> {
-    const normalizedZipCode = zipCode.replace(/\D/g, '');
-    if (normalizedZipCode.length !== 8) {
-      return null;
-    }
-
     try {
       const response = await firstValueFrom(
-        this.http.get<BrasilApiCepResponse>(
-          `https://brasilapi.com.br/api/cep/v2/${normalizedZipCode}`,
-        ),
+        this.http.get<BrasilApiCepResponse>(`https://brasilapi.com.br/api/cep/v2/${zipCode}`),
       );
       return this.toCoordinates(
         response.location?.coordinates?.latitude,
@@ -132,7 +141,7 @@ export class LocationService {
   }
 
   private async getNominatimCoordinates(address: string): Promise<Coordinates | null> {
-    const query = encodeURIComponent(`${address}, Bahia, Brasil`);
+    const query = encodeURIComponent(`${address}, Brasil`);
     try {
       const results = await firstValueFrom(
         this.http.get<NominatimResult[]>(
@@ -146,11 +155,24 @@ export class LocationService {
     }
   }
 
-  private readCache(key: string): Coordinates | null | undefined {
+  private throttleNominatim<T>(task: () => Promise<T>): Promise<T> {
+    const run = this.nominatimQueue.then(async () => {
+      const wait = this.lastNominatimAt + NOMINATIM_INTERVAL_MS - Date.now();
+      if (wait > 0) {
+        await new Promise((resolve) => setTimeout(resolve, wait));
+      }
+      this.lastNominatimAt = Date.now();
+      return task();
+    });
+    this.nominatimQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  private readCache(key: string): Coordinates | null {
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) {
-        return undefined;
+        return null;
       }
 
       const value: unknown = JSON.parse(raw);
@@ -169,11 +191,11 @@ export class LocationService {
       return null;
     } catch (error: unknown) {
       console.warn('Não foi possível ler o cache de localização neste dispositivo.', error);
-      return undefined;
+      return null;
     }
   }
 
-  private writeCache(key: string, coordinates: Coordinates | null): void {
+  private writeCache(key: string, coordinates: Coordinates): void {
     try {
       localStorage.setItem(key, JSON.stringify(coordinates));
     } catch (error: unknown) {

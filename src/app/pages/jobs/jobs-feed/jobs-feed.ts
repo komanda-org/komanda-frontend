@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Component, DestroyRef, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiError, isApiError } from '../../../core/models/api-error.model';
 import { Job } from '../../../core/models/jobs.model';
@@ -9,14 +10,54 @@ import { ProfessionalPreferences } from '../../../core/models/professional-prefe
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { JobsService } from '../../../core/services/jobs.service';
-import { Coordinates, LocationService } from '../../../core/services/location.service';
+import { LocationService, UserLocation } from '../../../core/services/location.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 
 type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO' | null;
+type LocationStatus = 'pending' | UserLocation['status'];
+
+export const DISTANCE_MIN_KM = 5;
+export const DISTANCE_MAX_KM = 100;
+export const DISTANCE_STEP_KM = 5;
+// Ultima posicao da barra, depois dos 100 km: sem filtro de distancia.
+export const DISTANCE_NO_LIMIT = DISTANCE_MAX_KM + DISTANCE_STEP_KM;
+
+export function toMaxDistance(value: number | string | null): number | null {
+  const km = value === null || value === '' ? NaN : Number(value);
+  if (!Number.isFinite(km) || km > DISTANCE_MAX_KM) {
+    return null;
+  }
+  return Math.max(DISTANCE_MIN_KM, km);
+}
+
+export interface DistanceView {
+  jobs: Job[];
+  /** Vagas com distancia calculada acima do limite. */
+  hidden: number;
+  /** Vagas sem distancia (calculando ou indisponivel), mostradas no fim. */
+  unknown: number;
+}
+
+export function applyDistanceFilter(jobs: readonly Job[], maxDistanceKm: number): DistanceView {
+  const within: Job[] = [];
+  const unknown: Job[] = [];
+  let hidden = 0;
+  for (const job of jobs) {
+    if (typeof job.distanceKm !== 'number') {
+      unknown.push(job);
+    } else if (job.distanceKm <= maxDistanceKm) {
+      within.push(job);
+    } else {
+      hidden++;
+    }
+  }
+  within.sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number));
+  return { jobs: [...within, ...unknown], hidden, unknown: unknown.length };
+}
 
 @Component({
   selector: 'app-jobs-feed',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './jobs-feed.html',
   styleUrl: './jobs-feed.scss',
 })
@@ -28,7 +69,7 @@ export class JobsFeed {
   private readonly professionalPreferencesService = inject(ProfessionalPreferencesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private userCoordinatesPromise: Promise<Coordinates | null> | null = null;
+  private userLocationPromise: Promise<UserLocation> | null = null;
   private requestVersion = 0;
 
   protected readonly jobs = signal<Job[]>([]);
@@ -47,12 +88,28 @@ export class JobsFeed {
   protected readonly applyingIds = signal(new Set<string>());
   protected readonly appliedIds = signal(new Set<string>());
   protected readonly applicationErrors = signal(new Map<string, string>());
+  protected readonly locationStatus = signal<LocationStatus>('pending');
+  protected readonly pendingDistances = signal(0);
   protected searchInput = '';
 
-  protected readonly visibleJobs = computed(() => {
+  protected readonly locationBlocked = computed(
+    () => this.locationStatus() === 'denied' || this.locationStatus() === 'unavailable',
+  );
+  protected readonly distanceMin = DISTANCE_MIN_KM;
+  protected readonly distanceMax = DISTANCE_MAX_KM;
+  protected readonly distanceStep = DISTANCE_STEP_KM;
+  protected readonly noLimit = DISTANCE_NO_LIMIT;
+  protected readonly distanceLabel = computed(() => {
+    const km = this.maxDistanceKm();
+    return km === null ? 'Sem limite' : `até ${km} km`;
+  });
+  protected readonly distanceActive = computed(
+    () => this.maxDistanceKm() !== null && this.locationStatus() === 'granted',
+  );
+
+  private readonly filteredJobs = computed(() => {
     const query = this.submittedQuery().toLocaleLowerCase('pt-BR');
     const filter = this.activeFilter();
-    const maxDistance = this.maxDistanceKm();
     const preferences =
       filter === 'para-voce'
         ? this.professionalPreferencesService.getForEmail(this.authService.getUser()?.email)
@@ -72,14 +129,20 @@ export class JobsFeed {
           : true;
       const matchesPreferences =
         filter !== 'para-voce' || this.matchesPreferences(job, preferences);
-      const matchesDistance =
-        maxDistance === null || (job.distanceKm !== null &&
-          job.distanceKm !== undefined &&
-          job.distanceKm <= maxDistance);
 
-      return matchesQuery && matchesContract && matchesPreferences && matchesDistance;
+      return matchesQuery && matchesContract && matchesPreferences;
     });
   });
+
+  protected readonly distanceView = computed<DistanceView>(() => {
+    const jobs = this.filteredJobs();
+    const maxDistance = this.maxDistanceKm();
+    return this.distanceActive() && maxDistance !== null
+      ? applyDistanceFilter(jobs, maxDistance)
+      : { jobs, hidden: 0, unknown: 0 };
+  });
+
+  protected readonly visibleJobs = computed(() => this.distanceView().jobs);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -124,9 +187,7 @@ export class JobsFeed {
   }
 
   protected setMaxDistance(value: number | string | null): void {
-    const parsedValue = value === null || value === '' ? null : Number(value);
-    const distance = parsedValue !== null && Number.isFinite(parsedValue) ? parsedValue : null;
-    this.maxDistanceKm.set(distance);
+    this.maxDistanceKm.set(toMaxDistance(value));
   }
 
   protected loadMore(): void {
@@ -282,36 +343,50 @@ export class JobsFeed {
   }
 
   private async enrichDistances(jobs: Job[]): Promise<void> {
-    try {
-      this.userCoordinatesPromise ??= this.locationService.getUserCoordinates();
-      const userCoordinates = await this.userCoordinatesPromise;
-      const distances = new Map<string, number | null>();
-
-      await Promise.all(
-        jobs.map(async (job) => {
-          const restaurantCoordinates = userCoordinates
-            ? await this.locationService.getRestaurantCoordinates(
-                job.restaurant.zipCode,
-                job.restaurant.address,
-              )
-            : null;
-          distances.set(
-            job.id,
-            userCoordinates && restaurantCoordinates
-              ? this.locationService.calculateDistanceKm(userCoordinates, restaurantCoordinates)
-              : job.distanceKm ?? null,
-          );
-        }),
-      );
-
-      this.jobs.update((current) =>
-        current.map((job) =>
-          distances.has(job.id) ? { ...job, distanceKm: distances.get(job.id) ?? null } : job,
-        ),
-      );
-    } catch (error: unknown) {
-      console.warn('Não foi possível calcular a distância das vagas.', error);
+    const pending = jobs.filter((job) => job.distanceKm === undefined);
+    if (pending.length === 0) {
+      return;
     }
+    this.pendingDistances.update((count) => count + pending.length);
+
+    let location: UserLocation;
+    try {
+      this.userLocationPromise ??= this.locationService.getUserLocation();
+      location = await this.userLocationPromise;
+    } catch {
+      location = { status: 'unavailable' };
+    }
+    this.locationStatus.set(location.status);
+
+    if (location.status !== 'granted') {
+      this.maxDistanceKm.set(null);
+      pending.forEach((job) => this.settleDistance(job.id, null));
+      return;
+    }
+
+    const origin = location.coordinates;
+    await Promise.all(
+      pending.map(async (job) => {
+        let distance: number | null = null;
+        try {
+          const destination = await this.locationService.getRestaurantCoordinates(
+            job.restaurant.zipCode,
+            job.restaurant.address,
+          );
+          distance = destination ? this.locationService.calculateDistanceKm(origin, destination) : null;
+        } catch (error: unknown) {
+          console.warn('Não foi possível calcular a distância da vaga.', error);
+        }
+        this.settleDistance(job.id, distance);
+      }),
+    );
+  }
+
+  private settleDistance(jobId: string, distanceKm: number | null): void {
+    this.jobs.update((current) =>
+      current.map((job) => (job.id === jobId ? { ...job, distanceKm } : job)),
+    );
+    this.pendingDistances.update((count) => Math.max(0, count - 1));
   }
 
   private matchesPreferences(job: Job, preferences: ProfessionalPreferences | null): boolean {

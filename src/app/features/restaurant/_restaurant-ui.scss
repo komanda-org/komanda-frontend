@@ -1,0 +1,230 @@
+// Pecas visuais comuns as telas do restaurante. Cada componente faz @use deste
+// arquivo; o encapsulamento do Angular mantem as classes locais a cada tela.
+
+:host {
+  display: block;
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--k-s-4);
+  margin-bottom: var(--k-s-6);
+}
+
+.page-title {
+  margin: 0;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.page-subtitle {
+  max-width: 32rem;
+  margin: var(--k-s-2) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin: 0 0 var(--k-s-4);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  font-weight: 400;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--k-ouro);
+  }
+}
+
+// --- Botoes ---
+.btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 140ms ease, border-color 140ms ease, background-color 140ms ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.btn--primary {
+  color: #1a160d;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+}
+
+.btn--outline {
+  color: var(--k-texto);
+  background: transparent;
+  border-color: var(--k-linha-forte);
+
+  &:hover:not(:disabled) {
+    border-color: var(--k-ouro);
+  }
+}
+
+.btn--gold-outline {
+  color: var(--k-ouro);
+  background: transparent;
+  border-color: rgb(242 202 80 / 50%);
+
+  &:hover:not(:disabled) {
+    background: rgb(242 202 80 / 8%);
+  }
+}
+
+.btn--ghost {
+  color: var(--k-texto-fraco);
+  background: transparent;
+  border-color: var(--k-linha);
+
+  &:hover:not(:disabled) {
+    color: var(--k-texto);
+  }
+}
+
+.btn--danger {
+  color: #ffb4ab;
+  background: var(--k-erro-fundo);
+  border-color: rgb(229 83 61 / 50%);
+}
+
+// --- Selos ---
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--k-raio-pilula);
+  font-size: var(--k-t-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tag--urgent {
+  color: #ffaaa0;
+  background: var(--k-erro-fundo);
+  border: 1px solid rgb(229 83 61 / 50%);
+}
+
+.tag--status {
+  color: var(--k-ouro);
+  background: var(--k-ouro-fosco);
+}
+
+.tag--muted {
+  color: var(--k-texto-fraco);
+  background: #2a2928;
+}
+
+.meta {
+  margin: var(--k-s-1) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card {
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.inline-error {
+  margin: var(--k-s-2) 0 0;
+  color: var(--k-erro);
+  font-size: var(--k-t-sm);
+}
+
+// --- Estados de carregamento / erro / vazio ---
+.status {
+  display: grid;
+  justify-items: center;
+  gap: var(--k-s-4);
+  padding: var(--k-s-7) var(--k-s-4);
+  color: var(--k-texto-muted);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+.status--error p {
+  color: var(--k-texto);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--k-linha-forte);
+  border-top-color: var(--k-ouro);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

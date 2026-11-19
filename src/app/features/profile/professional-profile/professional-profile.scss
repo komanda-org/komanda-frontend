@@ -1,0 +1,442 @@
+:host {
+  display: block;
+  --estrela-vazia: #3a3a3a;
+  --perigo-borda: rgb(229 83 61 / 45%);
+}
+
+p,
+h1,
+h2,
+h3,
+dl,
+dd,
+ol,
+ul,
+blockquote {
+  margin: 0;
+}
+
+.page {
+  max-width: 64rem;
+  margin-inline: auto;
+  font-family: var(--k-sans);
+  color: var(--k-texto);
+}
+
+/* --- Barra da pagina --- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.bar-title {
+  font-family: var(--k-serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 28px;
+  color: var(--k-ouro);
+}
+
+.edit {
+  padding: 8px 0 8px 12px;
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--k-ouro);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.notice {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--k-ouro-fosco);
+  border-left: 3px solid var(--k-ouro);
+  border-radius: var(--k-raio);
+  font-size: 14px;
+  color: var(--k-texto);
+}
+
+/* --- Abertura: foto, nome, cargo, nota, local, biografia, tags --- */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 16px;
+  background: var(--k-superficie);
+  border-radius: var(--k-raio-lg);
+}
+
+.photo {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  overflow: hidden;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio-lg);
+}
+
+.photo img,
+.photo-initials {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-initials {
+  background: var(--k-campo);
+  font-family: var(--k-serif);
+  font-size: 48px;
+  color: var(--k-ouro);
+}
+
+.hero-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--k-serif);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 32px;
+}
+
+.role {
+  font-size: 14px;
+  color: var(--k-ouro);
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.score {
+  font-weight: 700;
+}
+
+.count {
+  color: var(--k-texto-fraco);
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--k-texto-muted);
+}
+
+.location svg {
+  flex-shrink: 0;
+  color: var(--k-texto-fraco);
+}
+
+.about {
+  margin-top: 8px;
+  max-width: 65ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--k-texto-muted);
+}
+
+.specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Estrela por mascara: o gradiente pinta 100%, 50% ou 0% de dourado — meia estrela sem SVG duplicado. */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  --fill: 0%;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--k-ouro) var(--fill), var(--estrela-vazia) var(--fill));
+  mask: url('/icons/star.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/star.svg') center / contain no-repeat;
+}
+
+.star--full {
+  --fill: 100%;
+}
+
+.star--half {
+  --fill: 50%;
+}
+
+/* --- Secoes --- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--k-linha);
+}
+
+.label {
+  font-family: var(--k-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--k-ouro);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--k-texto-fraco);
+}
+
+/* --- Trajetoria --- */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 22px;
+}
+
+.step::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--k-texto-placeholder);
+}
+
+/* Linha da timeline: liga o ponto deste item ao do proximo, atravessando o gap. */
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 19px;
+  bottom: -20px;
+  left: 3.5px;
+  width: 1px;
+  background: var(--k-linha-forte);
+}
+
+.step--current::before {
+  background: var(--k-ouro);
+  box-shadow: 0 0 0 3px rgb(242 202 80 / 18%);
+}
+
+.exp-role {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.exp-meta {
+  font-size: 13px;
+  color: var(--k-texto-fraco);
+}
+
+.period {
+  color: var(--k-ouro);
+}
+
+.exp-description {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--k-texto-muted);
+}
+
+/* --- Disponibilidade --- */
+.availability {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 18px 16px;
+  background: var(--k-superficie-2);
+  border-radius: var(--k-raio-lg);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.availability dt {
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--k-texto-fraco);
+}
+
+/* --- Recomendacoes --- */
+.link {
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font-family: var(--k-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--k-ouro);
+  cursor: pointer;
+}
+
+.reviews {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.review-text {
+  flex: 1;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--k-texto-muted);
+}
+
+.review-author {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* --- Excluir conta --- */
+.delete {
+  width: 100%;
+  height: 44px;
+  margin-top: 28px;
+  background: transparent;
+  border: 1px solid var(--perigo-borda);
+  border-radius: var(--k-raio);
+  font-family: var(--k-sans);
+  font-size: 13px;
+  color: var(--k-erro);
+  cursor: not-allowed;
+}
+
+.delete[aria-disabled='true'] {
+  opacity: 0.85;
+}
+
+/* --- Estados da pagina --- */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+}
+
+.action {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #3c2f00;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.edit:focus-visible,
+.link:focus-visible,
+.action:focus-visible,
+.delete:focus-visible {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
+}
+
+/* --- Tablet: foto ao lado dos dados, recomendacoes lado a lado --- */
+@media (min-width: 769px) {
+  .bar {
+    margin-bottom: 24px;
+  }
+
+  .bar-title {
+    font-size: 28px;
+    line-height: 36px;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 32px;
+  }
+
+  .name {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+  .reviews {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .delete {
+    width: auto;
+    padding-inline: 32px;
+  }
+}
+
+/* --- Desktop: Trajetoria | Disponibilidade em duas colunas --- */
+@media (min-width: 1024px) {
+  .columns {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    column-gap: 48px;
+    border-bottom: 1px solid var(--k-linha);
+  }
+
+  .columns > .section {
+    border-bottom: none;
+  }
+}

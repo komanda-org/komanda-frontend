@@ -1,0 +1,198 @@
+<section class="page" data-testid="professional-profile">
+  <header class="bar">
+    <h1 class="bar-title">Meu perfil</h1>
+    @if (state() === 'ready') {
+      <a class="edit" routerLink="/perfil/editar" data-testid="edit-btn">Editar</a>
+    }
+  </header>
+
+  @if (notice(); as message) {
+    <p class="notice" role="status" data-testid="notice">{{ message }}</p>
+  }
+
+  @switch (state()) {
+    @case ('loading') {
+      <p class="feedback" role="status" data-testid="loading">Carregando seu perfil…</p>
+    }
+
+    @case ('error') {
+      <div class="feedback" role="alert" data-testid="error">
+        <p>{{ errorMessage() }}</p>
+        @if (sessionExpired()) {
+          <a class="action" routerLink="/login" data-testid="login-link">Entrar novamente</a>
+        } @else {
+          <button type="button" class="action" data-testid="retry-btn" (click)="load()">
+            Tentar de novo
+          </button>
+        }
+      </div>
+    }
+
+    @case ('ready') {
+      @if (profile(); as p) {
+        <div class="hero" data-testid="profile-hero">
+          <div class="photo">
+            @if (p.profilePhoto) {
+              <img [src]="p.profilePhoto" [alt]="'Foto de ' + p.fullName" width="160" height="160" data-testid="profile-photo" />
+            } @else {
+              <span class="photo-initials" role="img" [attr.aria-label]="'Foto de ' + p.fullName" data-testid="profile-photo">
+                {{ initials(p.fullName) }}
+              </span>
+            }
+          </div>
+
+          <div class="hero-info">
+            <h2 class="name" data-testid="profile-name">{{ p.fullName }}</h2>
+            <p class="role" data-testid="profile-role">{{ p.mainRole }}</p>
+
+            @if (rating(); as score) {
+              <p
+                class="rating"
+                data-testid="profile-rating"
+                [attr.aria-label]="'Nota ' + formatRating(score) + ' de 5 em ' + reviews().length + (reviews().length === 1 ? ' recomendação' : ' recomendações')"
+              >
+                <span class="stars" aria-hidden="true">
+                  @for (fill of starFills(score); track $index) {
+                    <span class="star star--{{ fill }}"></span>
+                  }
+                </span>
+                <span aria-hidden="true">
+                  <strong class="score">{{ formatRating(score) }}</strong>
+                  <span class="count">
+                    ({{ reviews().length }} {{ reviews().length === 1 ? 'recomendação' : 'recomendações' }})
+                  </span>
+                </span>
+              </p>
+            }
+
+            @if (location(); as place) {
+              <p class="location" data-testid="profile-location">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                  <circle cx="12" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.6" />
+                </svg>
+                {{ place }}
+              </p>
+            }
+
+            @if (p.experienceSummary) {
+              <p class="about" data-testid="profile-about">{{ p.experienceSummary }}</p>
+            }
+
+            @if (p.specialties.length > 0) {
+              <ul class="specialties" aria-label="Especialidades" data-testid="profile-specialties">
+                @for (specialty of p.specialties; track specialty) {
+                  <li class="k-tag" data-testid="specialty">{{ specialty }}</li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+
+        <div class="columns">
+          <section class="section" aria-labelledby="trajectory-title">
+            <h3 class="label" id="trajectory-title">Trajetória</h3>
+
+            @if (experiences().length === 0) {
+              <p class="empty" data-testid="experiences-empty">
+                Você ainda não cadastrou sua trajetória. Adicione suas experiências para os restaurantes conhecerem seu trabalho.
+              </p>
+            } @else {
+              <ol class="timeline">
+                @for (exp of experiences(); track exp.id) {
+                  <li class="step" [class.step--current]="exp.endDate === null" data-testid="experience">
+                    <p class="exp-role" data-testid="experience-role">{{ exp.role }}</p>
+                    <p class="exp-meta">
+                      <span data-testid="experience-company">{{ exp.company }}</span>
+                      <span aria-hidden="true"> • </span>
+                      <span class="period" data-testid="experience-period">{{ formatPeriod(exp.startDate, exp.endDate) }}</span>
+                    </p>
+                    @if (exp.description) {
+                      <p class="exp-description" data-testid="experience-description">{{ exp.description }}</p>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+          </section>
+
+          <section class="section" aria-labelledby="availability-title">
+            <h3 class="label" id="availability-title">Disponibilidade</h3>
+
+            @if (p.availability; as availability) {
+              <dl class="availability" data-testid="availability">
+                <div class="availability-col">
+                  <dt>Modelo</dt>
+                  @for (model of availability.workModels; track model) {
+                    <dd data-testid="availability-model">{{ workModelLabel(model) }}</dd>
+                  } @empty {
+                    <dd>Não informado</dd>
+                  }
+                </div>
+                <div class="availability-col">
+                  <dt>Mobilidade</dt>
+                  <dd data-testid="availability-mobility">
+                    {{ availability.mobility ? mobilityLabel(availability.mobility) : 'Não informada' }}
+                  </dd>
+                </div>
+              </dl>
+            } @else {
+              <p class="empty" data-testid="availability-empty">
+                Informe sua disponibilidade para receber vagas compatíveis com você.
+              </p>
+            }
+          </section>
+        </div>
+
+        <section class="section" aria-labelledby="reviews-title">
+          <h3 class="label" id="reviews-title">Recomendações</h3>
+
+          @switch (reviewsState()) {
+            @case ('loading') {
+              <p class="empty" role="status">Carregando recomendações…</p>
+            }
+            @case ('error') {
+              <div class="empty" role="alert" data-testid="reviews-error">
+                <p>Não foi possível carregar suas recomendações.</p>
+                <button type="button" class="link" (click)="loadReviews()">Tentar de novo</button>
+              </div>
+            }
+            @case ('ready') {
+              @if (reviews().length === 0) {
+                <p class="empty" data-testid="reviews-empty">
+                  Você ainda não recebeu recomendações. Elas aparecem aqui depois dos seus primeiros trabalhos.
+                </p>
+              } @else {
+                <ul class="reviews">
+                  @for (review of reviews(); track review.id) {
+                    <li class="review" data-testid="review">
+                      <span class="stars" role="img" [attr.aria-label]="'Nota ' + formatRating(review.rating) + ' de 5'">
+                        @for (fill of starFills(review.rating); track $index) {
+                          <span class="star star--{{ fill }}"></span>
+                        }
+                      </span>
+                      @if (review.comment) {
+                        <blockquote class="review-text" data-testid="review-text">“{{ review.comment }}”</blockquote>
+                      }
+                      <p class="review-author" data-testid="review-author">Restaurante</p>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          }
+        </section>
+
+        <button
+          type="button"
+          class="delete"
+          aria-disabled="true"
+          title="A exclusão de conta ainda não está disponível."
+          data-testid="delete-account-btn"
+        >
+          Excluir minha conta
+        </button>
+      }
+    }
+  }
+</section>

@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { homeFor } from '../../core/guards/role.guard';
 import { isApiError } from '../../core/models/api-error.model';
 import { translateLoginError } from '../../core/http/translate-login-error';
 import { AuthService } from '../../core/services/auth.service';
@@ -79,8 +80,7 @@ export class Login {
       .subscribe({
         next: (response) => {
           this.submitting.set(false);
-          const destination = response.user.role === 'RESTAURANTE' ? '/dashboard' : '/vagas';
-          void this.router.navigateByUrl(destination);
+          void this.router.navigateByUrl(homeFor(response.user.role));
         },
         error: (error: unknown) => {
           this.submitting.set(false);

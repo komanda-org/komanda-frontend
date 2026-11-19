@@ -1,0 +1,125 @@
+// Campos de formulario comuns (Nova vaga, Editar perfil).
+
+.group-title {
+  margin: 0 0 var(--k-s-4);
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  .form > &:not(:first-child) {
+    margin-top: var(--k-s-6);
+    padding-top: var(--k-s-5);
+    border-top: 1px solid var(--k-linha);
+  }
+}
+
+.field {
+  display: grid;
+  gap: var(--k-s-2);
+  min-width: 0;
+  margin: 0 0 var(--k-s-5);
+  padding: 0;
+  border: none;
+}
+
+.field__label {
+  padding: 0;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-sm);
+}
+
+.field__hint {
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+}
+
+.field__error {
+  color: var(--k-erro);
+  font-size: var(--k-t-sm);
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 0.9rem;
+  color: var(--k-texto);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-base);
+
+  &::placeholder {
+    color: var(--k-texto-placeholder);
+  }
+
+  &:focus-visible {
+    border-color: var(--k-ouro);
+    outline: none;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--k-erro);
+  }
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}
+
+.chip {
+  padding: 0.45rem 0.9rem;
+  color: var(--k-texto-muted);
+  background: transparent;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio-pilula);
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &--on {
+    color: #1a160d;
+    background: var(--k-ouro);
+    border-color: var(--k-ouro);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  color: var(--k-texto);
+  font-size: var(--k-t-sm);
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--k-ouro);
+  }
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--k-s-3);
+  margin-top: var(--k-s-6);
+}

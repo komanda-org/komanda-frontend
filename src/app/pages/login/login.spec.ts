@@ -75,7 +75,7 @@ describe('Login', () => {
       user: { id: 'user-id', role: 'PROFISSIONAL' },
     });
 
-    expect(navigateSpy).toHaveBeenCalledWith('/vagas');
+    expect(navigateSpy).toHaveBeenCalledWith('/home');
   });
 
   it('navigates restaurant accounts to the dashboard after success', () => {

@@ -1,0 +1,148 @@
+@use '../restaurant-ui';
+
+.hero {
+  margin-bottom: var(--k-s-6);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero__title {
+  max-width: 18ch;
+  margin: var(--k-s-3) auto;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-2xl);
+  line-height: 1.1;
+}
+
+.hero__subtitle {
+  margin: 0;
+  color: var(--k-texto-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
+  gap: var(--k-s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--k-s-5);
+
+  &--featured {
+    border-color: var(--k-ouro-claro);
+  }
+}
+
+.plan__badge {
+  position: absolute;
+  top: 0;
+  right: var(--k-s-5);
+  padding: 0.2rem 0.6rem;
+  color: #1a160d;
+  background: var(--k-ouro-claro);
+  border-radius: var(--k-raio-pilula);
+  font-size: var(--k-t-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateY(-50%);
+}
+
+.plan__name {
+  margin: 0;
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.plan__price {
+  margin: var(--k-s-3) 0 var(--k-s-1);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  font-weight: 700;
+
+  .plan--featured & {
+    color: var(--k-ouro-claro);
+  }
+}
+
+.plan__suffix {
+  color: var(--k-texto-fraco);
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm);
+  font-weight: 400;
+}
+
+.plan__tagline {
+  margin: 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+.features {
+  display: grid;
+  gap: var(--k-s-3);
+  margin: var(--k-s-5) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  gap: var(--k-s-3);
+  color: var(--k-texto);
+  font-size: var(--k-t-sm);
+
+  &--off {
+    color: var(--k-texto-placeholder);
+  }
+}
+
+.feature__icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  color: var(--k-ouro);
+
+  .feature--off & {
+    color: var(--k-texto-placeholder);
+  }
+}
+
+.plan__cta {
+  margin-top: auto;
+}
+
+.footnote {
+  margin: var(--k-s-6) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
