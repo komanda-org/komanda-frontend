@@ -534,4 +534,37 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.textContent).not.toContain('/api/jobs');
     expect(fixture.nativeElement.querySelector('.retry-button')).not.toBeNull();
   });
+
+  it('keeps the filters when the feed is opened again after the detail', () => {
+    loadJobs();
+
+    const chips = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.chip'));
+    chips.find((chip) => chip.textContent?.trim() === 'CLT')?.click();
+    fixture.detectChanges();
+    http
+      .expectOne((request) => request.url === '/api/jobs/search' && request.params.get('contractType') === 'CLT')
+      .flush(response);
+    http
+      .expectOne((request) => request.url === '/api/users/me/applications')
+      .flush(applicationsPage());
+    fixture.detectChanges();
+
+    fixture.destroy();
+
+    const reopened = TestBed.createComponent(JobsFeed);
+    reopened.detectChanges();
+    http
+      .expectOne((request) => request.url === '/api/jobs/search' && request.params.get('contractType') === 'CLT')
+      .flush(response);
+    http
+      .expectOne((request) => request.url === '/api/users/me/applications')
+      .flush(applicationsPage('job-applied'));
+    reopened.detectChanges();
+
+    const activeChip = Array.from(
+      (reopened.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.chip--active'),
+    ).find((chip) => chip.textContent?.trim() === 'CLT');
+
+    expect(activeChip).not.toBeUndefined();
+  });
 });

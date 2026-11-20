@@ -1,11 +1,13 @@
 import { Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
 import { ApplicationStatus } from '../../../core/models/applications.model';
 import { Job } from '../../../core/models/jobs.model';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { JobsService } from '../../../core/services/jobs.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { JobView } from '../../../shared/jobs/job-view/job-view';
 
 export function describeLoadError(error: unknown): string {
@@ -51,8 +53,9 @@ export function describeApplyError(error: unknown): string {
 })
 export class JobDetail {
   private readonly jobsService = inject(JobsService);
-  private readonly applicationsService = inject(ApplicationsService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly applicationsService = inject(ApplicationsService);  private readonly destroyRef = inject(DestroyRef);
+  private readonly location = inject(Location);
+  private readonly toast = inject(ToastService);
   private readonly jobId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
 
   protected readonly job = signal<Job | null>(null);
@@ -62,11 +65,15 @@ export class JobDetail {
   protected readonly acceptingApplications = computed(() => this.job()?.status === 'ABERTA');
   protected readonly applying = signal(false);
   protected readonly applyError = signal<string | null>(null);
-  protected readonly shareMessage = signal<string | null>(null);
 
   constructor() {
     // A sessao so existe no navegador; no servidor a chamada sairia sem token.
     afterNextRender(() => this.load());
+  }
+
+  /** Volta pelo historico: o feed recria a tela com os filtros que ficaram guardados. */
+  protected goBack(): void {
+    this.location.back();
   }
 
   protected load(): void {
@@ -118,11 +125,11 @@ export class JobDetail {
         return;
       }
       await navigator.clipboard.writeText(url);
-      this.shareMessage.set('Link da vaga copiado.');
+      this.toast.show('Link copiado');
     } catch {
       // Cancelar o compartilhamento nativo tambem cai aqui; nao e erro para o usuario.
       if (typeof navigator.share !== 'function') {
-        this.shareMessage.set('Não foi possível copiar o link. Copie pela barra de endereço.');
+        this.toast.show('Não foi possível copiar o link');
       }
     }
   }
