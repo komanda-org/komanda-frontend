@@ -140,7 +140,7 @@
                   </button>
                 }
                 @case ('APROVADA') {
-                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', selectedJobId()]" data-testid="chat-link">
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', selectedJobId(), applicant.professional.id]" data-testid="chat-link">
                     Abrir chat
                   </a>
                   <app-review-button

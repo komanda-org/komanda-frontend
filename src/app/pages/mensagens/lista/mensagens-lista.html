@@ -44,12 +44,13 @@
     @if (conversasAtivas().length > 0) {
       <p class="secao">Conversas ativas</p>
       <ul class="chat-list" role="list">
-        @for (chat of conversasAtivas(); track chat.jobId) {
+        @for (chat of conversasAtivas(); track chatKey(chat)) {
           <li
             class="chat-item"
             [class.ativa]="isActive(chat)"
             [class.nao-lida]="chat.unreadCount > 0"
-            [routerLink]="['/mensagens', chat.jobId]"
+            [routerLink]="['/mensagens', chat.jobId, chat.professionalId]"
+            data-testid="chat-item"
           >
             <span class="chat-avatar">
               @if (chat.otherPartyPhoto) {
@@ -64,7 +65,7 @@
             </span>
             <span class="chat-info">
               <span class="chat-header">
-                <span class="chat-title">{{ chat.otherPartyName }}</span>
+                <span class="chat-title" data-testid="chat-title">{{ chatTitle(chat) }}</span>
                 <time class="chat-time" [class.hoje]="isToday(chat.lastMessageTime)">{{
                   formatTime(chat.lastMessageTime)
                 }}</time>

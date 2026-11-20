@@ -1,10 +1,10 @@
-<div class="mensagens-shell" [class.com-chat]="jobId()">
+<div class="mensagens-shell" [class.com-chat]="jobId() && professionalId()">
   <aside class="painel-lista">
     <app-mensagens-lista />
   </aside>
 
   <section class="painel-detalhe">
-    @if (!jobId()) {
+    @if (!jobId() || !professionalId()) {
       <div class="selecionar">
         <svg
           viewBox="0 0 24 24"
@@ -24,7 +24,7 @@
       </div>
     }
 
-    @if (jobId()) {
+    @if (jobId() && professionalId()) {
       <app-mensagens-chat />
     }
   </section>

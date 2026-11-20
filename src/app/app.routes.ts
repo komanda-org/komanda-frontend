@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authChildGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { AppLayout } from './layout/app-layout/app-layout';
+import { legacyChatRedirect } from './pages/mensagens/legacy-chat-redirect';
 
 const professionalOnly = [roleGuard('PROFISSIONAL')];
 const restaurantOnly = [roleGuard('RESTAURANTE')];
@@ -93,10 +94,14 @@ export const routes: Routes = [
         title: 'Mensagens · Komanda',
       },
       {
-        path: 'mensagens/:jobId',
+        path: 'mensagens/:jobId/:professionalId',
         loadComponent: () =>
           import('./pages/mensagens/mensagens-shell').then((m) => m.MensagensShell),
         title: 'Chat · Komanda',
+      },
+      {
+        path: 'mensagens/:jobId',
+        redirectTo: legacyChatRedirect,
       },
       {
         path: 'perfil',

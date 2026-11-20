@@ -40,6 +40,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'mensagens/:jobId/:professionalId',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'my-jobs',
     renderMode: RenderMode.Client,
   },

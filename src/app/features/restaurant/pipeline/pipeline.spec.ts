@@ -123,7 +123,7 @@ describe('Pipeline', () => {
     (el().querySelector('[data-testid="tab-APROVADA"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(rows()).toHaveLength(1);
-    expect(el().querySelector('[data-testid="chat-link"]')?.getAttribute('href')).toBe('/mensagens/j1');
+    expect(el().querySelector('[data-testid="chat-link"]')?.getAttribute('href')).toBe('/mensagens/j1/p-a1');
   });
 
   it('reviews the approved professional with the open job and the professional id', async () => {

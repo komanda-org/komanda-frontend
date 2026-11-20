@@ -12,6 +12,7 @@ export interface Chat {
 
 export interface ChatListItem {
   jobId: string;
+  professionalId: string;
   jobTitle: string;
   otherPartyName: string;
   otherPartyPhoto: string | null;
@@ -19,4 +20,18 @@ export interface ChatListItem {
   lastMessageContent?: string;
   lastMessageTime?: Date | string;
   unreadCount: number;
+}
+
+/** Uma conversa: a vaga e o profissional aprovado nela. */
+export interface ChatRef {
+  jobId: string;
+  professionalId: string;
+}
+
+export function chatKey(chat: ChatRef): string {
+  return `${chat.jobId}:${chat.professionalId}`;
+}
+
+export function isSameChat(a: ChatRef | null | undefined, b: ChatRef | null | undefined): boolean {
+  return !!a && !!b && a.jobId === b.jobId && a.professionalId === b.professionalId;
 }

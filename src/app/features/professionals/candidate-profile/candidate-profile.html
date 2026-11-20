@@ -149,7 +149,7 @@
                   </div>
                 }
                 @if (app.status === 'APROVADA' && jobId) {
-                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', jobId]" data-testid="chat-link">Abrir chat</a>
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', jobId, p.id]" data-testid="chat-link">Abrir chat</a>
                 }
                 @if (decisionError(); as message) {
                   <p class="inline-error" role="alert" data-testid="decision-error">{{ message }}</p>

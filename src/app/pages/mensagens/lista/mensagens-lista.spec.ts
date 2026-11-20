@@ -50,6 +50,7 @@ describe('MensagensLista', () => {
     const mockChats = signal<ChatListItem[]>([
       {
         jobId: 'job-1',
+        professionalId: 'user-1',
         jobTitle: 'Chef de Cozinha',
         otherPartyName: 'Restaurante Gourmet',
         otherPartyPhoto: null,
@@ -60,6 +61,7 @@ describe('MensagensLista', () => {
       },
       {
         jobId: 'job-2',
+        professionalId: 'user-1',
         jobTitle: 'Garçom',
         otherPartyName: 'João Silva',
         otherPartyPhoto: null,
@@ -76,7 +78,7 @@ describe('MensagensLista', () => {
       connecting: signal(false),
       error: signal(null),
       connected: signal(true),
-      currentJobId: signal<string | null>(null),
+      currentChat: signal<{ jobId: string; professionalId: string } | null>(null),
       otherPartyOnline: signal(false),
       connect: vi.fn(),
       disconnect: vi.fn(),
@@ -162,5 +164,28 @@ describe('MensagensLista', () => {
     expect(component.getInitials('João Silva')).toBe('JS');
     expect(component.getInitials('Maria')).toBe('M');
     expect(component.getInitials('Ana Paula Souza')).toBe('AP');
+  });
+
+  it('shows two conversations of the same job as separate items for the restaurant', () => {
+    const chats = mockMessagingService.chats as ReturnType<typeof signal<ChatListItem[]>>;
+    const base = { jobId: 'job-9', jobTitle: 'Garçom', otherPartyPhoto: null, otherPartyRole: 'PROFISSIONAL' as const, unreadCount: 0 };
+    chats.set([
+      { ...base, professionalId: 'p1', otherPartyName: 'Ana' },
+      { ...base, professionalId: 'p2', otherPartyName: 'Bruno', unreadCount: 3 },
+    ]);
+    (mockMessagingService.currentChat as ReturnType<typeof signal<{ jobId: string; professionalId: string } | null>>).set({
+      jobId: 'job-9',
+      professionalId: 'p1',
+    });
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const items = Array.from(el.querySelectorAll('[data-testid="chat-item"]'));
+    expect(items.map((item) => item.querySelector('[data-testid="chat-title"]')?.textContent?.trim())).toEqual([
+      'Ana · Garçom',
+      'Bruno · Garçom',
+    ]);
+    expect(items.map((item) => item.classList.contains('ativa'))).toEqual([true, false]);
+    expect(items[1].querySelector('.unread-badge')?.textContent?.trim()).toBe('3');
   });
 });

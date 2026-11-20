@@ -216,7 +216,7 @@ describe('CandidateProfile', () => {
 
     expect(q('application-status')?.textContent).toContain('Aprovado');
     expect(q('approve-btn')).toBeNull();
-    expect(q('chat-link')?.getAttribute('href')).toBe('/mensagens/j1');
+    expect(q('chat-link')?.getAttribute('href')).toBe('/mensagens/j1/p1');
   });
 
   it('hides the decision buttons when the job was closed (422)', async () => {
