@@ -61,6 +61,7 @@ export class Pipeline {
   protected readonly selectedJob = computed(
     () => this.jobs().find((job) => job.id === this.selectedJobId()) ?? null,
   );
+  protected readonly selectedJobShift = computed(() => shiftsLabel(this.selectedJob()?.shifts));
   protected readonly visible = computed(() =>
     this.applicants().filter((applicant) => applicant.status === this.tab()),
   );

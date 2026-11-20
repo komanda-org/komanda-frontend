@@ -1,51 +1,99 @@
 <div class="backdrop" (click)="cancel()"></div>
-<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="review-title" data-testid="review-dialog">
-  <h2 class="dialog__title" id="review-title">{{ heading() }}</h2>
-  <p class="dialog__who">{{ receiverName() }}</p>
+<div class="dialog" [class.dialog--success]="success()" role="dialog" aria-modal="true" aria-labelledby="review-title" data-testid="review-dialog">
+  @if (success()) {
+    <div class="success-view" data-testid="review-success">
+      <div class="success-view__badge" aria-hidden="true">
+        <svg class="success-view__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
 
-  <form (submit)="$event.preventDefault(); submit()" novalidate>
-    <p class="dialog__label" id="review-rating-label">Sua nota</p>
-    <div class="rating" role="radiogroup" aria-labelledby="review-rating-label" aria-required="true">
-      @for (value of stars; track value) {
-        <label class="rating__star" [class.rating__star--on]="value <= rating()">
-          <input
-            type="radio"
-            name="review-rating"
-            class="rating__input"
-            [value]="value"
-            [checked]="rating() === value"
-            [attr.aria-label]="starsLabel(value)"
-            [attr.data-testid]="'star-' + value"
-            (change)="rating.set(value)"
-          />
-          <span aria-hidden="true">★</span>
-        </label>
+      <h2 class="success-view__title" id="review-title">Avaliação publicada!</h2>
+      <p class="success-view__copy">
+        Obrigado por ajudar a manter a comunidade Komanda segura e qualificada.
+      </p>
+
+      <button
+        type="button"
+        class="action action--conclude"
+        (click)="conclude()"
+        data-testid="review-done-btn"
+      >
+        Concluir
+      </button>
+    </div>
+  } @else {
+    <p class="dialog__eyebrow">Você trabalhou no {{ receiverName() }}!</p>
+    <h2 class="dialog__title" id="review-title">{{ heading() }}</h2>
+    <p class="dialog__warning">Avaliações não podem ser editadas após publicação.</p>
+
+    <div class="context">
+      <span class="context__logo" aria-hidden="true">{{ receiverName().trim().charAt(0) }}</span>
+      <div>
+        <p class="context__label">Avaliando</p>
+        <p class="context__name">{{ receiverName() }}</p>
+        @if (jobTitle() || shift()) {
+          <p class="context__job">{{ jobTitle() }}@if (jobTitle() && shift()) { · }@if (shift()) {Turno {{ shift() }}}</p>
+        }
+      </div>
+    </div>
+
+    <form (submit)="$event.preventDefault(); submit()" novalidate>
+      <div
+        class="rating"
+        role="radiogroup"
+        aria-label="Sua nota"
+        aria-required="true"
+        [attr.aria-invalid]="error() && rating() < 1"
+      >
+        @for (value of stars; track value) {
+          <label class="rating__star" [class.rating__star--on]="value <= rating()">
+            <input
+              type="radio"
+              name="review-rating"
+              class="rating__input"
+              [value]="value"
+              [checked]="rating() === value"
+              [attr.aria-label]="starsLabel(value)"
+              [attr.data-testid]="'star-' + value"
+              (change)="rating.set(value)"
+            />
+            <span aria-hidden="true">★</span>
+          </label>
+        }
+      </div>
+      @if (ratingLabel(rating()); as label) {
+        <p class="rating__label" data-testid="rating-label">{{ label }}</p>
       }
-    </div>
 
-    <label class="dialog__label" for="review-comment">Comentário (opcional)</label>
-    <textarea
-      id="review-comment"
-      class="dialog__comment"
-      rows="4"
-      [attr.maxlength]="commentMax"
-      placeholder="Conte como foi trabalhar junto."
-      [value]="comment()"
-      (input)="comment.set($any($event.target).value)"
-      data-testid="review-comment"
-    ></textarea>
+      <label class="dialog__label" for="review-comment">Depoimento (opcional)</label>
+      <div class="dialog__field">
+        <textarea
+          id="review-comment"
+          class="dialog__comment"
+          rows="4"
+          [attr.maxlength]="commentMax"
+          placeholder="Conte sobre o ambiente de trabalho, gestão e condições oferecidas..."
+          [value]="comment()"
+          (input)="comment.set($any($event.target).value)"
+          data-testid="review-comment"
+        ></textarea>
+        <span class="dialog__counter" data-testid="review-counter">{{ comment().length }}/{{ commentMax }}</span>
+      </div>
 
-    @if (error(); as message) {
-      <p class="dialog__error" role="alert" data-testid="review-error">{{ message }}</p>
-    }
+      @if (error(); as message) {
+        <p class="dialog__error" role="alert" data-testid="review-error">{{ message }}</p>
+      }
 
-    <div class="dialog__actions">
-      <button type="button" class="action action--ghost" [disabled]="submitting()" (click)="cancel()" data-testid="review-cancel">
-        Cancelar
+      <button type="submit" class="action action--primary" [disabled]="submitting()" data-testid="review-submit">
+        {{ submitting() ? 'Publicando...' : 'Publicar avaliação' }}
+        <svg class="action__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M5 12h14m-6-6 6 6-6 6" />
+        </svg>
       </button>
-      <button type="submit" class="action action--primary" [disabled]="rating() < 1 || submitting()" data-testid="review-submit">
-        {{ submitting() ? 'Enviando...' : 'Enviar' }}
+      <button type="button" class="skip" [disabled]="submitting()" (click)="cancel()" data-testid="review-skip">
+        Pular por agora
       </button>
-    </div>
-  </form>
+    </form>
+  }
 </div>

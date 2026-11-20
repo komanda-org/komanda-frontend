@@ -63,13 +63,35 @@ describe('ReviewButton + ReviewDialog', () => {
     expect(labels).toEqual(['1 estrela', '2 estrelas', '3 estrelas', '4 estrelas', '5 estrelas']);
   });
 
-  it('keeps Enviar disabled until a rating is chosen', () => {
+  it('blocks publishing without a rating with an actionable message', () => {
     open();
-    expect(q<HTMLButtonElement>('review-submit')!.disabled).toBe(true);
+    send();
 
-    rate(4);
+    expect(q('review-error')?.textContent).toContain('Escolha uma nota');
     expect(q<HTMLButtonElement>('review-submit')!.disabled).toBe(false);
     http.expectNone('/api/users/reviews');
+  });
+
+  it('labels the rating under the stars and sends it', () => {
+    open();
+    rate(4);
+
+    expect(q('rating-label')?.textContent).toContain('Muito bom');
+  });
+
+  it('shows the success state only after the API confirms the publication', () => {
+    open();
+    rate(5);
+    send();
+
+    expect(q('review-success')).toBeNull();
+    expect(q<HTMLButtonElement>('review-submit')!.disabled).toBe(true);
+
+    http.expectOne('/api/users/reviews').flush({ id: 'rev1' }, { status: 201, statusText: 'Created' });
+    fixture.detectChanges();
+
+    expect(q('review-success')?.textContent).toContain('Avaliação publicada!');
+    expect(q('review-dialog')?.textContent).not.toContain('Pular por agora');
   });
 
   it('sends the review, shows the toast and turns the button into "Avaliado ✓"', () => {
@@ -92,6 +114,15 @@ describe('ReviewButton + ReviewDialog', () => {
     fixture.detectChanges();
 
     expect(TestBed.inject(ToastService).message()).toBe(REVIEW_SENT_TOAST);
+    expect(q('review-success')).not.toBeNull();
+    expect(q('review-dialog')!.textContent).toContain('Avaliação publicada!');
+    expect(q('review-dialog')!.textContent).toContain(
+      'Obrigado por ajudar a manter a comunidade Komanda segura e qualificada.',
+    );
+
+    q<HTMLButtonElement>('review-done-btn')!.click();
+    fixture.detectChanges();
+
     expect(q('review-dialog')).toBeNull();
     const done = q<HTMLButtonElement>('reviewed')!;
     expect(done.textContent).toContain('Avaliado ✓');
@@ -119,6 +150,9 @@ describe('ReviewButton + ReviewDialog', () => {
     fixture.detectChanges();
 
     expect(q('review-error')).toBeNull();
+    expect(q('review-success')).not.toBeNull();
+    q<HTMLButtonElement>('review-done-btn')!.click();
+    fixture.detectChanges();
     expect(q('reviewed')!.textContent).toContain('Avaliado ✓');
   });
 
@@ -132,13 +166,14 @@ describe('ReviewButton + ReviewDialog', () => {
     fixture.detectChanges();
 
     expect(q('review-error')!.textContent).toContain('Usuário avaliado não encontrado.');
+    expect(q('review-success')).toBeNull();
     expect(q<HTMLButtonElement>('review-submit')!.disabled).toBe(false);
     expect(q('reviewed')).toBeNull();
   });
 
-  it('closes on Cancelar without sending', () => {
+  it('closes on Pular por agora without sending', () => {
     open();
-    q('review-cancel')!.click();
+    q('review-skip')!.click();
     fixture.detectChanges();
 
     expect(q('review-dialog')).toBeNull();

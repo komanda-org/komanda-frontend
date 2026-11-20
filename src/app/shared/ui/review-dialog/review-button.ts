@@ -20,7 +20,8 @@ import { ReviewDialog, ReviewDialogResult } from './review-dialog';
         [jobId]="jobId()"
         [receiverId]="receiverId()"
         [receiverName]="receiverName()"
-        [heading]="label()"
+        [jobTitle]="jobTitle()"
+        [shift]="shift()"
         (closed)="onClosed($event)"
       />
     }
@@ -72,6 +73,8 @@ export class ReviewButton {
   readonly receiverId = input.required<string>();
   readonly receiverName = input.required<string>();
   readonly label = input.required<string>();
+  readonly jobTitle = input('');
+  readonly shift = input<string | null>(null);
 
   protected readonly open = signal(false);
   protected readonly reviewed = computed(() =>

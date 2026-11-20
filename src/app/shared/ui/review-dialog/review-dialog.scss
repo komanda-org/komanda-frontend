@@ -2,7 +2,16 @@
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: rgb(0 0 0 / 60%);
+  background:
+    radial-gradient(circle at 50% 0%, rgb(242 202 80 / 10%), transparent 40%),
+    repeating-linear-gradient(
+      135deg,
+      rgb(0 0 0 / 0) 0,
+      rgb(0 0 0 / 0) 2px,
+      rgb(255 255 255 / 2) 2px,
+      rgb(255 255 255 / 2) 4px
+    ),
+    rgb(10 9 14 / 95%);
 }
 
 .dialog {
@@ -10,16 +19,16 @@
   top: 50%;
   left: 50%;
   z-index: 151;
-  width: min(440px, calc(100vw - 32px));
+  width: min(460px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   box-sizing: border-box;
   overflow-y: auto;
-  padding: var(--k-s-6);
+  padding: var(--k-s-7) var(--k-s-6);
   color: var(--k-texto);
   background: var(--k-superficie-2);
   border: 1px solid var(--k-linha-forte);
   border-radius: var(--k-raio-lg);
-  box-shadow: 0 16px 48px rgb(0 0 0 / 55%);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 60%);
   transform: translate(-50%, -50%);
   text-align: left;
 }
@@ -27,12 +36,65 @@
 .dialog__title {
   margin: 0;
   font-family: var(--k-serif);
-  font-size: var(--k-t-lg);
+  font-size: var(--k-t-xl);
   font-weight: 400;
+  line-height: 1.15;
 }
 
-.dialog__who {
-  margin: var(--k-s-1) 0 var(--k-s-5);
+.dialog__eyebrow {
+  margin: 0 0 var(--k-s-2);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dialog__warning {
+  margin: var(--k-s-2) 0 var(--k-s-4);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+.context {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-5);
+  padding: var(--k-s-3);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+}
+
+.context__logo {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border-radius: var(--k-raio);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-md, 1.1rem);
+  font-weight: 700;
+}
+
+.context__label {
+  margin: 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+}
+
+.context__name {
+  margin: 0;
+  color: var(--k-ouro);
+  font-weight: 700;
+}
+
+.context__job {
+  margin: 0;
   color: var(--k-texto-fraco);
   font-size: var(--k-t-sm);
 }
@@ -40,14 +102,17 @@
 .dialog__label {
   display: block;
   margin: 0 0 var(--k-s-2);
-  font-family: var(--k-serif);
-  font-size: var(--k-t-sm);
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .rating {
   display: flex;
   gap: var(--k-s-1);
-  margin-bottom: var(--k-s-5);
+  margin-top: var(--k-s-2);
 }
 
 .rating__star {
@@ -68,6 +133,12 @@
   }
 }
 
+.rating__label {
+  margin: var(--k-s-1) 0 var(--k-s-5);
+  color: var(--k-ouro);
+  font-size: var(--k-t-sm);
+}
+
 // Radio nativo invisivel: mantem setas do teclado e leitor de tela sem desenhar a bolinha.
 .rating__input {
   position: absolute;
@@ -77,10 +148,14 @@
   cursor: pointer;
 }
 
+.dialog__field {
+  position: relative;
+}
+
 .dialog__comment {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.75rem 0.9rem;
+  padding: 0.75rem 0.9rem 1.6rem;
   color: var(--k-texto);
   background: var(--k-campo);
   border: 1px solid var(--k-linha);
@@ -94,17 +169,19 @@
   }
 }
 
+.dialog__counter {
+  position: absolute;
+  right: var(--k-s-3);
+  bottom: var(--k-s-2);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  pointer-events: none;
+}
+
 .dialog__error {
   margin: var(--k-s-3) 0 0;
   color: var(--k-erro);
   font-size: var(--k-t-sm);
-}
-
-.dialog__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--k-s-3);
-  margin-top: var(--k-s-5);
 }
 
 .action {
@@ -130,13 +207,110 @@
   }
 
   &--primary {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: var(--k-s-2);
+    margin-top: var(--k-s-5);
     color: #1a160d;
     background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
   }
+}
 
-  &--ghost {
-    color: var(--k-texto-fraco);
-    background: transparent;
-    border-color: var(--k-linha);
+.action__arrow {
+  width: 18px;
+  height: 18px;
+}
+
+.skip {
+  display: block;
+  width: 100%;
+  margin-top: var(--k-s-5);
+  padding: var(--k-s-2);
+  color: var(--k-texto-fraco);
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--k-t-sm);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &:hover {
+    color: var(--k-ouro);
+    text-decoration: underline;
+  }
+}
+
+.success-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--k-s-4) var(--k-s-2) var(--k-s-2);
+}
+
+.success-view__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--k-s-5);
+  color: #fff;
+  background-color: #22c55e;
+  border-radius: 16px;
+  box-shadow: 0 0 24px rgb(34 197 94 / 35%);
+}
+
+.success-view__check {
+  width: 32px;
+  height: 32px;
+}
+
+.success-view__title {
+  margin: 0 0 var(--k-s-3);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.success-view__copy {
+  max-width: 300px;
+  margin: 0 0 var(--k-s-6);
+  color: var(--k-texto-fraco);
+  font-family: var(--k-sans);
+  font-size: var(--k-t-sm);
+  line-height: 1.5;
+}
+
+.action--conclude {
+  width: 100%;
+  min-height: 48px;
+  color: var(--k-texto);
+  background: var(--k-campo);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: var(--k-superficie-1, #252424);
+    border-color: var(--k-linha-forte);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-linha-forte);
+    outline-offset: 3px;
   }
 }
