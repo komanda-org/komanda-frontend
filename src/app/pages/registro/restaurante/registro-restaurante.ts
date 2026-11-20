@@ -19,6 +19,7 @@ import {
   aplicarErrosDeValidacao,
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
+import { isApiError } from '../../../core/models/api-error.model';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
 import {
@@ -103,7 +104,8 @@ export class RegistroRestaurante {
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly errosDetalhados = signal<string[]>([]);
   protected readonly cepConsultando = signal(false);
-  protected readonly cepMensagem = signal<string | null>(null);
+  protected readonly cepDica = signal<string | null>(null);
+  protected readonly cepErro = signal<string | null>(null);
   protected readonly cnpjConsultando = signal(false);
   protected readonly cnpjMensagem = signal<string | null>(null);
   private readonly cnpjApiErro = signal<string | null>(null);
@@ -227,7 +229,8 @@ export class RegistroRestaurante {
   private consultarCep(valor: string): void {
     this.cepConsulta?.unsubscribe();
     this.cepConsultando.set(false);
-    this.cepMensagem.set(null);
+    this.cepDica.set(null);
+    this.cepErro.set(null);
 
     const cep = valor.replace(/\D/g, '');
     if (!isPlatformBrowser(this.platformId) || cep.length !== 8) {
@@ -241,23 +244,42 @@ export class RegistroRestaurante {
       .subscribe({
         next: (resposta) => {
           this.cepConsultando.set(false);
-          if (!this.form.controls.address.value.trim() && resposta.street?.trim()) {
+          const ruaPreenchida =
+            !this.form.controls.address.value.trim() && !!resposta.street?.trim();
+          if (ruaPreenchida && resposta.street) {
             this.form.controls.address.setValue(resposta.street);
           }
-          this.preencherLocalidade(
+          const localidadePreenchida = this.preencherLocalidade(
             resposta.neighborhood,
             resposta.city,
             resposta.state,
           );
-          this.cepMensagem.set('Dados de localização preenchidos. Você pode complementá-los.');
+          if (ruaPreenchida || localidadePreenchida) {
+            this.cepDica.set('Dados de localização preenchidos. Você pode complementá-los.');
+          }
         },
-        error: () => {
+        error: (erro: unknown) => {
           this.cepConsultando.set(false);
-          this.cepMensagem.set(
-            'Não encontramos esse CEP. Você pode preencher o endereço manualmente.',
-          );
+          this.cepErro.set(this.mensagemErroCep(erro));
         },
       });
+  }
+
+  private mensagemErroCep(erro: unknown): string {
+    if (!isApiError(erro) && !ehErroApi(erro)) {
+      return 'Não foi possível consultar o CEP agora. Tente novamente ou preencha o endereço manualmente.';
+    }
+
+    switch (erro.status) {
+      case 404:
+        return 'Não encontramos esse CEP. Você pode preencher o endereço manualmente.';
+      case 0:
+        return 'Não foi possível conectar para consultar o CEP. Verifique sua conexão e tente novamente.';
+      case 429:
+        return 'A consulta de CEP está temporariamente limitada. Tente novamente ou preencha o endereço manualmente.';
+      default:
+        return 'Não foi possível consultar o CEP agora. Tente novamente ou preencha o endereço manualmente.';
+    }
   }
 
   private consultarCnpj(valor: string): void {
@@ -292,17 +314,17 @@ export class RegistroRestaurante {
             this.cnpjMensagem.set('CNPJ encontrado e ativo. Dados disponíveis foram preenchidos.');
           }
           this.form.controls.cnpj.updateValueAndValidity({ emitEvent: false });
+          if (!ativo) {
+            this.form.controls.cnpj.markAsTouched();
+          }
         },
         error: (erro: unknown) => {
           this.cnpjConsultando.set(false);
-          const status =
-            typeof erro === 'object' && erro !== null && 'status' in erro
-              ? erro.status
-              : undefined;
-          if (status === 404) {
+          if ((isApiError(erro) || ehErroApi(erro)) && erro.status === 404) {
             this.cnpjApiErro.set('Não encontramos esse CNPJ na Receita Federal.');
             this.cnpjMensagem.set(null);
             this.form.controls.cnpj.updateValueAndValidity({ emitEvent: false });
+            this.form.controls.cnpj.markAsTouched();
             return;
           }
 
@@ -339,16 +361,21 @@ export class RegistroRestaurante {
     neighborhood: string | null,
     city: string | null,
     state: string | null,
-  ): void {
+  ): boolean {
+    let preenchido = false;
     if (!this.form.controls.neighborhood.value.trim() && neighborhood?.trim()) {
       this.form.controls.neighborhood.setValue(neighborhood);
+      preenchido = true;
     }
     if (!this.form.controls.city.value.trim() && city?.trim()) {
       this.form.controls.city.setValue(city);
+      preenchido = true;
     }
     if (!this.form.controls.state.value.trim() && state?.trim()) {
       this.form.controls.state.setValue(state);
+      preenchido = true;
     }
+    return preenchido;
   }
 
   protected aplicarTelefone(evento: Event): void {
@@ -408,6 +435,22 @@ export class RegistroRestaurante {
   }
 
   private enviar(): void {
+    if (this.cnpjConsultando()) {
+      this.irParaEtapaDoCampo('cnpj');
+      return;
+    }
+
+    if (this.form.invalid) {
+      const campo = this.camposPorEtapa
+        .flat()
+        .find((nome) => this.form.controls[nome].invalid);
+      if (campo) {
+        this.form.controls[campo].markAsTouched();
+        this.irParaEtapaDoCampo(campo);
+      }
+      return;
+    }
+
     this.enviando.set(true);
     this.limparErro();
 

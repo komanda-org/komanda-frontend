@@ -301,8 +301,10 @@
               </div>
               @if (cepConsultando()) {
                 <span class="campo__dica" role="status" aria-live="polite">Consultando CEP…</span>
-              } @else if (cepMensagem()) {
-                <span class="campo__erro" role="alert">{{ cepMensagem() }}</span>
+              } @else if (cepDica()) {
+                <span class="campo__dica" role="status" aria-live="polite">{{ cepDica() }}</span>
+              } @else if (cepErro()) {
+                <span class="campo__erro" role="alert">{{ cepErro() }}</span>
               }
             </app-campo>
 

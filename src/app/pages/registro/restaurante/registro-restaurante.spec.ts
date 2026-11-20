@@ -1,8 +1,9 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
+import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { RegistroRestaurante } from './registro-restaurante';
 
 /**
@@ -48,7 +49,7 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
         // O componente injeta RegistroService, que injeta HttpClient. Nenhum
         // destes testes chega a enviar — o Testing garante que, se chegasse,
         // a requisicao nao sairia de verdade.
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
       ],
     }).compileComponents();
@@ -115,6 +116,122 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.form.controls['acceptTerms'].value).toBe(true);
   });
 
+  it('retorna à etapa do CNPJ inválido e não envia o cadastro', () => {
+    componente.form.patchValue(ETAPA_1_VALIDA);
+    const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
+    input.value = '11222333000181';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    componente.avancar();
+    expect(componente.etapa()).toBe(2);
+
+    http.expectOne('https://brasilapi.com.br/api/cnpj/v1/11222333000181').flush(
+      { message: 'Not Found' },
+      { status: 404, statusText: 'Not Found' },
+    );
+    fixture.detectChanges();
+
+    componente.form.patchValue({
+      phone: '(11) 99999-9999',
+      zipCode: '01310-100',
+      address: 'Rua Exemplo',
+      description: 'Um ambiente agradável para receber os clientes.',
+    });
+    componente.avancar();
+
+    expect(componente.etapa()).toBe(1);
+    expect(componente.form.controls['cnpj'].invalid).toBe(true);
+    http.expectNone(
+      (request) => request.method === 'POST' && request.url.includes('/restaurants'),
+    );
+  });
+
+  it('mostra imediatamente erro de CNPJ enquanto o campo continua focado', () => {
+    const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
+    input.focus();
+    input.value = '11222333000181';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    http.expectOne('https://brasilapi.com.br/api/cnpj/v1/11222333000181').flush(
+      { message: 'Not Found' },
+      { status: 404, statusText: 'Not Found' },
+    );
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(input);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Não encontramos esse CNPJ na Receita Federal.',
+    );
+  });
+
+  it('mostra imediatamente CNPJ inativo enquanto o campo continua focado', () => {
+    const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
+    input.focus();
+    input.value = '11222333000181';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    http.expectOne('https://brasilapi.com.br/api/cnpj/v1/11222333000181').flush({
+      cnpj: '11222333000181',
+      razao_social: 'Bistrô Maison Ltda.',
+      nome_fantasia: 'Bistrô Maison',
+      descricao_situacao_cadastral: 'INAPTA',
+      situacao_cadastral: 3,
+      logradouro: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      municipio: null,
+      uf: null,
+      cep: null,
+      ddd_telefone_1: null,
+    });
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(input);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Este CNPJ não consta como ativo na Receita Federal.',
+    );
+  });
+
+  it('não envia enquanto a consulta do CNPJ ainda está pendente', () => {
+    componente.form.patchValue(ETAPA_1_VALIDA);
+    const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
+    input.value = '11222333000181';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const requisicao = http.expectOne(
+      'https://brasilapi.com.br/api/cnpj/v1/11222333000181',
+    );
+    componente.avancar();
+    componente.form.patchValue({
+      phone: '(11) 99999-9999',
+      zipCode: '01310-100',
+      address: 'Rua Exemplo',
+      description: 'Um ambiente agradável para receber os clientes.',
+    });
+    componente.avancar();
+
+    expect(componente.etapa()).toBe(1);
+    http.expectNone(
+      (request) => request.method === 'POST' && request.url.includes('/restaurants'),
+    );
+    requisicao.flush({
+      cnpj: '11222333000181',
+      razao_social: 'Bistrô Maison Ltda.',
+      nome_fantasia: 'Bistrô Maison',
+      descricao_situacao_cadastral: 'ATIVA',
+      situacao_cadastral: 2,
+      logradouro: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      municipio: null,
+      uf: null,
+      cep: null,
+      ddd_telefone_1: null,
+    });
+  });
+
   it('consulta o CNPJ e preenche somente os dados ainda vazios', () => {
     const input = fixture.nativeElement.querySelector('#cnpj') as HTMLInputElement;
     input.value = '11222333000181';
@@ -175,6 +292,12 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     });
     fixture.detectChanges();
 
+    expect(
+      fixture.nativeElement.querySelector('.campo__dica[role="status"]'),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('.campo__erro[role="alert"]'),
+    ).toBeNull();
     expect(componente.form.controls['zipCode'].value).toBe('01310-100');
     expect(componente.form.controls['neighborhood'].value).toBe('Bela Vista');
     expect(componente.form.controls['city'].value).toBe('São Paulo');
@@ -182,5 +305,33 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.montarPayload().address).toBe(
       'Rua Exemplo, Bela Vista, São Paulo - SP',
     );
+  });
+
+  it('distingue CEP não encontrado de falha temporária', () => {
+    componente.form.patchValue(ETAPA_1_VALIDA);
+    componente.avancar();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('#zipCode') as HTMLInputElement;
+    input.value = '01310100';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    http.expectOne('https://brasilapi.com.br/api/cep/v2/01310100').flush(
+      { message: 'Not Found' },
+      { status: 404, statusText: 'Not Found' },
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Não encontramos esse CEP.');
+
+    input.value = '01000000';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    http.expectOne('https://brasilapi.com.br/api/cep/v2/01000000').flush(
+      { message: 'Unavailable' },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Não foi possível consultar o CEP agora.',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Não encontramos esse CEP.');
   });
 });

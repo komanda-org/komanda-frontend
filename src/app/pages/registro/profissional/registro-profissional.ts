@@ -20,6 +20,7 @@ import {
   aplicarErrosDeValidacao,
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
+import { isApiError } from '../../../core/models/api-error.model';
 import { ehErroApi } from '../../../core/models/erro-api.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
 import { BrasilApiService } from '../../../core/services/brasil-api.service';
@@ -61,8 +62,6 @@ type CampoProfissional =
   | 'skills'
   | 'profilePhoto'
   | 'neighborhood'
-  | 'city'
-  | 'state'
   | 'zipCode'
   | 'acceptedTerms';
 
@@ -162,8 +161,6 @@ export class RegistroProfissional {
     skills: this.fb.control<string[]>([], [itensAteTamanho(50)]),
     profilePhoto: this.fb.control(''),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
-    city: this.fb.control('', [Validators.maxLength(100)]),
-    state: this.fb.control('', [Validators.maxLength(2)]),
     zipCode: this.fb.control('', [cepValido()]),
     acceptedTerms: this.fb.control(false, [obrigatorioTrue()]),
   });
@@ -172,7 +169,7 @@ export class RegistroProfissional {
   private readonly camposPorEtapa: readonly (readonly CampoProfissional[])[] = [
     ['profilePhoto', 'fullName', 'email', 'mainRole', 'contractType', 'password', 'confirmPassword', 'acceptedTerms'],
     ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
-    ['zipCode', 'neighborhood', 'city', 'state'],
+    ['zipCode', 'neighborhood'],
   ];
 
   protected aplicarCep(evento: Event): void {
@@ -204,20 +201,29 @@ export class RegistroProfissional {
           if (!this.form.controls.neighborhood.value.trim() && resposta.neighborhood?.trim()) {
             this.form.controls.neighborhood.setValue(resposta.neighborhood);
           }
-          if (!this.form.controls.city.value.trim() && resposta.city?.trim()) {
-            this.form.controls.city.setValue(resposta.city);
-          }
-          if (!this.form.controls.state.value.trim() && resposta.state?.trim()) {
-            this.form.controls.state.setValue(resposta.state);
-          }
         },
-        error: () => {
+        error: (erro: unknown) => {
           this.cepConsultando.set(false);
-          this.cepMensagem.set(
-            'Não encontramos esse CEP. Confira os números ou preencha o bairro manualmente.',
-          );
+          this.cepMensagem.set(this.mensagemErroCep(erro));
         },
       });
+  }
+
+  private mensagemErroCep(erro: unknown): string {
+    if (!isApiError(erro) && !ehErroApi(erro)) {
+      return 'Não foi possível consultar o CEP agora. Tente novamente ou preencha o bairro manualmente.';
+    }
+
+    switch (erro.status) {
+      case 404:
+        return 'Não encontramos esse CEP. Confira os números ou preencha o bairro manualmente.';
+      case 0:
+        return 'Não foi possível conectar para consultar o CEP. Verifique sua conexão e tente novamente.';
+      case 429:
+        return 'A consulta de CEP está temporariamente limitada. Tente novamente ou preencha o bairro manualmente.';
+      default:
+        return 'Não foi possível consultar o CEP agora. Tente novamente ou preencha o bairro manualmente.';
+    }
   }
 
   protected readonly experienceSummary = computed(() => {
