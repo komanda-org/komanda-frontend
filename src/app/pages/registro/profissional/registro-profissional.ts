@@ -18,7 +18,7 @@ import {
   aplicarErrosDeValidacao,
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
-import { ehErroApi } from '../../../core/models/erro-api.model';
+import { isApiError } from '../../../core/models/api-error.model';
 import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
@@ -362,8 +362,8 @@ export class RegistroProfissional {
   private tratarErro(erro: unknown): void {
     this.enviando.set(false);
 
-    // Se nao e ErroApi, nao passou pelo interceptor: erro nosso, nao da rede.
-    if (!ehErroApi(erro)) {
+    // Se nao e ApiError, nao passou pelo interceptor: erro nosso, nao da rede.
+    if (!isApiError(erro)) {
       this.erroGeral.set('Algo deu errado ao criar a conta. Tente novamente.');
       return;
     }
@@ -384,7 +384,7 @@ export class RegistroProfissional {
     }
 
     // 400: cada mensagem vira erro do proprio campo; o banner fica com o resto.
-    const restantes = aplicarErrosDeValidacao(this.form, erro.mensagens);
+    const restantes = aplicarErrosDeValidacao(this.form, erro.messages);
     this.errosDetalhados.set(restantes.length > 1 ? restantes : []);
     this.erroGeral.set(
       restantes.length > 1

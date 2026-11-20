@@ -91,3 +91,63 @@ describe('RegistroProfissional — CEP', () => {
     request.flush({ id: 'p1' });
   });
 });
+
+describe('RegistroProfissional — API errors', () => {
+  let fixture: ComponentFixture<RegistroProfissional>;
+  let http: HttpTestingController;
+  const el = () => fixture.nativeElement as HTMLElement;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [RegistroProfissional],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([apiErrorInterceptor])),
+        provideHttpClientTesting(),
+        { provide: ProfessionalPreferencesService, useValue: { saveForEmail: vi.fn() } },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fixture = TestBed.createComponent(RegistroProfissional);
+    const component = fixture.componentInstance as unknown as {
+      form: { patchValue(value: object): void };
+      etapa: { set(value: number): void };
+    };
+    component.form.patchValue({
+      email: 'ana@example.com',
+      password: 'senha-forte-1',
+      confirmPassword: 'senha-forte-1',
+      fullName: 'Ana Souza',
+      mainRole: 'Cozinheira',
+      contractType: 'CLT',
+      acceptedTerms: true,
+      zipCode: '01001-000',
+    });
+    component.etapa.set(3);
+    fixture.detectChanges();
+    el().querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+  });
+
+  afterEach(() => http.verify());
+
+  it('explains an e-mail already in use and goes back to the step that has it', () => {
+    http
+      .expectOne('/api/professionals')
+      .flush({ message: 'Email já cadastrado' }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    expect(el().textContent).toContain('Email já cadastrado');
+    expect(el().textContent).not.toContain('Algo deu errado');
+    expect(el().querySelector('#email')).not.toBeNull();
+  });
+
+  it('shows the validation message sent by the API instead of the generic one', () => {
+    http
+      .expectOne('/api/professionals')
+      .flush({ message: ['zipCode must be a valid CEP'] }, { status: 400, statusText: 'Bad Request' });
+    fixture.detectChanges();
+
+    expect(el().textContent).not.toContain('Algo deu errado');
+  });
+});

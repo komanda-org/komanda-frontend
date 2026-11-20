@@ -17,7 +17,7 @@ import {
   aplicarErrosDeValidacao,
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
-import { ehErroApi } from '../../../core/models/erro-api.model';
+import { isApiError } from '../../../core/models/api-error.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep, mascararCnpj, mascararTelefone } from '../../../core/utils/mascaras';
@@ -266,7 +266,7 @@ export class RegistroRestaurante {
   private tratarErro(erro: unknown): void {
     this.enviando.set(false);
 
-    if (!ehErroApi(erro)) {
+    if (!isApiError(erro)) {
       this.erroGeral.set('Algo deu errado ao criar a conta. Tente novamente.');
       return;
     }
@@ -289,7 +289,7 @@ export class RegistroRestaurante {
     }
 
     // 400: cada mensagem vira erro do proprio campo; o banner fica com o resto.
-    const restantes = aplicarErrosDeValidacao(this.form, erro.mensagens);
+    const restantes = aplicarErrosDeValidacao(this.form, erro.messages);
     this.errosDetalhados.set(restantes.length > 1 ? restantes : []);
     this.erroGeral.set(
       restantes.length > 1
