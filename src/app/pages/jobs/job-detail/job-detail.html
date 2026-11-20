@@ -1,9 +1,10 @@
 <section class="detail">
   <header class="topbar">
-    <a class="back" routerLink="/vagas" data-testid="back-link">
+    <button type="button" class="back" (click)="goBack()" aria-label="Voltar" data-testid="back-btn">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"></path></svg>
-      <span>Detalhes da vaga</span>
-    </a>
+      <span>Voltar</span>
+    </button>
+    <p class="eyebrow">Detalhes da vaga</p>
     @if (job()) {
       <button type="button" class="icon-button" aria-label="Compartilhar vaga" data-testid="share-btn" (click)="share()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -15,9 +16,6 @@
       </button>
     }
   </header>
-  @if (shareMessage(); as message) {
-    <p class="share-message" role="status">{{ message }}</p>
-  }
 
   @if (loading()) {
     <div class="status" role="status">

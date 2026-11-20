@@ -143,6 +143,12 @@ svg {
   font-weight: 700;
 }
 
+.salary__unit {
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+  font-weight: 400;
+}
+
 /* --- Sobre a vaga / requisitos --- */
 .block__title {
   display: flex;

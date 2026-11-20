@@ -9,12 +9,12 @@ import { Job } from '../../../core/models/jobs.model';
 import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { FeedFilter, JobsFeedFiltersService } from '../../../core/services/jobs-feed-filters.service';
 import { JobsService } from '../../../core/services/jobs.service';
 import { LocationService, UserLocation } from '../../../core/services/location.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
 import { shiftsLabel } from '../../../core/utils/job-labels';
 
-type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO' | null;
 type LocationStatus = 'pending' | UserLocation['status'];
 
 export const DISTANCE_MIN_KM = 5;
@@ -68,6 +68,7 @@ export class JobsFeed {
   private readonly authService = inject(AuthService);
   private readonly locationService = inject(LocationService);
   private readonly professionalPreferencesService = inject(ProfessionalPreferencesService);
+  private readonly filters = inject(JobsFeedFiltersService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private userLocationPromise: Promise<UserLocation> | null = null;
@@ -78,21 +79,28 @@ export class JobsFeed {
   protected readonly loading = signal(true);
   protected readonly loadingMore = signal(false);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly activeFilter = signal<FeedFilter>('para-voce');
+  protected readonly activeFilter = this.filters.activeFilter;
   protected readonly shiftsLabel = shiftsLabel;
-  protected readonly selectedShift = signal<string | null>(null);
-  protected readonly minSalary = signal<number | null>(null);
-  protected readonly maxDistanceKm = signal<number | null>(null);
+  protected readonly selectedShift = this.filters.selectedShift;
+  protected readonly minSalary = this.filters.minSalary;
+  protected readonly maxDistanceKm = this.filters.maxDistanceKm;
   protected readonly skip = signal(0);
   protected readonly take = signal(20);
-  protected readonly submittedQuery = signal('');
+  protected readonly submittedQuery = this.filters.submittedQuery;
   protected readonly quickFiltersVisible = signal(true);
   protected readonly applyingIds = signal(new Set<string>());
   protected readonly appliedIds = signal(new Set<string>());
   protected readonly applicationErrors = signal(new Map<string, string>());
   protected readonly locationStatus = signal<LocationStatus>('pending');
   protected readonly pendingDistances = signal(0);
-  protected searchInput = '';
+
+  protected get searchInput(): string {
+    return this.filters.searchInput;
+  }
+
+  protected set searchInput(value: string) {
+    this.filters.searchInput = value;
+  }
 
   protected readonly locationBlocked = computed(
     () => this.locationStatus() === 'denied' || this.locationStatus() === 'unavailable',
@@ -204,12 +212,7 @@ export class JobsFeed {
   }
 
   protected clearFilters(): void {
-    this.searchInput = '';
-    this.submittedQuery.set('');
-    this.activeFilter.set('para-voce');
-    this.selectedShift.set(null);
-    this.minSalary.set(null);
-    this.maxDistanceKm.set(null);
+    this.filters.reset();
     this.load();
   }
 

@@ -30,7 +30,7 @@
         <li class="badge">{{ contractLabel(current.contractType) }}</li>
       </ul>
 
-      <p class="salary" data-testid="job-salary">{{ formatSalary(current.salary) }}</p>
+      <p class="salary" data-testid="job-salary">{{ formatSalary(current.salary) }}@if (current.salary) {<span class="salary__unit"> / mês</span>}</p>
     </article>
 
     <section class="block" aria-labelledby="about-title">

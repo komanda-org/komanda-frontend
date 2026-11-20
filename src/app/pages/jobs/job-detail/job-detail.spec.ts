@@ -1,8 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
+import { ToastService } from '../../../core/services/toast.service';
 import { Job } from '../../../core/models/jobs.model';
 import { contractLabel, formatSalary, jobMeta, shiftsLabel } from '../../../core/utils/job-labels';
 import { JobDetail } from './job-detail';
@@ -55,6 +57,7 @@ describe('JobDetail — pure functions', () => {
 describe('JobDetail', () => {
   let fixture: ComponentFixture<JobDetail>;
   let http: HttpTestingController;
+  const locationMock = { back: vi.fn() };
   const el = () => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string) => el().querySelector(`[data-testid="${id}"]`);
 
@@ -84,19 +87,25 @@ describe('JobDetail', () => {
   });
 
   beforeEach(() => {
+    locationMock.back.mockClear();
     TestBed.configureTestingModule({
       imports: [JobDetail],
       providers: [
         provideRouter([]),
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
+        { provide: Location, useValue: locationMock },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'job-1' }) } } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.verify();
+    Reflect.deleteProperty(navigator, 'share');
+    Reflect.deleteProperty(navigator, 'clipboard');
+  });
 
   it('loads the job from GET /jobs/:id', async () => {
     await open(JOB);
@@ -176,5 +185,36 @@ describe('JobDetail', () => {
     await open(null, { status: 400, statusText: 'Bad Request' });
 
     expect(byTestId('load-error')?.textContent).toContain('Não encontramos esta vaga');
+  });
+
+  it('goes back through history so the feed keeps its filters', async () => {
+    await open(JOB);
+
+    (byTestId('back-btn') as HTMLButtonElement).click();
+
+    expect(locationMock.back).toHaveBeenCalled();
+  });
+
+  it('shares the current url when the browser supports it', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+
+    await open(JOB);
+    (byTestId('share-btn') as HTMLButtonElement).click();
+    await settle();
+
+    expect(share).toHaveBeenCalledWith({ title: JOB.title, url: location.href });
+  });
+
+  it('copies the link when the browser cannot share', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+    await open(JOB);
+    (byTestId('share-btn') as HTMLButtonElement).click();
+    await settle();
+
+    expect(writeText).toHaveBeenCalledWith(location.href);
+    expect(TestBed.inject(ToastService).message()).toBe('Link copiado');
   });
 });
