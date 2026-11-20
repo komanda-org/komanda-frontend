@@ -18,7 +18,8 @@ import { AppNotification } from '../../core/models/notifications.model';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationsService } from '../../core/services/notifications.service';
 import { describeError } from '../../core/utils/describe-error';
-import { notificationRoute, relativeTime, unreadBadge } from '../../core/utils/notifications';
+import { notificationRoute, unreadBadge } from '../../core/utils/notifications';
+import { relativeTime } from '../../core/utils/relative-time';
 
 export const REFRESH_INTERVAL_MS = 60_000;
 

@@ -78,25 +78,34 @@
       <ul class="list">
         @for (applicant of visible(); track applicant.applicationId) {
           <li class="row card" data-testid="applicant-row">
-            <div class="row__main">
+            <a
+              class="row__main row__link"
+              [routerLink]="['/profissionais', applicant.professional.id]"
+              [queryParams]="{ job: selectedJobId() }"
+              [state]="profileState(applicant)"
+              [attr.aria-label]="'Ver perfil de ' + applicant.professional.fullName"
+              data-testid="applicant-link"
+            >
               @if (applicant.professional.profilePhoto) {
                 <img class="avatar" [src]="applicant.professional.profilePhoto" alt="" width="48" height="48" />
               } @else {
                 <span class="avatar avatar--initials" aria-hidden="true">{{ initials(applicant.professional.fullName) }}</span>
               }
               <div class="row__who">
-                <p class="row__name" data-testid="applicant-name">{{ applicant.professional.fullName }}</p>
-                <p class="meta">
-                  {{ appliedAt(applicant) }} · {{ applicant.professional.mainRole }}
-                  @if (applicant.professional.averageRating) {
-                    · <span class="rating">★ {{ applicant.professional.averageRating }}</span>
-                  }
+                <p class="row__name">
+                  <span data-testid="applicant-name">{{ applicant.professional.fullName }}</span>
+                  <span
+                    class="rating"
+                    [class.rating--new]="!applicant.professional.averageRating"
+                    data-testid="applicant-rating"
+                  >{{ ratingBadge(applicant.professional.averageRating) }}</span>
                 </p>
+                <p class="meta">{{ appliedAt(applicant) }} · {{ applicant.professional.mainRole }}</p>
                 @if (applicant.status === 'APROVADA') {
                   <span class="tag tag--ok">✓ Aprovado</span>
                 }
               </div>
-            </div>
+            </a>
 
             <div class="row__actions">
               @if (applicant.professional.experienceSummary) {

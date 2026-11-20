@@ -115,6 +115,14 @@ export const routes: Routes = [
           import('./features/profile/profile-edit/profile-edit').then((m) => m.ProfileEdit),
       },
       {
+        path: 'profissionais/:id',
+        title: 'Perfil do profissional · Komanda',
+        loadComponent: () =>
+          import('./features/professionals/candidate-profile/candidate-profile').then(
+            (m) => m.CandidateProfile,
+          ),
+      },
+      {
         path: 'restaurantes/:id',
         title: 'Restaurante · Komanda',
         loadComponent: () =>

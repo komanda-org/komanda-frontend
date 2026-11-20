@@ -143,7 +143,37 @@
 }
 
 .rating {
+  margin-left: var(--k-s-2);
   color: var(--k-ouro);
+  font-family: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--new {
+    color: var(--k-texto-fraco);
+  }
+}
+
+// O card do candidato abre o perfil: area clicavel = foto + nome.
+.row__link {
+  margin: calc(var(--k-s-2) * -1);
+  padding: var(--k-s-2);
+  color: inherit;
+  border-radius: var(--k-raio);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover .row__name span:first-child {
+    color: var(--k-ouro);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
 }
 
 .tag--ok {

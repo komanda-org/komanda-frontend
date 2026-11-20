@@ -5,7 +5,9 @@ import { ApplicationStatus } from '../../../core/models/applications.model';
 import { Applicant, RestaurantJob } from '../../../core/models/restaurant-jobs.model';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
 import { contractLabel, shiftsLabel } from '../../../core/utils/job-labels';
+import { formatRating } from '../../../core/utils/rating';
 import { initials } from '../../../core/utils/text';
+import { CandidateProfileState } from '../../professionals/candidate-profile/candidate-profile';
 import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 import { describeRestaurantError } from '../restaurant-errors';
 
@@ -14,6 +16,10 @@ export const PIPELINE_TABS: readonly { status: ApplicationStatus; label: string 
   { status: 'APROVADA', label: 'Aprovado' },
   { status: 'REJEITADA', label: 'Recusado' },
 ];
+
+export function ratingBadge(rating: number | null): string {
+  return rating ? `★ ${formatRating(rating)}` : 'Novo';
+}
 
 export function appliedAtLabel(iso: string, now: Date): string {
   const date = new Date(iso);
@@ -38,6 +44,7 @@ export class Pipeline {
   protected readonly tabs = PIPELINE_TABS;
   protected readonly initials = initials;
   protected readonly contractLabel = contractLabel;
+  protected readonly ratingBadge = ratingBadge;
 
   protected readonly jobs = signal<RestaurantJob[]>([]);
   protected readonly selectedJobId = signal<string | null>(null);
@@ -163,6 +170,15 @@ export class Pipeline {
 
   protected toggleSummary(applicationId: string): void {
     this.expandedId.update((current) => (current === applicationId ? null : applicationId));
+  }
+
+  protected profileState(applicant: Applicant): CandidateProfileState {
+    return {
+      professional: applicant.professional,
+      jobId: this.selectedJobId() ?? '',
+      applicationId: applicant.applicationId,
+      status: applicant.status,
+    };
   }
 
   protected appliedAt(applicant: Applicant): string {

@@ -40,7 +40,7 @@ export function workModelLabel(model: WorkModel): string {
     case 'PJ':
       return 'PJ';
     case 'FREELANCER':
-      return 'Freelance';
+      return 'Freelancer';
     case 'TEMPORARIO':
       return 'Temporário';
   }

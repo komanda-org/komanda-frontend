@@ -1,10 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, UrlTree, convertToParamMap, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Applicant, RestaurantJob } from '../../../core/models/restaurant-jobs.model';
-import { Pipeline, appliedAtLabel } from './pipeline';
+import { Pipeline, appliedAtLabel, ratingBadge } from './pipeline';
 
 const job = (id: string, status: RestaurantJob['status'] = 'ABERTA'): RestaurantJob => ({
   id,
@@ -40,6 +40,13 @@ describe('appliedAtLabel', () => {
     const now = new Date('2026-11-19T15:00:00');
     expect(appliedAtLabel('2026-11-19T09:00:00', now)).toBe('Hoje');
     expect(appliedAtLabel('2026-11-10T09:00:00', now)).not.toBe('Hoje');
+  });
+});
+
+describe('ratingBadge', () => {
+  it('shows the average with a comma, or Novo without reviews', () => {
+    expect(ratingBadge(4.6)).toBe('★ 4,6');
+    expect(ratingBadge(null)).toBe('Novo');
   });
 });
 
@@ -87,7 +94,7 @@ describe('Pipeline', () => {
     expect(el().querySelector('[data-testid="tab-APROVADA"]')?.textContent).toContain('Aprovado (1)');
     expect(rows()).toHaveLength(1);
     expect(rows()[0].textContent).toContain('Pessoa a1');
-    expect(rows()[0].textContent).toContain('★ 4.8');
+    expect(rows()[0].textContent).toContain('★ 4,8');
     expect(el().querySelector('[data-testid="approval-rate"]')?.textContent).toBe('50%');
   });
 
@@ -144,5 +151,36 @@ describe('Pipeline', () => {
     await settle();
 
     expect(el().querySelector('[data-testid="reviewed"]')?.textContent).toContain('Avaliado ✓');
+  });
+
+  it('opens the candidate profile with the summary in the router state', async () => {
+    await render('j1');
+    http.expectOne((r) => r.url === '/api/jobs/j1/applications').flush(page([applicant('a1', 'PENDENTE')]));
+    await settle();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    const link = el().querySelector('[data-testid="applicant-link"]') as HTMLAnchorElement;
+    expect(link.getAttribute('aria-label')).toBe('Ver perfil de Pessoa a1');
+    expect(link.getAttribute('href')).toBe('/profissionais/p-a1?job=j1');
+    link.click();
+
+    const [url, extras] = navigate.mock.calls[0];
+    expect(TestBed.inject(Router).serializeUrl(url as UrlTree)).toBe('/profissionais/p-a1?job=j1');
+    expect(extras?.state).toEqual({
+      professional: applicant('a1', 'PENDENTE').professional,
+      jobId: 'j1',
+      applicationId: 'a1',
+      status: 'PENDENTE',
+    });
+  });
+
+  it('marks a candidate without reviews as Novo', async () => {
+    await render('j1');
+    const fresh = applicant('a1', 'PENDENTE');
+    fresh.professional.averageRating = null;
+    http.expectOne((r) => r.url === '/api/jobs/j1/applications').flush(page([fresh]));
+    await settle();
+
+    expect(el().querySelector('[data-testid="applicant-rating"]')?.textContent).toBe('Novo');
   });
 });

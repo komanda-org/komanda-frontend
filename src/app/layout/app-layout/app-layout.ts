@@ -2,7 +2,6 @@ import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { Toast } from '../../shared/ui/toast';
 import { Header } from '../header/header';
 import { Sidebar } from '../sidebar/sidebar';
 
@@ -29,7 +28,7 @@ function ignoresSwipe(target: EventTarget | null): boolean {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, Header, Sidebar, Toast],
+  imports: [RouterOutlet, Header, Sidebar],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss',
   host: { '(document:keydown.escape)': 'closeDrawer()' },

@@ -217,7 +217,7 @@ describe('ProfessionalProfilePage', () => {
 
     const terms = Array.from(el().querySelectorAll('[data-testid="availability"] dt')).map((n) => n.textContent?.trim());
     expect(terms).toEqual(['Modelo', 'Mobilidade']);
-    expect(all('availability-model')).toEqual(['PJ', 'Freelance']);
+    expect(all('availability-model')).toEqual(['PJ', 'Freelancer']);
     expect(text('availability-mobility')).toBe('Nacional');
   });
 

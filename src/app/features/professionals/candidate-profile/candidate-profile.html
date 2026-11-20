@@ -1,0 +1,226 @@
+<section class="page profile" data-testid="candidate-profile">
+  <a class="back" routerLink="/pipeline" [queryParams]="backQuery()" data-testid="back-link">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"></path></svg>
+    Voltar para os candidatos
+  </a>
+
+  @switch (view()) {
+    @case ('loading') {
+      <div class="skeleton" role="status" aria-label="Carregando perfil" data-testid="profile-loading">
+        <div class="skeleton__head">
+          <span class="skeleton__block skeleton__avatar"></span>
+          <div class="skeleton__lines">
+            <span class="skeleton__block skeleton__line skeleton__line--lg"></span>
+            <span class="skeleton__block skeleton__line"></span>
+            <span class="skeleton__block skeleton__line skeleton__line--sm"></span>
+          </div>
+        </div>
+        <span class="skeleton__block skeleton__para"></span>
+        <span class="skeleton__block skeleton__para"></span>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="status status--error" role="alert" data-testid="profile-error">
+        <p>{{ profileError() ?? 'Não foi possível carregar o perfil. Tente novamente.' }}</p>
+        <button type="button" class="btn btn--outline" (click)="load()" data-testid="retry-btn">Tentar novamente</button>
+      </div>
+    }
+
+    @case ('ready') {
+      @if (profile(); as p) {
+        <div class="layout">
+          <div class="main">
+            <header class="hero card" data-testid="profile-hero">
+              @if (p.profilePhoto) {
+                <img class="hero__photo" [src]="p.profilePhoto" [alt]="'Foto de ' + p.fullName" width="96" height="96" />
+              } @else {
+                <span class="hero__photo hero__photo--initials" aria-hidden="true">{{ initials(p.fullName) }}</span>
+              }
+              <div class="hero__info">
+                <h1 class="hero__name" data-testid="profile-name">{{ p.fullName }}</h1>
+                <p class="hero__role">{{ p.mainRole }}</p>
+                @if (location(); as place) {
+                  <p class="hero__location" data-testid="profile-location">{{ place }}</p>
+                }
+                @if (ratingText(); as text) {
+                  <p class="hero__rating" data-testid="profile-rating">
+                    <span class="stars stars--lg" aria-hidden="true">
+                      @for (fill of starFills(rating().average ?? 0); track $index) {
+                        <span class="star star--{{ fill }}"></span>
+                      }
+                    </span>
+                    <span>{{ text }}</span>
+                  </p>
+                } @else {
+                  <p class="hero__rating hero__rating--none" data-testid="profile-rating">Ainda sem avaliações</p>
+                }
+              </div>
+            </header>
+
+            @if (p.experienceSummary) {
+              <section class="section card" aria-labelledby="about-title">
+                <h2 class="section__title" id="about-title">Sobre</h2>
+                <p class="section__text" data-testid="profile-about">{{ p.experienceSummary }}</p>
+              </section>
+            }
+
+            @if (p.specialties.length > 0 || p.interestedRoles.length > 0) {
+              <section class="section card" aria-labelledby="skills-title">
+                <h2 class="section__title" id="skills-title">Especialidades e cargos de interesse</h2>
+                @if (p.specialties.length > 0) {
+                  <h3 class="section__subtitle">Especialidades</h3>
+                  <ul class="chips" data-testid="profile-specialties">
+                    @for (item of p.specialties; track item) {
+                      <li class="chip">{{ item }}</li>
+                    }
+                  </ul>
+                }
+                @if (p.interestedRoles.length > 0) {
+                  <h3 class="section__subtitle">Cargos de interesse</h3>
+                  <ul class="chips" data-testid="profile-roles">
+                    @for (item of p.interestedRoles; track item) {
+                      <li class="chip">{{ item }}</li>
+                    }
+                  </ul>
+                }
+              </section>
+            }
+
+            @if (p.workModels.length > 0 || p.mobility) {
+              <section class="section card" aria-labelledby="availability-title">
+                <h2 class="section__title" id="availability-title">Disponibilidade</h2>
+                <dl class="facts">
+                  @if (p.workModels.length > 0) {
+                    <div>
+                      <dt>Modelos de trabalho</dt>
+                      <dd data-testid="profile-work-models">
+                        @for (model of p.workModels; track model; let last = $last) {
+                          {{ workModelLabel(model) }}{{ last ? '' : ', ' }}
+                        }
+                      </dd>
+                    </div>
+                  }
+                  @if (p.mobility; as mobility) {
+                    <div>
+                      <dt>Mobilidade</dt>
+                      <dd data-testid="profile-mobility">{{ mobilityLabel(mobility) }}</dd>
+                    </div>
+                  }
+                </dl>
+              </section>
+            }
+
+            @if (p.experiences.length > 0) {
+              <section class="section card" aria-labelledby="experience-title">
+                <h2 class="section__title" id="experience-title">Experiências</h2>
+                <ol class="timeline">
+                  @for (exp of p.experiences; track $index) {
+                    <li class="timeline__item" [class.timeline__item--current]="!exp.endDate" data-testid="experience">
+                      <p class="timeline__role">{{ exp.role }}</p>
+                      <p class="timeline__meta">
+                        {{ exp.company }} · <span data-testid="experience-period">{{ experiencePeriod(exp.startDate, exp.endDate) }}</span>
+                      </p>
+                      @if (exp.description) {
+                        <p class="timeline__text">{{ exp.description }}</p>
+                      }
+                    </li>
+                  }
+                </ol>
+              </section>
+            }
+          </div>
+
+          <aside class="side">
+            @if (application(); as app) {
+              <section class="card decision" aria-labelledby="decision-title" data-testid="application-panel">
+                <h2 class="section__title" id="decision-title">Candidatura</h2>
+                <p class="decision__status decision__status--{{ app.status }}" data-testid="application-status">
+                  {{ statusLabels[app.status] }}
+                </p>
+                @if (app.status === 'PENDENTE' && !decisionLocked()) {
+                  <div class="decision__actions">
+                    <button type="button" class="btn btn--outline" [disabled]="deciding()" (click)="decide('REJEITADA')" data-testid="reject-btn">
+                      Rejeitar
+                    </button>
+                    <button type="button" class="btn btn--primary" [disabled]="deciding()" (click)="decide('APROVADA')" data-testid="approve-btn">
+                      {{ deciding() ? 'Salvando...' : 'Aprovar' }}
+                    </button>
+                  </div>
+                }
+                @if (app.status === 'APROVADA' && jobId) {
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', jobId]" data-testid="chat-link">Abrir chat</a>
+                }
+                @if (decisionError(); as message) {
+                  <p class="inline-error" role="alert" data-testid="decision-error">{{ message }}</p>
+                }
+              </section>
+            }
+
+            <section class="card reviews" aria-labelledby="reviews-title">
+              <h2 class="section__title" id="reviews-title">Avaliações recebidas</h2>
+              @switch (reviewsState()) {
+                @case ('loading') {
+                  <p class="muted" role="status">Carregando avaliações...</p>
+                }
+                @case ('error') {
+                  <div role="alert" data-testid="reviews-error">
+                    <p class="muted">Não foi possível carregar as avaliações.</p>
+                    <button type="button" class="btn btn--ghost more" (click)="loadReviews()">Tentar novamente</button>
+                  </div>
+                }
+                @case ('ready') {
+                  @if (reviews().length === 0) {
+                    <p class="muted" data-testid="reviews-empty">Este profissional ainda não recebeu avaliações.</p>
+                  } @else {
+                    <ul class="review-list">
+                      @for (review of reviews(); track review.id) {
+                        <li class="review" data-testid="review">
+                          <div class="review__head">
+                            @if (review.reviewer?.photo) {
+                              <img class="review__avatar" [src]="review.reviewer!.photo" alt="" width="32" height="32" />
+                            } @else {
+                              <span class="review__avatar review__avatar--initials" aria-hidden="true">
+                                {{ initials(review.reviewer?.name ?? 'Restaurante parceiro') }}
+                              </span>
+                            }
+                            <div>
+                              <p class="review__author" data-testid="review-author">{{ review.reviewer?.name ?? 'Restaurante parceiro' }}</p>
+                              <time class="review__date" [attr.datetime]="review.createdAt">{{ relativeTime(review.createdAt) }}</time>
+                            </div>
+                          </div>
+                          <span class="stars" role="img" [attr.aria-label]="'Nota ' + review.rating + ' de 5'">
+                            @for (fill of starFills(review.rating); track $index) {
+                              <span class="star star--{{ fill }}"></span>
+                            }
+                          </span>
+                          @if (review.comment) {
+                            <p class="review__comment" data-testid="review-comment">{{ review.comment }}</p>
+                          }
+                        </li>
+                      }
+                    </ul>
+                    @if (moreReviewsError(); as message) {
+                      <p class="inline-error" role="alert">{{ message }}</p>
+                    }
+                    @if (hasMoreReviews()) {
+                      <button
+                        type="button"
+                        class="btn btn--ghost more"
+                        [disabled]="loadingMoreReviews()"
+                        (click)="loadMoreReviews()"
+                        data-testid="more-reviews"
+                      >
+                        {{ loadingMoreReviews() ? 'Carregando...' : 'Ver mais avaliações' }}
+                      </button>
+                    }
+                  }
+                }
+              }
+            </section>
+          </aside>
+        </div>
+      }
+    }
+  }
+</section>

@@ -35,6 +35,26 @@ export interface ProfessionalProfile {
 
 export type ProfessionalMe = ProfessionalProfile & { role: 'PROFISSIONAL' };
 
+/** GET /professionals/:id: o perfil como um restaurante o ve. */
+export interface PublicProfessionalProfile {
+  id: string;
+  fullName: string;
+  profilePhoto: string | null;
+  mainRole: string;
+  interestedRoles: string[];
+  specialties: string[];
+  experienceSummary: string | null;
+  city: string | null;
+  state: string | null;
+  neighborhood: string | null;
+  workModels: WorkModel[];
+  mobility: Mobility | null;
+  averageRating: number | null;
+  reviewsCount: number;
+  memberSince: string | null;
+  experiences: Omit<Experience, 'id'>[];
+}
+
 export type RestaurantPlan = 'FREE' | 'ESSENTIAL' | 'PRO';
 
 export interface RestaurantMe {
@@ -95,7 +115,14 @@ export interface UpdateProfileResponse {
   profile: ProfessionalProfile;
 }
 
-/** Item de GET /users/:id/reviews (KMD-38). TODO API: a resposta nao traz o autor da avaliacao. */
+export interface ReviewAuthor {
+  id: string;
+  name: string;
+  photo: string | null;
+  role: 'PROFISSIONAL' | 'RESTAURANTE';
+}
+
+/** Item de GET /users/:id/reviews. `reviewer` pode faltar em respostas antigas. */
 export interface Review {
   id: string;
   /** 1 a 5. */
@@ -104,6 +131,7 @@ export interface Review {
   jobId: string;
   reviewerId: string;
   createdAt: string;
+  reviewer?: ReviewAuthor | null;
 }
 
 /** Corpo de POST /users/reviews. A API rejeita campo extra (forbidNonWhitelisted). */
