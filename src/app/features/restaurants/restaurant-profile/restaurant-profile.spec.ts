@@ -35,7 +35,7 @@ function restaurant(overrides: Partial<RestaurantPublicProfile> = {}): Restauran
         title: 'Cozinheiro(a) de massas',
         contractType: 'CLT',
         salary: 3200,
-        shift: 'NOITE',
+        shifts: ['MANHA', 'TARDE'],
         urgent: true,
         createdAt: '2026-11-19T09:20:05.590Z',
       },
@@ -44,7 +44,7 @@ function restaurant(overrides: Partial<RestaurantPublicProfile> = {}): Restauran
         title: 'Barista para fins de semana',
         contractType: 'FREELANCER',
         salary: null,
-        shift: null,
+        shifts: [],
         urgent: false,
         createdAt: '2026-11-18T09:20:05.590Z',
       },
@@ -75,7 +75,7 @@ describe('restaurant profile helpers', () => {
   });
 
   it('joins contract and shift labels, skipping a missing shift', () => {
-    expect(jobMetaLine(restaurant().openJobs[0])).toBe('CLT • Noite');
+    expect(jobMetaLine(restaurant().openJobs[0])).toBe('CLT • Manhã e Tarde');
     expect(jobMetaLine(restaurant().openJobs[1])).toBe('Freelancer');
   });
 });
@@ -174,7 +174,7 @@ describe('RestaurantProfile', () => {
     await render();
 
     expect(all('job-title')).toEqual(['Cozinheiro(a) de massas', 'Barista para fins de semana']);
-    expect(all('job-meta')).toEqual(['CLT • Noite', 'Freelancer']);
+    expect(all('job-meta')).toEqual(['CLT • Manhã e Tarde', 'Freelancer']);
     expect(all('job-salary')[0]).toMatch(/^R\$\s3\.200,00$/);
     expect(all('job-salary')[1]).toBe('A combinar');
     expect(all('job-urgent')).toEqual(['Urgente']);

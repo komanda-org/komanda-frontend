@@ -22,7 +22,7 @@ const JOB: Job = {
     zipCode: null,
   },
   createdAt: '2026-11-10T12:00:00.000Z',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   urgent: false,
 };
 

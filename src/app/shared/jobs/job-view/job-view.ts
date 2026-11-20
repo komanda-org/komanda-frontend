@@ -5,7 +5,7 @@ import {
   contractLabel,
   formatPublishedAt,
   formatSalary,
-  shiftLabel,
+  shiftsLabel,
 } from '../../../core/utils/job-labels';
 
 export type JobViewMode = 'professional' | 'preview';
@@ -33,7 +33,7 @@ export class JobView {
   readonly apply = output<void>();
 
   protected readonly formatSalary = formatSalary;
-  protected readonly shiftLabel = shiftLabel;
+  protected readonly shiftsLabel = shiftsLabel;
   protected readonly contractLabel = contractLabel;
   protected readonly formatPublishedAt = formatPublishedAt;
   protected readonly restaurantInitial = restaurantInitial;

@@ -9,13 +9,14 @@ import {
   Validators,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ContractType } from '../../../core/models/jobs.model';
+import { ContractType, JobShift } from '../../../core/models/jobs.model';
 import {
   CONTRACT_OPTIONS,
+  FULL_DAY_SHIFT,
   SHIFT_OPTIONS,
   contractLabel,
   formatSalary,
-  shiftLabel,
+  shiftsLabel,
 } from '../../../core/utils/job-labels';
 
 // Mesmos limites do DTO da API (POST e PATCH /jobs).
@@ -27,7 +28,7 @@ export const REQUIREMENTS_MAX = 1000;
 
 export interface JobFormValue {
   title: string;
-  shift: string;
+  shifts: JobShift[];
   contractType: ContractType;
   salary: number | null;
   description: string;
@@ -63,14 +64,14 @@ export class JobForm implements OnInit {
 
   protected readonly shiftOptions = SHIFT_OPTIONS;
   protected readonly contractOptions = CONTRACT_OPTIONS;
-  protected readonly shiftLabel = shiftLabel;
+  protected readonly shiftsLabel = shiftsLabel;
   protected readonly contractLabel = contractLabel;
   protected readonly formatSalary = formatSalary;
   protected readonly limits = { TITLE_MIN, TITLE_MAX, DESCRIPTION_MAX, REQUIREMENTS_MAX };
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     title: ['', trimmedLength(TITLE_MIN, TITLE_MAX)],
-    shift: [''],
+    shifts: [[] as JobShift[]],
     contractType: ['CLT' as ContractType, Validators.required],
     salary: [null as number | null, Validators.min(0)],
     description: ['', trimmedLength(DESCRIPTION_MIN, DESCRIPTION_MAX)],
@@ -99,9 +100,23 @@ export class JobForm implements OnInit {
     return !!length && length.actual > length.max;
   }
 
-  protected setShift(value: string): void {
-    const current = this.form.controls.shift.value;
-    this.form.controls.shift.setValue(current === value ? '' : value);
+  protected hasShift(value: JobShift): boolean {
+    return this.form.controls.shifts.value.includes(value);
+  }
+
+  protected toggleShift(value: JobShift): void {
+    const control = this.form.controls.shifts;
+    let next: JobShift[];
+    if (control.value.includes(value)) {
+      next = control.value.filter((shift) => shift !== value);
+    } else if (value === FULL_DAY_SHIFT) {
+      next = [value];
+    } else {
+      const picked = [...control.value.filter((shift) => shift !== FULL_DAY_SHIFT), value];
+      next = SHIFT_OPTIONS.map((option) => option.value).filter((shift) => picked.includes(shift));
+    }
+    control.setValue(next);
+    control.markAsDirty();
   }
 
   protected setContract(value: ContractType): void {

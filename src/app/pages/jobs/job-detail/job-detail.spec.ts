@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Job } from '../../../core/models/jobs.model';
-import { contractLabel, formatSalary, shiftLabel } from '../../../core/utils/job-labels';
+import { contractLabel, formatSalary, jobMeta, shiftsLabel } from '../../../core/utils/job-labels';
 import { JobDetail } from './job-detail';
 
 const JOB: Job = {
@@ -25,7 +25,7 @@ const JOB: Job = {
     zipCode: '01001-000',
   },
   createdAt: '2026-11-10T12:00:00.000Z',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   urgent: true,
 };
 
@@ -37,10 +37,18 @@ describe('JobDetail — pure functions', () => {
     expect(formatSalary(null)).toBe('A combinar');
   });
 
-  it('translates shift and contract codes into readable labels', () => {
-    expect(shiftLabel('MANHA')).toBe('Manhã');
-    expect(shiftLabel(null)).toBeNull();
+  it('translates contract codes into readable labels', () => {
     expect(contractLabel('ESTAGIO')).toBe('Estágio');
+  });
+
+  it('joins 0, 1, 2 and 3 shifts into a readable label', () => {
+    expect(shiftsLabel([])).toBeNull();
+    expect(shiftsLabel(null)).toBeNull();
+    expect(shiftsLabel(['INTEGRAL'])).toBe('Integral');
+    expect(shiftsLabel(['MANHA', 'TARDE'])).toBe('Manhã e Tarde');
+    expect(shiftsLabel(['MANHA', 'TARDE', 'NOITE'])).toBe('Manhã, Tarde e Noite');
+    expect(jobMeta(['MANHA', 'TARDE'], 'CLT')).toBe('Manhã e Tarde · CLT');
+    expect(jobMeta([], 'PJ')).toBe('PJ');
   });
 });
 

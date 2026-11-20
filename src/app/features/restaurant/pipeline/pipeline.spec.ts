@@ -13,7 +13,7 @@ const job = (id: string, status: RestaurantJob['status'] = 'ABERTA'): Restaurant
   requirements: null,
   salary: 1200,
   contractType: 'CLT',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   status,
   urgent: false,
   createdAt: '2026-11-01T12:00:00.000Z',

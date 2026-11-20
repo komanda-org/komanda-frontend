@@ -16,7 +16,7 @@ const job = (id: string, overrides: Partial<RestaurantJob> = {}): RestaurantJob 
   requirements: null,
   salary: 1200,
   contractType: 'CLT',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   status: 'ABERTA',
   urgent: false,
   createdAt: '2026-11-01T12:00:00.000Z',

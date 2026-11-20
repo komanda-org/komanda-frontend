@@ -25,7 +25,7 @@ export function toJobPreview(job: RestaurantJob, me: RestaurantMe): Job {
     salary: job.salary === null || job.salary === '' ? null : String(job.salary),
     contractType: job.contractType,
     status: job.status,
-    shift: job.shift,
+    shifts: job.shifts ?? [],
     urgent: job.urgent,
     createdAt: job.createdAt,
     restaurantId: me.id,

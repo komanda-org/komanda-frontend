@@ -13,8 +13,8 @@ export function toPayload(value: JobFormValue): CreateJobPayload {
     contractType: value.contractType,
     urgent: value.urgent,
   };
-  if (value.shift) {
-    payload.shift = value.shift;
+  if (value.shifts.length > 0) {
+    payload.shifts = value.shifts;
   }
   const requirements = value.requirements.trim();
   if (requirements) {

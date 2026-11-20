@@ -1,27 +1,34 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { Header } from './header';
 
 describe('Header', () => {
-  const authService = { logout: vi.fn() };
+  const authService = { logout: vi.fn(), getUser: () => ({ id: 'u1', role: 'PROFISSIONAL' }) };
 
   beforeEach(async () => {
     authService.logout.mockReset();
     await TestBed.configureTestingModule({
       imports: [Header],
-      providers: [provideRouter([]), { provide: AuthService, useValue: authService }],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authService },
+      ],
     }).compileComponents();
   });
 
-  it('shows the notification bell and unread indicator', () => {
+  it('shows the notification bell, without a badge before anything is loaded', () => {
     const fixture = TestBed.createComponent(Header);
     fixture.detectChanges();
     const nativeElement = fixture.nativeElement as HTMLElement;
 
     expect(nativeElement.querySelector('[data-testid="notifications-btn"]')).not.toBeNull();
     expect(nativeElement.querySelector('.bell img')?.getAttribute('src')).toBe('/icons/bell.svg');
-    expect(nativeElement.querySelector('.badge')).not.toBeNull();
+    expect(nativeElement.querySelector('[data-testid="notifications-badge"]')).toBeNull();
   });
 
   it('renders a logout button', () => {

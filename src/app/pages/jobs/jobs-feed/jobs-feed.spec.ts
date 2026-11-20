@@ -32,7 +32,7 @@ const jobs: Job[] = [
     restaurantId: 'restaurant-1',
     restaurant: restaurant('Le Petit Bistro'),
     createdAt: '2026-10-01T12:00:00.000Z',
-    shift: 'NOITE',
+    shifts: ['MANHA', 'TARDE'],
     distanceKm: 1.2,
     urgent: true,
   },
@@ -47,6 +47,7 @@ const jobs: Job[] = [
     restaurantId: 'restaurant-2',
     restaurant: restaurant('Pizzaria Napoli'),
     createdAt: '2026-10-02T12:00:00.000Z',
+    shifts: [],
   },
   {
     id: 'job-applied',
@@ -59,6 +60,7 @@ const jobs: Job[] = [
     restaurantId: 'restaurant-3',
     restaurant: restaurant('Burguer House'),
     createdAt: '2026-10-03T12:00:00.000Z',
+    shifts: [],
   },
 ];
 
@@ -292,6 +294,31 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
     expect(fixture.nativeElement.textContent).toContain('1.2 KM');
     expect(fixture.nativeElement.textContent).toContain('Urgente');
+  });
+
+  it('shows the job shifts as a readable badge', () => {
+    loadJobs();
+
+    const badges = Array.from(el().querySelectorAll('.job-card')[0].querySelectorAll('.badge')).map(
+      (badge) => badge.textContent?.trim(),
+    );
+    expect(badges).toContain('Manhã e Tarde');
+  });
+
+  it('filters by the Integral shift and no longer offers Madrugada', () => {
+    loadJobs();
+
+    const select = el().querySelector<HTMLSelectElement>('select[name="jobShift"]')!;
+    const options = Array.from(select.options).map((option) => option.value);
+    expect(options).toEqual(['', 'MANHA', 'TARDE', 'NOITE', 'INTEGRAL']);
+
+    select.value = 'INTEGRAL';
+    select.dispatchEvent(new Event('change'));
+    const jobsRequest = http.expectOne(
+      (request) => request.url === '/api/jobs/search' && request.params.get('shift') === 'INTEGRAL',
+    );
+    http.expectOne((request) => request.url === '/api/users/me/applications').flush(applicationsPage());
+    jobsRequest.flush({ data: [], total: 0, skip: 0, take: 20 });
   });
 
   it('links the restaurant name to its public profile', () => {

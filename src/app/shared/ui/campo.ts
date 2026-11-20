@@ -18,6 +18,9 @@ import { mensagemDoErro } from '../../core/validators/mensagens-de-erro';
           [attr.for]="para()"
         >
           {{ rotulo() }}
+          @if (required()) {
+            <span class="campo__obrigatorio" aria-hidden="true">*</span>
+          }
           @if (opcional()) {
             <span class="campo__opcional">opcional</span>
           }
@@ -53,6 +56,8 @@ export class Campo {
 
   readonly dica = input<string>('');
   readonly opcional = input(false);
+  /** So o asterisco visual; o input precisa de aria-required para o leitor de tela. */
+  readonly required = input(false);
   readonly suave = input(false);
   readonly customErrorMessage = input<string | null | undefined>(undefined);
   /** Quando informado, mostra contador de caracteres. */

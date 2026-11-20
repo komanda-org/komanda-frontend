@@ -5,13 +5,13 @@
 
   <form (submit)="$event.preventDefault(); submit()" novalidate>
     <p class="dialog__label" id="review-rating-label">Sua nota</p>
-    <div class="stars" role="radiogroup" aria-labelledby="review-rating-label" aria-required="true">
+    <div class="rating" role="radiogroup" aria-labelledby="review-rating-label" aria-required="true">
       @for (value of stars; track value) {
-        <label class="star" [class.star--on]="value <= rating()">
+        <label class="rating__star" [class.rating__star--on]="value <= rating()">
           <input
             type="radio"
             name="review-rating"
-            class="star__input"
+            class="rating__input"
             [value]="value"
             [checked]="rating() === value"
             [attr.aria-label]="starsLabel(value)"

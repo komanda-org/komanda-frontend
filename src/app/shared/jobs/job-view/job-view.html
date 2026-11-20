@@ -24,7 +24,7 @@
       <h1 class="hero__title" data-testid="job-title">{{ current.title }}</h1>
 
       <ul class="badges" aria-label="Características da vaga">
-        @if (shiftLabel(current.shift); as shift) {
+        @if (shiftsLabel(current.shifts); as shift) {
           <li class="badge">{{ shift }}</li>
         }
         <li class="badge">{{ contractLabel(current.contractType) }}</li>
@@ -106,7 +106,7 @@
             <div><p class="fact__label">Início imediato</p><p class="fact__hint">Vaga marcada como urgente</p></div>
           </li>
         }
-        @if (shiftLabel(current.shift); as shift) {
+        @if (shiftsLabel(current.shifts); as shift) {
           <li class="fact">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
             <div><p class="fact__label">Turno</p><p class="fact__hint">{{ shift }}</p></div>

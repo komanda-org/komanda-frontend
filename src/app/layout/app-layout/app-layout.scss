@@ -9,7 +9,10 @@
     / var(--k-sidebar-w) 1fr;
 }
 
+// Acima do conteudo para o painel de notificacoes; abaixo do menu do celular (z-index 90/100).
 .header {
+  position: relative;
+  z-index: 50;
   grid-area: header;
 }
 

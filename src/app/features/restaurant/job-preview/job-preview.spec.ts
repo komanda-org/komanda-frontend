@@ -20,7 +20,7 @@ const JOB: RestaurantJob = {
   requirements: 'Experiência com grelha',
   salary: 2400,
   contractType: 'CLT',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   status: 'ABERTA',
   urgent: true,
   createdAt: '2026-11-19T12:00:00.000Z',

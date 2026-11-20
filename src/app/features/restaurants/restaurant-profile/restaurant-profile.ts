@@ -10,7 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import { RestaurantsService } from '../../../core/services/restaurants.service';
 import { describeError } from '../../../core/utils/http-error';
-import { contractLabel, formatSalary, shiftLabel } from '../../../core/utils/job-labels';
+import { contractLabel, formatSalary, shiftsLabel } from '../../../core/utils/job-labels';
 import { formatRating, starFills } from '../../../core/utils/rating';
 import { initials } from '../../../core/utils/text';
 
@@ -28,7 +28,7 @@ export function reviewsCountLabel(count: number): string {
 }
 
 export function jobMetaLine(job: OpenJob): string {
-  return [contractLabel(job.contractType), shiftLabel(job.shift)].filter(Boolean).join(' • ');
+  return [contractLabel(job.contractType), shiftsLabel(job.shifts)].filter(Boolean).join(' • ');
 }
 
 @Component({

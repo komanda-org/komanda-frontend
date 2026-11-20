@@ -1,6 +1,7 @@
 import { Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { JobShift } from '../../../core/models/jobs.model';
 import { RestaurantJob, UpdateJobPayload } from '../../../core/models/restaurant-jobs.model';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -22,13 +23,17 @@ function toSalary(value: number | string | null): number | null {
 export function toFormValue(job: RestaurantJob): JobFormValue {
   return {
     title: job.title,
-    shift: job.shift ?? '',
+    shifts: [...(job.shifts ?? [])],
     contractType: job.contractType,
     salary: toSalary(job.salary),
     description: job.description,
     requirements: job.requirements ?? '',
     urgent: job.urgent,
   };
+}
+
+function sameShifts(a: readonly JobShift[], b: readonly JobShift[]): boolean {
+  return a.length === b.length && a.every((shift) => b.includes(shift));
 }
 
 /** So o que mudou em relacao a vaga carregada; opcional esvaziado vira null. */
@@ -52,6 +57,9 @@ export function changedFields(job: RestaurantJob, value: JobFormValue): UpdateJo
   }
   if (value.contractType !== job.contractType) {
     changes.contractType = value.contractType;
+  }
+  if (!sameShifts(value.shifts, job.shifts ?? [])) {
+    changes.shifts = value.shifts;
   }
   if (value.urgent !== job.urgent) {
     changes.urgent = value.urgent;

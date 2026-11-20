@@ -1,4 +1,4 @@
-import { ContractType } from './jobs.model';
+import { ContractType, JobShift } from './jobs.model';
 
 /** Vaga ABERTA dentro do perfil publico: mais recentes primeiro, no maximo 20. */
 export interface OpenJob {
@@ -6,7 +6,7 @@ export interface OpenJob {
   title: string;
   contractType: ContractType;
   salary: number | null;
-  shift: string | null;
+  shifts: JobShift[];
   urgent: boolean;
   createdAt: string;
 }

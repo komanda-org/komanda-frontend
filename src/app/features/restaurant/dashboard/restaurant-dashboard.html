@@ -70,7 +70,7 @@
                     <span class="tag tag--status">{{ jobStatusLabel(item.job.status) }}</span>
                   }
                 </div>
-                <p class="meta">{{ jobMeta(item.job.shift, item.job.contractType) }}</p>
+                <p class="meta">{{ jobMeta(item.job.shifts, item.job.contractType) }}</p>
                 <div class="job__progress">
                   <span data-testid="job-applicants">
                     {{ item.applicants.length }} {{ item.applicants.length === 1 ? 'candidato' : 'candidatos' }}

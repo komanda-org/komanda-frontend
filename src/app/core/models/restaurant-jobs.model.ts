@@ -1,5 +1,5 @@
 import { ApplicationStatus } from './applications.model';
-import { ContractType } from './jobs.model';
+import { ContractType, JobShift } from './jobs.model';
 
 export type JobStatus = 'ABERTA' | 'PAUSADA' | 'ENCERRADA';
 
@@ -11,7 +11,7 @@ export interface RestaurantJob {
   requirements: string | null;
   salary: number | string | null;
   contractType: ContractType;
-  shift: string | null;
+  shifts: JobShift[];
   status: JobStatus;
   urgent: boolean;
   createdAt: string;
@@ -55,17 +55,18 @@ export interface CreateJobPayload {
   contractType: ContractType;
   requirements?: string;
   salary?: number;
-  shift?: string;
+  shifts?: JobShift[];
   urgent?: boolean;
 }
 
-/** Corpo de PATCH /jobs/:id: so o que mudou; null apaga o campo. Turno e status ficam fora. */
+/** Corpo de PATCH /jobs/:id: so o que mudou; null apaga o campo e `shifts: []` apaga os turnos. */
 export interface UpdateJobPayload {
   title?: string;
   description?: string;
   requirements?: string | null;
   salary?: number | null;
   contractType?: ContractType;
+  shifts?: JobShift[];
   urgent?: boolean;
 }
 

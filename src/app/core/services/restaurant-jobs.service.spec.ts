@@ -11,7 +11,7 @@ const job = (id: string): RestaurantJob => ({
   requirements: null,
   salary: 1200,
   contractType: 'CLT',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   status: 'ABERTA',
   urgent: false,
   createdAt: '2026-11-19T09:20:05.805Z',

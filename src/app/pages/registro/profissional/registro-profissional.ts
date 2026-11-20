@@ -155,7 +155,7 @@ export class RegistroProfissional {
     skills: this.fb.control<string[]>([], [itensAteTamanho(50)]),
     profilePhoto: this.fb.control(''),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
-    zipCode: this.fb.control('', [cepValido()]),
+    zipCode: this.fb.control('', [Validators.required, cepValido()]),
     acceptedTerms: this.fb.control(false, [obrigatorioTrue()]),
   });
 
@@ -165,6 +165,18 @@ export class RegistroProfissional {
     ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
     ['zipCode', 'neighborhood'],
   ];
+
+  protected zipCodeError(): string | undefined {
+    const errors = this.form.controls.zipCode.errors;
+    if (errors?.['required']) {
+      return 'Informe seu CEP';
+    }
+    if (errors?.['cep']) {
+      return 'CEP inválido';
+    }
+    // Outros erros (ex.: mensagem do servidor) seguem a regra padrao do app-campo.
+    return undefined;
+  }
 
   protected aplicarCep(evento: Event): void {
     const alvo = evento.target as HTMLInputElement;
@@ -422,6 +434,7 @@ export class RegistroProfissional {
       password: valores.password,
       fullName: valores.fullName.trim(),
       mainRole: valores.mainRole.trim(),
+      zipCode: valores.zipCode,
     };
 
     if (valores.interestedRoles.length > 0) {
@@ -439,10 +452,6 @@ export class RegistroProfissional {
     const bairro = valores.neighborhood.trim();
     if (bairro) {
       payload.neighborhood = bairro;
-    }
-
-    if (valores.zipCode) {
-      payload.zipCode = valores.zipCode;
     }
 
     return payload;

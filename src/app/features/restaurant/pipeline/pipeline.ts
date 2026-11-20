@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApplicationStatus } from '../../../core/models/applications.model';
 import { Applicant, RestaurantJob } from '../../../core/models/restaurant-jobs.model';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
-import { contractLabel, shiftLabel } from '../../../core/utils/job-labels';
+import { contractLabel, shiftsLabel } from '../../../core/utils/job-labels';
 import { initials } from '../../../core/utils/text';
 import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 import { describeRestaurantError } from '../restaurant-errors';
@@ -37,7 +37,6 @@ export class Pipeline {
 
   protected readonly tabs = PIPELINE_TABS;
   protected readonly initials = initials;
-  protected readonly shiftLabel = shiftLabel;
   protected readonly contractLabel = contractLabel;
 
   protected readonly jobs = signal<RestaurantJob[]>([]);
@@ -171,7 +170,7 @@ export class Pipeline {
   }
 
   protected jobOptionLabel(job: RestaurantJob): string {
-    const shift = shiftLabel(job.shift);
+    const shift = shiftsLabel(job.shifts);
     const closed = job.status === 'ENCERRADA' ? ' (encerrada)' : '';
     return `${job.title}${shift ? ' · ' + shift : ''}${closed}`;
   }

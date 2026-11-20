@@ -8,7 +8,7 @@ import { NewJob, toPayload } from './new-job';
 describe('toPayload', () => {
   const base = {
     title: '  Cozinheiro de Linha ',
-    shift: '',
+    shifts: [],
     contractType: 'CLT' as const,
     salary: null,
     description: ' Descrição longa o bastante para a vaga. ',
@@ -25,10 +25,10 @@ describe('toPayload', () => {
     });
   });
 
-  it('rounds the salary to two decimals and keeps shift and requirements', () => {
+  it('rounds the salary to two decimals and keeps shifts and requirements', () => {
     expect(
-      toPayload({ ...base, shift: 'NOITE', salary: 2400.456, requirements: 'Experiência' }),
-    ).toMatchObject({ shift: 'NOITE', salary: 2400.46, requirements: 'Experiência' });
+      toPayload({ ...base, shifts: ['MANHA', 'TARDE'], salary: 2400.456, requirements: 'Experiência' }),
+    ).toMatchObject({ shifts: ['MANHA', 'TARDE'], salary: 2400.46, requirements: 'Experiência' });
   });
 });
 
@@ -94,6 +94,21 @@ describe('NewJob', () => {
     await fixture.whenStable();
 
     expect(navigate).toHaveBeenCalledWith('/my-jobs');
+  });
+
+  it('publishes the shifts picked in the chips', () => {
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    type('title-input', 'Sommelier Pleno');
+    type('description-input', 'Curadoria da carta de vinhos e treinamento do salão.');
+    (el().querySelector('[data-testid="shift-MANHA"]') as HTMLButtonElement).click();
+    (el().querySelector('[data-testid="shift-TARDE"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (el().querySelector('[data-testid="publish-btn"]') as HTMLButtonElement).click();
+    const request = http.expectOne('/api/jobs');
+    expect(request.request.body.shifts).toEqual(['MANHA', 'TARDE']);
+    expect(request.request.body).not.toHaveProperty('shift');
+    request.flush({ id: 'new' });
   });
 
   it('shows an actionable message when the API rejects the job', async () => {

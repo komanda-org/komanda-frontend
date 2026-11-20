@@ -1,5 +1,7 @@
 export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO';
 
+export type JobShift = 'MANHA' | 'TARDE' | 'NOITE' | 'INTEGRAL';
+
 export interface JobRestaurant {
   restaurantName: string;
   logoUrl: string | null;
@@ -21,7 +23,8 @@ export interface Job {
   restaurantId: string;
   restaurant: JobRestaurant;
   createdAt: string;
-  shift?: string | null;
+  /** Lista vazia = turno nao informado. */
+  shifts: JobShift[];
   /** Calculada no navegador: `undefined` = ainda calculando; `null` = nao foi possivel. */
   distanceKm?: number | null;
   urgent?: boolean;

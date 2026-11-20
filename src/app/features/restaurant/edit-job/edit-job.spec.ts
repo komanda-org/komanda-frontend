@@ -20,7 +20,7 @@ const JOB: RestaurantJob = {
   requirements: 'Experiência com grelha',
   salary: 2400,
   contractType: 'CLT',
-  shift: 'NOITE',
+  shifts: ['NOITE'],
   status: 'ABERTA',
   urgent: false,
   createdAt: '2026-11-19T12:00:00.000Z',
@@ -46,6 +46,14 @@ describe('changedFields', () => {
       salary: null,
       urgent: true,
     });
+  });
+
+  it('sends shifts only when they changed, and [] when all were unselected', () => {
+    expect(changedFields(JOB, { ...toFormValue(JOB), shifts: ['NOITE'] })).toEqual({});
+    expect(changedFields(JOB, { ...toFormValue(JOB), shifts: ['MANHA', 'TARDE'] })).toEqual({
+      shifts: ['MANHA', 'TARDE'],
+    });
+    expect(changedFields(JOB, { ...toFormValue(JOB), shifts: [] })).toEqual({ shifts: [] });
   });
 
   it('treats a salary sent as text by the API as the same number', () => {
@@ -95,13 +103,15 @@ describe('EditJob', () => {
 
   afterEach(() => http.verify());
 
-  it('fills the form with the job carried by the list, with the shift read-only', async () => {
+  it('fills the form with the job carried by the list, with the shifts editable', async () => {
     await openWithState();
 
     expect(q<HTMLInputElement>('title-input')!.value).toBe('Cozinheiro de Linha');
     expect(q<HTMLTextAreaElement>('requirements-input')!.value).toBe('Experiência com grelha');
     expect(q<HTMLInputElement>('salary-input')!.value).toBe('2400');
-    expect(q('shift-readonly')!.textContent).toContain('Noite');
+    expect(q('shift-readonly')).toBeNull();
+    expect(q('shift-NOITE')!.getAttribute('aria-pressed')).toBe('true');
+    expect(q('shift-MANHA')!.getAttribute('aria-pressed')).toBe('false');
     expect(q('publish-btn')!.textContent).toContain('Salvar alterações');
   });
 
@@ -153,6 +163,19 @@ describe('EditJob', () => {
 
     expect(TestBed.inject(ToastService).message()).toBe(JOB_UPDATED_TOAST);
     expect(navigate).toHaveBeenCalledWith('/my-jobs');
+  });
+
+  it('changes the shift to Integral and sends it in the PATCH', async () => {
+    await openWithState();
+
+    q<HTMLButtonElement>('shift-INTEGRAL')!.click();
+    harness.detectChanges();
+    expect(q('shift-NOITE')!.getAttribute('aria-pressed')).toBe('false');
+    submit();
+
+    const request = http.expectOne('/api/jobs/j1');
+    expect(request.request.body).toEqual({ shifts: ['INTEGRAL'] });
+    request.flush({ ...JOB, shifts: ['INTEGRAL'] });
   });
 
   it('returns to the preview when it was opened from there', async () => {

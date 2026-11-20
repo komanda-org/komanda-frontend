@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { JobsService } from '../../../core/services/jobs.service';
 import { LocationService, UserLocation } from '../../../core/services/location.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
+import { shiftsLabel } from '../../../core/utils/job-labels';
 
 type FeedFilter = 'para-voce' | 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO' | null;
 type LocationStatus = 'pending' | UserLocation['status'];
@@ -78,6 +79,7 @@ export class JobsFeed {
   protected readonly loadingMore = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly activeFilter = signal<FeedFilter>('para-voce');
+  protected readonly shiftsLabel = shiftsLabel;
   protected readonly selectedShift = signal<string | null>(null);
   protected readonly minSalary = signal<number | null>(null);
   protected readonly maxDistanceKm = signal<number | null>(null);
