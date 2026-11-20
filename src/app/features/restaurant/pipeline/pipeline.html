@@ -146,6 +146,8 @@
                   <app-review-button
                     label="Avaliar profissional"
                     [jobId]="selectedJobId()!"
+                    [jobTitle]="selectedJob()?.title ?? ''"
+                    [shift]="selectedJobShift()"
                     [receiverId]="applicant.professional.id"
                     [receiverName]="applicant.professional.fullName"
                   />

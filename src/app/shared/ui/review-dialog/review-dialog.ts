@@ -16,8 +16,21 @@ import { ErrorCopy, apiMessage, describeError } from '../../../core/utils/descri
 
 export const REVIEW_SENT_TOAST = 'Avaliação enviada';
 export const ALREADY_REVIEWED_TOAST = 'Você já tinha avaliado nesta vaga.';
-export const COMMENT_MAX = 1000;
+export const COMMENT_MAX = 240;
 export const STARS = [1, 2, 3, 4, 5] as const;
+
+/** Rotulo da nota abaixo das estrelas (4 = "Muito bom", como no Figma). */
+const RATING_LABELS: Record<number, string> = {
+  1: 'Ruim',
+  2: 'Regular',
+  3: 'Bom',
+  4: 'Muito bom',
+  5: 'Excelente',
+};
+
+export function ratingLabel(value: number): string | null {
+  return RATING_LABELS[value] ?? null;
+}
 
 export type ReviewDialogResult = 'reviewed' | 'cancelled';
 
@@ -57,16 +70,20 @@ export class ReviewDialog {
   readonly jobId = input.required<string>();
   readonly receiverId = input.required<string>();
   readonly receiverName = input.required<string>();
-  readonly heading = input('Avaliar');
+  readonly jobTitle = input('');
+  readonly shift = input<string | null>(null);
+  readonly heading = input('Como foi a experiência?');
   readonly closed = output<ReviewDialogResult>();
 
   protected readonly stars = STARS;
   protected readonly starsLabel = starsLabel;
+  protected readonly ratingLabel = ratingLabel;
   protected readonly commentMax = COMMENT_MAX;
   protected readonly rating = signal(0);
   protected readonly comment = signal('');
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly success = signal(false);
 
   constructor() {
     const host = inject(ElementRef<HTMLElement>).nativeElement as HTMLElement;
@@ -74,14 +91,26 @@ export class ReviewDialog {
   }
 
   protected cancel(): void {
+    if (this.success()) {
+      this.conclude();
+      return;
+    }
     if (!this.submitting()) {
       this.closed.emit('cancelled');
     }
   }
 
+  protected conclude(): void {
+    this.closed.emit('reviewed');
+  }
+
   protected submit(): void {
+    if (this.submitting() || this.success()) {
+      return;
+    }
     const rating = this.rating();
-    if (rating < 1 || this.submitting()) {
+    if (rating < 1) {
+      this.error.set('Escolha uma nota de 1 a 5 estrelas antes de publicar.');
       return;
     }
     const jobId = this.jobId();
@@ -93,11 +122,11 @@ export class ReviewDialog {
       .create({ jobId, receiverId, rating, ...(comment ? { comment } : {}) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => this.finish(REVIEW_SENT_TOAST),
+        next: () => this.handleSuccess(REVIEW_SENT_TOAST),
         error: (error: unknown) => {
           // 409 = esta pessoa ja avaliou nesta vaga: para a tela e o mesmo que ter enviado.
           if (isApiError(error) && error.status === 409) {
-            this.finish(ALREADY_REVIEWED_TOAST);
+            this.handleSuccess(ALREADY_REVIEWED_TOAST);
             return;
           }
           this.submitting.set(false);
@@ -106,10 +135,10 @@ export class ReviewDialog {
       });
   }
 
-  private finish(message: string): void {
+  private handleSuccess(message: string): void {
     this.submitting.set(false);
     this.reviews.markReviewed(this.jobId(), this.receiverId());
     this.toast.show(message);
-    this.closed.emit('reviewed');
+    this.success.set(true);
   }
 }
