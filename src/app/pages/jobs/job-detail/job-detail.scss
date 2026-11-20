@@ -75,6 +75,17 @@ svg {
   font-size: var(--k-t-sm);
 }
 
+.closed-banner {
+  margin: 0 0 var(--k-s-5);
+  padding: var(--k-s-3) var(--k-s-4);
+  color: var(--k-texto-muted);
+  background: var(--k-ouro-fosco);
+  border: 1px solid rgb(242 202 80 / 30%);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+}
+
 /* --- Estados --- */
 .status {
   display: grid;

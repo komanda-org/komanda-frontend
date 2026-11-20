@@ -27,9 +27,9 @@ const JOB: Job = {
   createdAt: '2026-11-10T12:00:00.000Z',
   shifts: ['NOITE'],
   urgent: true,
+  hasApplied: false,
+  application: null,
 };
-
-const emptyApplications = { data: [], total: 0, skip: 0, take: 50 };
 
 describe('JobDetail — pure functions', () => {
   it('formats salary and falls back when it is missing', () => {
@@ -58,17 +58,30 @@ describe('JobDetail', () => {
   const el = () => fixture.nativeElement as HTMLElement;
   const byTestId = (id: string) => el().querySelector(`[data-testid="${id}"]`);
 
-  async function start(state: unknown = null): Promise<void> {
-    history.replaceState(state, '');
-    fixture = TestBed.createComponent(JobDetail);
-    fixture.detectChanges();
-    await fixture.whenStable();
-  }
-
   async function settle(): Promise<void> {
     await fixture.whenStable();
     fixture.detectChanges();
   }
+
+  async function open(job: Job | null, error?: { status: number; statusText: string }): Promise<void> {
+    fixture = TestBed.createComponent(JobDetail);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    http.expectNone((r) => r.url === '/api/users/me/applications');
+    const request = http.expectOne('/api/jobs/job-1');
+    if (error) {
+      request.flush({ message: 'Vaga não encontrada' }, error);
+    } else {
+      request.flush(job);
+    }
+    await settle();
+  }
+
+  const applied = (status: 'PENDENTE' | 'APROVADA' | 'REJEITADA'): Job => ({
+    ...JOB,
+    hasApplied: true,
+    application: { id: 'a1', status, createdAt: JOB.createdAt },
+  });
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -83,16 +96,10 @@ describe('JobDetail', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    http.verify();
-    history.replaceState(null, '');
-  });
+  afterEach(() => http.verify());
 
-  it('renders the job handed over by the list without calling GET /jobs/:id', async () => {
-    await start({ job: JOB });
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush(emptyApplications);
-    http.expectNone('/api/jobs/job-1');
-    await settle();
+  it('loads the job from GET /jobs/:id', async () => {
+    await open(JOB);
 
     expect(byTestId('job-title')?.textContent).toContain('Cozinheiro de Linha');
     expect(byTestId('restaurant-name')?.textContent).toContain('Le Petit Bistro');
@@ -102,31 +109,11 @@ describe('JobDetail', () => {
     expect(byTestId('restaurant-link')?.getAttribute('href')).toBe('/restaurantes/rest-1');
     expect(byTestId('restaurant-hero-link')?.getAttribute('href')).toBe('/restaurantes/rest-1');
     expect(el().textContent).toContain('Noite');
+    expect(byTestId('closed-banner')).toBeNull();
   });
 
-  it('fetches the job by id when opened directly', async () => {
-    await start();
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush(emptyApplications);
-    http.expectOne('/api/jobs/job-1').flush(JOB);
-    await settle();
-
-    expect(byTestId('job-title')?.textContent).toContain('Cozinheiro de Linha');
-  });
-
-  it('explains a missing job without exposing the HTTP status', async () => {
-    await start();
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush(emptyApplications);
-    http.expectOne('/api/jobs/job-1').flush(null, { status: 404, statusText: 'Not Found' });
-    await settle();
-
-    expect(byTestId('load-error')?.textContent).toContain('Não encontramos esta vaga');
-    expect(byTestId('load-error')?.textContent).not.toContain('404');
-  });
-
-  it('applies once and switches the button to the submitted state', async () => {
-    await start({ job: JOB });
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush(emptyApplications);
-    await settle();
+  it('applies once and shows the pending status', async () => {
+    await open(JOB);
 
     (byTestId('apply-btn') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -136,27 +123,58 @@ describe('JobDetail', () => {
     request.flush({ id: 'a1', jobId: 'job-1', professionalId: 'u1', createdAt: JOB.createdAt });
     await settle();
 
-    expect(byTestId('apply-btn')?.textContent).toContain('Candidatura enviada');
-    expect((byTestId('apply-btn') as HTMLButtonElement).disabled).toBe(true);
+    expect(byTestId('apply-btn')).toBeNull();
+    expect(byTestId('application-status')?.textContent).toContain('Candidatura enviada');
   });
 
-  it('shows the job as already applied when it is in my applications', async () => {
-    await start({ job: JOB });
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush({
-      ...emptyApplications,
-      data: [
-        {
-          applicationId: 'a1',
-          status: 'PENDENTE',
-          applicationDate: JOB.createdAt,
-          job: { id: 'job-1', title: JOB.title },
-          restaurant: { id: 'rest-1', name: 'Le Petit Bistro' },
-        },
-      ],
-      total: 1,
-    });
-    await settle();
+  it('shows "Candidatura enviada" for a pending application', async () => {
+    await open(applied('PENDENTE'));
 
-    expect(byTestId('apply-btn')?.textContent).toContain('Candidatura enviada');
+    expect(byTestId('apply-btn')).toBeNull();
+    expect(byTestId('application-status')?.textContent).toContain('Candidatura enviada');
+  });
+
+  it('congratulates an approved application and links to the conversation', async () => {
+    await open(applied('APROVADA'));
+
+    expect(byTestId('application-status')?.textContent).toContain('Você foi aprovado(a)!');
+    expect(byTestId('open-chat')?.textContent).toContain('Abrir conversa');
+    expect(byTestId('open-chat')?.getAttribute('href')).toBe('/mensagens/job-1');
+    expect(byTestId('apply-btn')).toBeNull();
+  });
+
+  it('tells a rejected application kindly', async () => {
+    await open(applied('REJEITADA'));
+
+    expect(byTestId('application-status')?.textContent).toContain('Não foi dessa vez');
+    expect(byTestId('open-chat')).toBeNull();
+    expect(byTestId('apply-btn')).toBeNull();
+  });
+
+  it('hides the apply button on a closed job and explains why', async () => {
+    await open({ ...JOB, status: 'ENCERRADA' });
+
+    expect(byTestId('closed-banner')?.textContent).toContain('Esta vaga não está recebendo candidaturas');
+    expect(byTestId('apply-btn')).toBeNull();
+  });
+
+  it('keeps showing the application status on a paused job already applied to', async () => {
+    await open({ ...applied('APROVADA'), status: 'PAUSADA' });
+
+    expect(byTestId('closed-banner')).not.toBeNull();
+    expect(byTestId('application-status')?.textContent).toContain('Você foi aprovado(a)!');
+  });
+
+  it('explains a missing job without exposing the HTTP status', async () => {
+    await open(null, { status: 404, statusText: 'Not Found' });
+
+    expect(byTestId('load-error')?.textContent).toContain('Não encontramos esta vaga');
+    expect(byTestId('load-error')?.textContent).not.toContain('404');
+  });
+
+  it('treats an invalid id (400) as a job that was not found', async () => {
+    await open(null, { status: 400, statusText: 'Bad Request' });
+
+    expect(byTestId('load-error')?.textContent).toContain('Não encontramos esta vaga');
   });
 });

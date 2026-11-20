@@ -1,9 +1,10 @@
-import { Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
+import { Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
+import { ApplicationStatus } from '../../../core/models/applications.model';
 import { Job } from '../../../core/models/jobs.model';
-import { APPLICATIONS_MAX_TAKE, ApplicationsService } from '../../../core/services/applications.service';
+import { ApplicationsService } from '../../../core/services/applications.service';
 import { JobsService } from '../../../core/services/jobs.service';
 import { JobView } from '../../../shared/jobs/job-view/job-view';
 
@@ -15,6 +16,8 @@ export function describeLoadError(error: unknown): string {
       return 'Sua sessão expirou. Entre novamente para ver a vaga.';
     case 403:
       return 'Esta conta não tem acesso às vagas. Entre com sua conta de profissional.';
+    // 400 = id invalido: para quem abriu o link, e a mesma vaga que nao existe.
+    case 400:
     case 404:
       return 'Não encontramos esta vaga. Ela pode ter sido encerrada. Abra a vaga a partir da lista.';
     default:
@@ -55,26 +58,19 @@ export class JobDetail {
   protected readonly job = signal<Job | null>(null);
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
-  protected readonly applied = signal(false);
+  protected readonly applicationStatus = signal<ApplicationStatus | null>(null);
+  protected readonly acceptingApplications = computed(() => this.job()?.status === 'ABERTA');
   protected readonly applying = signal(false);
   protected readonly applyError = signal<string | null>(null);
   protected readonly shareMessage = signal<string | null>(null);
 
   constructor() {
-    // history.state e a sessao so existem no navegador.
+    // A sessao so existe no navegador; no servidor a chamada sairia sem token.
     afterNextRender(() => this.load());
   }
 
   protected load(): void {
     this.loadError.set(null);
-    this.loadAppliedStatus();
-
-    const fromList = (history.state as { job?: Job } | null)?.job;
-    if (fromList?.id === this.jobId) {
-      this.show(fromList);
-      return;
-    }
-
     this.loading.set(true);
     this.jobsService
       .getById(this.jobId)
@@ -90,7 +86,7 @@ export class JobDetail {
 
   protected apply(): void {
     const job = this.job();
-    if (!job || this.applied() || this.applying()) {
+    if (!job || this.applicationStatus() || !this.acceptingApplications() || this.applying()) {
       return;
     }
     this.applying.set(true);
@@ -101,7 +97,7 @@ export class JobDetail {
       .subscribe({
         next: () => {
           this.applying.set(false);
-          this.applied.set(true);
+          this.applicationStatus.set('PENDENTE');
         },
         error: (error: unknown) => {
           this.applying.set(false);
@@ -134,23 +130,6 @@ export class JobDetail {
   private show(job: Job): void {
     this.job.set(job);
     this.loading.set(false);
-    if (job.hasApplied || job.application) {
-      this.applied.set(true);
-    }
-  }
-
-  private loadAppliedStatus(): void {
-    this.applicationsService
-      .list(0, APPLICATIONS_MAX_TAKE)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (page) => {
-          if (page.data.some((application) => application.job.id === this.jobId)) {
-            this.applied.set(true);
-          }
-        },
-        // Sem a lista, o botao continua ativo e a API recusa duplicata com 409.
-        error: () => undefined,
-      });
+    this.applicationStatus.set(job.application?.status ?? (job.hasApplied ? 'PENDENTE' : null));
   }
 }

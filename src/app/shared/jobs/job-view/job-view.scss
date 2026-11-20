@@ -300,6 +300,49 @@ svg {
   }
 }
 
+a.apply {
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.application {
+  display: flex;
+  min-height: 48px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  margin-bottom: var(--k-s-3);
+  padding: var(--k-s-2) var(--k-s-3);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  text-align: center;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  &--pending,
+  &--approved {
+    color: #c6f0d8;
+    background: var(--k-ok-fundo);
+    border-color: #28543d;
+  }
+
+  &--rejected {
+    color: var(--k-texto-fraco);
+    background: var(--k-superficie);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
 .apply-hint {
   margin: var(--k-s-2) 0 0;
   color: var(--k-texto-fraco);

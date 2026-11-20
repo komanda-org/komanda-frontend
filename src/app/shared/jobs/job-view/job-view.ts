@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ApplicationStatus } from '../../../core/models/applications.model';
 import { Job } from '../../../core/models/jobs.model';
 import {
   contractLabel,
@@ -26,7 +27,9 @@ export function restaurantInitial(job: Job): string {
 export class JobView {
   readonly job = input.required<Job>();
   readonly mode = input<JobViewMode>('professional');
-  readonly applied = input(false);
+  readonly applicationStatus = input<ApplicationStatus | null>(null);
+  /** Falso em vaga PAUSADA/ENCERRADA: o botao some, quem ja se candidatou ainda ve o status. */
+  readonly acceptingApplications = input(true);
   readonly applying = input(false);
   readonly applyError = input<string | null>(null);
 

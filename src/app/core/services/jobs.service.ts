@@ -13,7 +13,6 @@ export class JobsService {
     return this.http.get<JobsResponse>(`${this.base}/jobs`);
   }
 
-  // TODO API: GET /jobs/:id ainda nao existe (so PATCH); hoje responde 404.
   getById(id: string): Observable<Job> {
     return this.http.get<Job>(`${this.base}/jobs/${encodeURIComponent(id)}`);
   }

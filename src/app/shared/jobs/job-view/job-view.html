@@ -81,12 +81,22 @@
           </button>
         </span>
         <p class="apply-hint" data-testid="apply-hint">{{ previewHint }}</p>
-      } @else if (applied()) {
-        <button type="button" class="apply apply--done" disabled data-testid="apply-btn">
+      } @else if (applicationStatus() === 'APROVADA') {
+        <div class="application application--approved" role="status" data-testid="application-status">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"></path></svg>
+          Você foi aprovado(a)!
+        </div>
+        <a class="apply" [routerLink]="['/mensagens', current.id]" data-testid="open-chat">Abrir conversa</a>
+      } @else if (applicationStatus() === 'REJEITADA') {
+        <div class="application application--rejected" role="status" data-testid="application-status">
+          Não foi dessa vez
+        </div>
+      } @else if (applicationStatus() === 'PENDENTE') {
+        <div class="application application--pending" role="status" data-testid="application-status">
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"></path></svg>
           Candidatura enviada
-        </button>
-      } @else {
+        </div>
+      } @else if (acceptingApplications()) {
         <button type="button" class="apply" [disabled]="applying()" (click)="onApply()" data-testid="apply-btn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
           {{ applying() ? 'Enviando...' : 'Candidatar-se' }}

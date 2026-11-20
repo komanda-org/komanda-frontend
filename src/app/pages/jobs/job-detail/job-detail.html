@@ -33,10 +33,14 @@
       </div>
     </div>
   } @else if (job(); as job) {
+    @if (!acceptingApplications()) {
+      <p class="closed-banner" role="status" data-testid="closed-banner">Esta vaga não está recebendo candidaturas</p>
+    }
     <app-job-view
       [job]="job"
       mode="professional"
-      [applied]="applied()"
+      [applicationStatus]="applicationStatus()"
+      [acceptingApplications]="acceptingApplications()"
       [applying]="applying()"
       [applyError]="applyError()"
       (apply)="apply()"

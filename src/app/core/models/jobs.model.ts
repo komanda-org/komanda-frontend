@@ -1,3 +1,5 @@
+import { ApplicationStatus } from './applications.model';
+
 export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO';
 
 export type JobShift = 'MANHA' | 'TARDE' | 'NOITE' | 'INTEGRAL';
@@ -29,7 +31,8 @@ export interface Job {
   distanceKm?: number | null;
   urgent?: boolean;
   hasApplied?: boolean;
-  application?: Application | null;
+  /** So em GET /jobs/:id: a candidatura de quem esta logado. */
+  application?: JobApplication | null;
 }
 
 export interface JobsResponse {
@@ -39,6 +42,13 @@ export interface JobsResponse {
   take: number;
 }
 
+export interface JobApplication {
+  id: string;
+  status: ApplicationStatus;
+  createdAt: string;
+}
+
+/** Resposta de POST /jobs/:id/applications. */
 export interface Application {
   id: string;
   jobId: string;
