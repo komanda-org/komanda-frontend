@@ -30,6 +30,7 @@ describe('ReviewButton + ReviewDialog', () => {
   }
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({
       imports: [ReviewButton],
       providers: [
