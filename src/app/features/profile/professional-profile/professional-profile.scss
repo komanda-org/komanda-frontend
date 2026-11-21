@@ -356,11 +356,46 @@ blockquote {
   font-family: var(--k-sans);
   font-size: 13px;
   color: var(--k-erro);
+  cursor: pointer;
+}
+
+.delete:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.delete[aria-disabled='true'] {
-  opacity: 0.85;
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.delete-confirm .delete {
+  margin-top: 0;
+}
+
+.delete--danger {
+  background: var(--k-erro-fundo);
+  border-color: rgb(229 83 61 / 50%);
+  font-weight: 700;
+  color: #ffb4ab;
+}
+
+.delete--ghost {
+  border-color: var(--k-linha-forte);
+  color: var(--k-texto-fraco);
+}
+
+.delete-warning {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--k-texto-fraco);
+}
+
+.delete-error {
+  font-size: 13px;
+  color: var(--k-erro);
 }
 
 /* --- Estados da pagina --- */

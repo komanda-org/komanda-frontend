@@ -9,6 +9,7 @@ import {
   Review,
   requireProfessional,
 } from '../../../core/models/profile.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import { mobilityLabel, workModelLabel } from '../profile-labels';
 
@@ -58,6 +59,25 @@ export function starFills(rating: number): StarFill[] {
   });
 }
 
+export function describeDeleteError(error: unknown): string {
+  const status = isApiError(error) ? error.status : -1;
+
+  switch (status) {
+    case 0:
+      return 'Não conseguimos conectar. Verifique sua internet e tente de novo.';
+    case 401:
+      return 'Sua sessão expirou. Entre novamente para excluir sua conta.';
+    case 404:
+      return 'Esta conta já foi excluída.';
+    case 500:
+    case 502:
+    case 503:
+      return 'Nosso serviço está instável agora. Tente de novo em instantes.';
+    default:
+      return 'Não foi possível excluir sua conta. Tente de novo.';
+  }
+}
+
 export function describeError(error: unknown): string {
   const status = isApiError(error) ? error.status : -1;
 
@@ -87,6 +107,8 @@ export function describeError(error: unknown): string {
 })
 export class ProfessionalProfilePage {
   private readonly service = inject(ProfileService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly formatPeriod = formatPeriod;
@@ -101,6 +123,9 @@ export class ProfessionalProfilePage {
   protected readonly sessionExpired = signal(false);
   protected readonly profile = signal<ProfessionalProfile | null>(null);
   protected readonly notice = signal<string | null>(null);
+  protected readonly confirmingDelete = signal(false);
+  protected readonly deleting = signal(false);
+  protected readonly deleteError = signal<string | null>(null);
 
   protected readonly reviewsState = signal<LoadState>('loading');
   protected readonly reviews = signal<Review[]>([]);
@@ -114,7 +139,7 @@ export class ProfessionalProfilePage {
 
   constructor() {
     // `state` da navegacao so existe durante ela; some no F5.
-    const state = inject(Router).getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
+    const state = this.router.getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
     this.notice.set(state?.notice ?? null);
     // A rota e pre-renderizada no build (Node, sem API): a chamada so roda no browser.
     afterNextRender(() => this.load());
@@ -158,6 +183,51 @@ export class ProfessionalProfilePage {
         },
         error: () => this.reviewsState.set('error'),
       });
+  }
+
+  protected askDelete(): void {
+    this.deleteError.set(null);
+    this.confirmingDelete.set(true);
+  }
+
+  protected cancelDelete(): void {
+    if (this.deleting()) {
+      return;
+    }
+    this.deleteError.set(null);
+    this.confirmingDelete.set(false);
+  }
+
+  protected confirmDelete(): void {
+    if (this.deleting()) {
+      return;
+    }
+
+    this.deleteError.set(null);
+    this.deleting.set(true);
+
+    this.service
+      .deleteAccount()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.finishDeletion('Sua conta foi excluída.'),
+        error: (error: unknown) => {
+          this.deleting.set(false);
+          // 404: a conta ja estava excluida, entao o objetivo do usuario foi cumprido.
+          if (isApiError(error) && error.status === 404) {
+            this.finishDeletion('Esta conta já foi excluída.');
+            return;
+          }
+          this.deleteError.set(describeDeleteError(error));
+        },
+      });
+  }
+
+  private finishDeletion(message: string): void {
+    this.deleting.set(false);
+    this.confirmingDelete.set(false);
+    this.auth.logout();
+    void this.router.navigateByUrl('/login', { state: { mensagem: message } });
   }
 
   protected initials(name: string): string {
