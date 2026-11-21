@@ -71,17 +71,34 @@ describe('DeleteAccount', () => {
     expect(text('delete-confirm')).toContain('Suas vagas também saem do ar.');
   });
 
-  it('cancels without sending a request', async () => {
+  it('cancels without sending a request and returns focus to the trigger', async () => {
     await start();
     await open();
 
-    el().querySelector<HTMLButtonElement>('[data-testid="cancel-delete-account"]')!.click();
+    const trigger = el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!;
+    const cancel = el().querySelector<HTMLButtonElement>('[data-testid="cancel-delete-account"]')!;
+    cancel.focus();
+    cancel.click();
     await settle();
 
     expect(el().querySelector('[data-testid="delete-confirm"]')).toBeNull();
-    expect(
-      el().querySelector('[data-testid="delete-account-btn"]')?.getAttribute('aria-expanded'),
-    ).toBe('false');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('gives each instance its own confirmation id', () => {
+    const first = TestBed.createComponent(DeleteAccount);
+    const second = TestBed.createComponent(DeleteAccount);
+    first.detectChanges();
+    second.detectChanges();
+
+    const ids = [first, second].map((instance) =>
+      instance.nativeElement
+        .querySelector('[data-testid="delete-account-btn"]')
+        .getAttribute('aria-controls'),
+    );
+
+    expect(ids[0]).not.toBe(ids[1]);
   });
 
   it('deletes the account after confirmation, clears the session and goes to login', async () => {
@@ -106,6 +123,27 @@ describe('DeleteAccount', () => {
     expect(navigate).toHaveBeenCalledWith('/login', {
       state: { mensagem: ACCOUNT_DELETED_NOTICE },
     });
+  });
+
+  it('sends a single request when the confirm button is clicked twice', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    const logout = vi.spyOn(auth, 'logout');
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    await start();
+    await open();
+    const confirm = el().querySelector<HTMLButtonElement>('[data-testid="confirm-delete-account"]')!;
+    confirm.click();
+    confirm.click();
+    await settle();
+
+    http
+      .expectOne({ method: 'DELETE', url: '/api/users/me' })
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await settle();
+
+    expect(logout).toHaveBeenCalledOnce();
   });
 
   it('keeps the account and shows actionable copy when deletion fails', async () => {

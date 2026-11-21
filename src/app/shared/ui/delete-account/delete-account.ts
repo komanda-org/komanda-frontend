@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
@@ -11,10 +11,9 @@ export const ACCOUNT_ALREADY_DELETED_NOTICE = 'Esta conta já foi excluída.';
 
 const ERROR_COPY: ErrorCopy = {
   fallback: 'Não foi possível excluir sua conta. Tente de novo.',
-  byStatus: {
-    404: 'Esta conta já foi excluída.',
-  },
 };
+
+let nextInstanceId = 0;
 
 export function describeDeleteError(error: unknown): string {
   return describeError(error, ERROR_COPY);
@@ -29,6 +28,10 @@ export class DeleteAccount {
   /** O que sai do ar junto com a conta (perfil, vagas...). */
   readonly consequence = input('Sua conta perde o acesso imediatamente.');
 
+  /** O componente pode aparecer mais de uma vez na mesma pagina. */
+  protected readonly confirmId = `delete-account-confirm-${nextInstanceId++}`;
+
+  private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
   private readonly service = inject(ProfileService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -49,6 +52,8 @@ export class DeleteAccount {
     }
     this.errorMessage.set(null);
     this.confirming.set(false);
+    // O botao que abriu a confirmacao continua no DOM: devolve o foco para ele.
+    this.trigger()?.nativeElement.focus();
   }
 
   protected confirmDelete(): void {

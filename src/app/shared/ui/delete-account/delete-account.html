@@ -1,8 +1,9 @@
 <button
+  #trigger
   type="button"
   class="delete"
   [attr.aria-expanded]="confirming()"
-  aria-controls="delete-account-confirm"
+  [attr.aria-controls]="confirmId"
   (click)="askDelete()"
   data-testid="delete-account-btn"
 >
@@ -10,7 +11,7 @@
 </button>
 
 @if (confirming()) {
-  <div id="delete-account-confirm" class="confirm" data-testid="delete-confirm">
+  <div [id]="confirmId" class="confirm" data-testid="delete-confirm">
     <p class="warning" role="alert">
       Esta ação é permanente e não pode ser desfeita. {{ consequence() }}
     </p>

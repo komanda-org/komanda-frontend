@@ -262,6 +262,15 @@ describe('ProfessionalProfilePage', () => {
     expect(text('delete-confirm')).toContain('Seu perfil deixa de aparecer nas buscas.');
   });
 
+  it('keeps account deletion available when the profile fails to load', async () => {
+    await start();
+    http.expectOne('/api/users/me').flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    await settle();
+
+    expect(text('error')).toContain('Tente de novo');
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
+  });
+
   it('shows "Não informada" when availability has no mobility', async () => {
     await render(profile({ availability: { workModels: ['CLT'], mobility: null } }));
 
