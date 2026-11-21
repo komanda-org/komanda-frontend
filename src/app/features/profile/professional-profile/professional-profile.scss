@@ -1,7 +1,6 @@
 :host {
   display: block;
   --estrela-vazia: #3a3a3a;
-  --perigo-borda: rgb(229 83 61 / 45%);
 }
 
 p,
@@ -346,21 +345,9 @@ blockquote {
 }
 
 /* --- Excluir conta --- */
-.delete {
-  width: 100%;
-  height: 44px;
+.account-delete {
+  display: block;
   margin-top: 28px;
-  background: transparent;
-  border: 1px solid var(--perigo-borda);
-  border-radius: var(--k-raio);
-  font-family: var(--k-sans);
-  font-size: 13px;
-  color: var(--k-erro);
-  cursor: not-allowed;
-}
-
-.delete[aria-disabled='true'] {
-  opacity: 0.85;
 }
 
 /* --- Estados da pagina --- */
@@ -388,8 +375,7 @@ blockquote {
 
 .edit:focus-visible,
 .link:focus-visible,
-.action:focus-visible,
-.delete:focus-visible {
+.action:focus-visible {
   outline: 2px solid var(--k-ouro);
   outline-offset: 2px;
 }
@@ -419,11 +405,6 @@ blockquote {
 
   .reviews {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .delete {
-    width: auto;
-    padding-inline: 32px;
   }
 }
 

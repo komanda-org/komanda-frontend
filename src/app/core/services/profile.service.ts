@@ -26,6 +26,10 @@ export class ProfileService {
       .pipe(map((response) => response.profile));
   }
 
+  deleteAccount(): Observable<void> {
+    return this.http.delete<void>(`${this.base}/users/me`);
+  }
+
   listReviews(userId: string): Observable<Review[]> {
     return this.http
       .get<ReviewsPage>(`${this.base}/users/${encodeURIComponent(userId)}/reviews`)

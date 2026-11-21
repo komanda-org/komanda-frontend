@@ -250,11 +250,25 @@ describe('ProfessionalProfilePage', () => {
     expect(edit.hasAttribute('aria-disabled')).toBe(false);
   });
 
-  it('keeps delete account flagged as pending', async () => {
+  it('offers account deletion with the profile-specific consequence', async () => {
     await render();
 
-    const button = el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!;
-    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
+    expect(text('delete-account-btn')).toBe('Excluir minha conta');
+
+    el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!.click();
+    await settle();
+
+    expect(text('delete-confirm')).toContain('Seu perfil deixa de aparecer nas buscas.');
+  });
+
+  it('keeps account deletion available when the profile fails to load', async () => {
+    await start();
+    http.expectOne('/api/users/me').flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    await settle();
+
+    expect(text('error')).toContain('Tente de novo');
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
   });
 
   it('shows "Não informada" when availability has no mobility', async () => {

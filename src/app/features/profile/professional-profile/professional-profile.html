@@ -182,17 +182,12 @@
             }
           }
         </section>
-
-        <button
-          type="button"
-          class="delete"
-          aria-disabled="true"
-          title="A exclusão de conta ainda não está disponível."
-          data-testid="delete-account-btn"
-        >
-          Excluir minha conta
-        </button>
       }
     }
   }
+
+  <app-delete-account
+    class="account-delete"
+    consequence="Seu perfil deixa de aparecer nas buscas."
+  />
 </section>

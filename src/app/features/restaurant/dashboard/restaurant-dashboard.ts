@@ -5,13 +5,14 @@ import { JobOverview } from '../../../core/models/restaurant-jobs.model';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
 import { greetingFor } from '../../../core/utils/greeting';
 import { jobMeta, jobStatusLabel } from '../../../core/utils/job-labels';
+import { DeleteAccount } from '../../../shared/ui/delete-account/delete-account';
 import { describeRestaurantError } from '../restaurant-errors';
 
 const STALE_AFTER_MS = 48 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-restaurant-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, DeleteAccount],
   templateUrl: './restaurant-dashboard.html',
   styleUrl: './restaurant-dashboard.scss',
 })

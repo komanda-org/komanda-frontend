@@ -1,0 +1,40 @@
+<button
+  #trigger
+  type="button"
+  class="delete"
+  [attr.aria-expanded]="confirming()"
+  [attr.aria-controls]="confirmId"
+  (click)="askDelete()"
+  data-testid="delete-account-btn"
+>
+  Excluir minha conta
+</button>
+
+@if (confirming()) {
+  <div [id]="confirmId" class="confirm" data-testid="delete-confirm">
+    <p class="warning" role="alert">
+      Esta ação é permanente e não pode ser desfeita. {{ consequence() }}
+    </p>
+    <button
+      type="button"
+      class="delete delete--danger"
+      [disabled]="deleting()"
+      (click)="confirmDelete()"
+      data-testid="confirm-delete-account"
+    >
+      {{ deleting() ? 'Excluindo…' : 'Sim, excluir minha conta' }}
+    </button>
+    <button
+      type="button"
+      class="delete delete--ghost"
+      [disabled]="deleting()"
+      (click)="cancelDelete()"
+      data-testid="cancel-delete-account"
+    >
+      Cancelar
+    </button>
+    @if (errorMessage(); as message) {
+      <p class="error" role="alert" data-testid="delete-error">{{ message }}</p>
+    }
+  </div>
+}
