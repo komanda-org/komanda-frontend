@@ -217,7 +217,7 @@ export class MessagingService {
       this.resetConversation();
       this._currentChat.set(chat);
 
-      this.socket.emit('chat:join', { ...chat, take }, (response: JoinResponse) => {
+      this.socket.emit('chat:join', { jobId: chat.jobId, take }, (response: JoinResponse) => {
         // A pessoa pode ter trocado de conversa antes do ack chegar.
         if (!isSameChat(chat, this._currentChat())) {
           resolve({ messages: [], hasMore: false });
@@ -245,7 +245,7 @@ export class MessagingService {
         return;
       }
 
-      this.socket.emit('chat:leave', chat, (response) => {
+      this.socket.emit('chat:leave', { jobId: chat.jobId }, (response) => {
         if (response.ok) {
           if (isSameChat(chat, this._currentChat())) {
             this.resetConversation();
@@ -268,7 +268,7 @@ export class MessagingService {
         return;
       }
 
-      this.socket.emit('chat:send', { ...chat, content }, (response: SendResponse) => {
+      this.socket.emit('chat:send', { jobId: chat.jobId, content }, (response: SendResponse) => {
         if (response.ok && response.message) {
           // O ack garante que o remetente veja a mensagem mesmo se o broadcast
           // da room chegar antes do join ou for perdido.
@@ -299,7 +299,7 @@ export class MessagingService {
 
       this.socket.emit(
         'chat:history',
-        { ...chat, before: before?.toISOString(), take },
+        { jobId: chat.jobId, before: before?.toISOString(), take },
         (response: HistoryResponse) => {
           if (response.ok && response.messages) {
             if (isSameChat(chat, this._currentChat())) {
@@ -401,7 +401,12 @@ export class MessagingService {
       lastMessageTime: message.createdAt,
     });
 
-    if (isSameChat(message, this._currentChat())) {
+    // Mensagem do restaurante sem professionalId (vários aprovados): exibe em qualquer conversa da vaga.
+    const isCurrentChat = message.professionalId === ''
+      ? message.jobId === this._currentChat()?.jobId
+      : isSameChat(message, this._currentChat());
+
+    if (isCurrentChat) {
       this._messages.update((current) =>
         current.some((m) => m.id === message.id) ? current : [...current, message].sort(byCreatedAt),
       );
