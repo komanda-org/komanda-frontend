@@ -155,6 +155,10 @@
   flex-basis: 100%;
 }
 
+.account {
+  margin-top: var(--k-s-6);
+}
+
 @media (max-width: 640px) {
   .stats {
     grid-template-columns: minmax(0, 1fr);

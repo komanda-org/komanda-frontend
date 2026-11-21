@@ -1,14 +1,12 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Experience, ProfessionalMe, Review } from '../../../core/models/profile.model';
-import { AuthService } from '../../../core/services/auth.service';
 import {
   ProfessionalProfilePage,
   averageRating,
-  describeDeleteError,
   describeError,
   formatLocation,
   formatPeriod,
@@ -117,7 +115,6 @@ describe('ProfessionalProfile — pure functions', () => {
   it('never exposes the HTTP status in the error copy', () => {
     for (const status of [0, 401, 403, 404, 500, 418]) {
       expect(describeError({ status, messages: ['x'] })).not.toMatch(/\d{3}/);
-      expect(describeDeleteError({ status, messages: ['x'] })).not.toMatch(/\d{3}/);
     }
   });
 });
@@ -253,89 +250,16 @@ describe('ProfessionalProfilePage', () => {
     expect(edit.hasAttribute('aria-disabled')).toBe(false);
   });
 
-  it('asks for confirmation before deleting and lets the user cancel', async () => {
+  it('offers account deletion with the profile-specific consequence', async () => {
     await render();
+
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
+    expect(text('delete-account-btn')).toBe('Excluir minha conta');
 
     el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!.click();
     await settle();
 
-    expect(el().querySelector('[data-testid="delete-account-btn"]')).toBeNull();
-    expect(text('delete-confirm')).toContain('permanente');
-
-    el().querySelector<HTMLButtonElement>('[data-testid="cancel-delete-account"]')!.click();
-    await settle();
-
-    expect(el().querySelector('[data-testid="delete-account-btn"]')).not.toBeNull();
-    expect(el().querySelector('[data-testid="delete-confirm"]')).toBeNull();
-  });
-
-  it('deletes the account after confirmation, clears the session and goes to login', async () => {
-    const auth = TestBed.inject(AuthService);
-    const router = TestBed.inject(Router);
-    const logout = vi.spyOn(auth, 'logout');
-    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
-
-    await render();
-    el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!.click();
-    await settle();
-    el().querySelector<HTMLButtonElement>('[data-testid="confirm-delete-account"]')!.click();
-    await settle();
-
-    expect(text('confirm-delete-account')).toBe('Excluindo…');
-
-    http
-      .expectOne({ method: 'DELETE', url: '/api/users/me' })
-      .flush(null, { status: 204, statusText: 'No Content' });
-    await settle();
-
-    expect(logout).toHaveBeenCalledOnce();
-    expect(navigate).toHaveBeenCalledWith('/login', {
-      state: { mensagem: 'Sua conta foi excluída.' },
-    });
-  });
-
-  it('keeps the account and shows actionable copy when deletion fails', async () => {
-    const auth = TestBed.inject(AuthService);
-    const logout = vi.spyOn(auth, 'logout');
-
-    await render();
-    el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!.click();
-    await settle();
-    el().querySelector<HTMLButtonElement>('[data-testid="confirm-delete-account"]')!.click();
-    await settle();
-
-    http
-      .expectOne({ method: 'DELETE', url: '/api/users/me' })
-      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
-    await settle();
-
-    expect(text('delete-error')).toContain('Tente de novo');
-    expect(text('delete-error')).not.toMatch(/500/);
-    expect(logout).not.toHaveBeenCalled();
-    expect(el().querySelector('[data-testid="confirm-delete-account"]')).not.toBeNull();
-  });
-
-  it('treats an already deleted account as success', async () => {
-    const auth = TestBed.inject(AuthService);
-    const router = TestBed.inject(Router);
-    const logout = vi.spyOn(auth, 'logout');
-    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
-
-    await render();
-    el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!.click();
-    await settle();
-    el().querySelector<HTMLButtonElement>('[data-testid="confirm-delete-account"]')!.click();
-    await settle();
-
-    http
-      .expectOne({ method: 'DELETE', url: '/api/users/me' })
-      .flush({ message: 'Conta não encontrada' }, { status: 404, statusText: 'Not Found' });
-    await settle();
-
-    expect(logout).toHaveBeenCalledOnce();
-    expect(navigate).toHaveBeenCalledWith('/login', {
-      state: { mensagem: 'Esta conta já foi excluída.' },
-    });
+    expect(text('delete-confirm')).toContain('Seu perfil deixa de aparecer nas buscas.');
   });
 
   it('shows "Não informada" when availability has no mobility', async () => {

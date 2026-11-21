@@ -1,7 +1,6 @@
 :host {
   display: block;
   --estrela-vazia: #3a3a3a;
-  --perigo-borda: rgb(229 83 61 / 45%);
 }
 
 p,
@@ -346,56 +345,9 @@ blockquote {
 }
 
 /* --- Excluir conta --- */
-.delete {
-  width: 100%;
-  height: 44px;
+.account-delete {
+  display: block;
   margin-top: 28px;
-  background: transparent;
-  border: 1px solid var(--perigo-borda);
-  border-radius: var(--k-raio);
-  font-family: var(--k-sans);
-  font-size: 13px;
-  color: var(--k-erro);
-  cursor: pointer;
-}
-
-.delete:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.delete-confirm {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 28px;
-}
-
-.delete-confirm .delete {
-  margin-top: 0;
-}
-
-.delete--danger {
-  background: var(--k-erro-fundo);
-  border-color: rgb(229 83 61 / 50%);
-  font-weight: 700;
-  color: #ffb4ab;
-}
-
-.delete--ghost {
-  border-color: var(--k-linha-forte);
-  color: var(--k-texto-fraco);
-}
-
-.delete-warning {
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--k-texto-fraco);
-}
-
-.delete-error {
-  font-size: 13px;
-  color: var(--k-erro);
 }
 
 /* --- Estados da pagina --- */
@@ -423,8 +375,7 @@ blockquote {
 
 .edit:focus-visible,
 .link:focus-visible,
-.action:focus-visible,
-.delete:focus-visible {
+.action:focus-visible {
   outline: 2px solid var(--k-ouro);
   outline-offset: 2px;
 }
@@ -454,11 +405,6 @@ blockquote {
 
   .reviews {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .delete {
-    width: auto;
-    padding-inline: 32px;
   }
 }
 

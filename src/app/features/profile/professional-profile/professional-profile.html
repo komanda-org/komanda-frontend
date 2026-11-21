@@ -183,43 +183,10 @@
           }
         </section>
 
-        @if (confirmingDelete()) {
-          <div class="delete-confirm" data-testid="delete-confirm">
-            <p class="delete-warning">
-              Esta ação é permanente e não pode ser desfeita. Sua conta perde o acesso imediatamente.
-            </p>
-            <button
-              type="button"
-              class="delete delete--danger"
-              [disabled]="deleting()"
-              (click)="confirmDelete()"
-              data-testid="confirm-delete-account"
-            >
-              {{ deleting() ? 'Excluindo…' : 'Sim, excluir minha conta' }}
-            </button>
-            <button
-              type="button"
-              class="delete delete--ghost"
-              [disabled]="deleting()"
-              (click)="cancelDelete()"
-              data-testid="cancel-delete-account"
-            >
-              Cancelar
-            </button>
-            @if (deleteError(); as message) {
-              <p class="delete-error" role="alert" data-testid="delete-error">{{ message }}</p>
-            }
-          </div>
-        } @else {
-          <button
-            type="button"
-            class="delete"
-            (click)="askDelete()"
-            data-testid="delete-account-btn"
-          >
-            Excluir minha conta
-          </button>
-        }
+        <app-delete-account
+          class="account-delete"
+          consequence="Seu perfil deixa de aparecer nas buscas."
+        />
       }
     }
   }
