@@ -13,12 +13,30 @@ export type UserLocation =
   | { status: 'denied' | 'unavailable' };
 
 interface BrasilApiCepResponse {
+  street?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
   location?: {
     coordinates?: {
       latitude?: number | string;
       longitude?: number | string;
     };
   };
+}
+
+export interface BrasilApiCepData {
+  street?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}
+
+export interface BrasilApiCnpjData {
+  nome_fantasia?: string;
+  razao_social?: string;
+  ddd_telefone_1?: string;
+  cep?: string;
 }
 
 interface NominatimResult {
@@ -55,6 +73,56 @@ export class LocationService {
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
       );
     });
+  }
+
+  async getCep(zipCode: string): Promise<BrasilApiCepData | null> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+
+    const normalizedZipCode = zipCode.replace(/\D/g, '');
+    if (normalizedZipCode.length !== 8) {
+      return null;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.http.get<BrasilApiCepResponse>(
+          `https://brasilapi.com.br/api/cep/v2/${normalizedZipCode}`,
+        ),
+      );
+      return {
+        street: response.street,
+        neighborhood: response.neighborhood,
+        city: response.city,
+        state: response.state,
+      };
+    } catch (error: unknown) {
+      console.warn('Não foi possível consultar o CEP pela BrasilAPI.', error);
+      return null;
+    }
+  }
+
+  async getCnpj(cnpj: string): Promise<BrasilApiCnpjData | null> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+
+    const normalizedCnpj = cnpj.replace(/\D/g, '');
+    if (normalizedCnpj.length !== 14) {
+      return null;
+    }
+
+    try {
+      return await firstValueFrom(
+        this.http.get<BrasilApiCnpjData>(
+          `https://brasilapi.com.br/api/cnpj/v1/${normalizedCnpj}`,
+        ),
+      );
+    } catch (error: unknown) {
+      console.warn('Não foi possível consultar o CNPJ pela BrasilAPI.', error);
+      return null;
+    }
   }
 
   getRestaurantCoordinates(zipCode?: string, address?: string): Promise<Coordinates | null> {
