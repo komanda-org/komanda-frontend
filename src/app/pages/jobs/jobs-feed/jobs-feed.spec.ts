@@ -213,6 +213,17 @@ describe('JobsFeed', () => {
     expect(q('distance-badge')?.textContent).toContain('3.0 KM');
     expect(q('distance-value')?.textContent).toBe('Sem limite');
     setMaxDistance('100');
+    http.expectOne((request) => request.url === '/api/jobs/search').flush({
+      data: nearbyPage,
+      total: 3,
+      skip: 0,
+      take: 20,
+    });
+    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
+      applicationsPage(),
+    );
+    await settle();
+
     expect(q('distance-value')?.textContent).toBe('até 100 km');
 
     expect(cardTitles()).toEqual(['Pizzaiolo', 'Garçom', 'Sommelier']);
@@ -224,6 +235,16 @@ describe('JobsFeed', () => {
     loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 });
     await settle();
     setMaxDistance('10');
+    http.expectOne((request) => request.url === '/api/jobs/search').flush({
+      data: nearbyPage,
+      total: 3,
+      skip: 0,
+      take: 20,
+    });
+    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
+      applicationsPage(),
+    );
+    await settle();
 
     expect(cardTitles()).toEqual(['Pizzaiolo', 'Sommelier']);
     expect(q('distance-note')?.textContent).toContain('1 vaga fora do raio foi ocultada');
@@ -239,6 +260,16 @@ describe('JobsFeed', () => {
     loadJobs({ data: [nearbyPage[1]], total: 1, skip: 0, take: 20 });
     await settle();
     setMaxDistance('10');
+    http.expectOne((request) => request.url === '/api/jobs/search').flush({
+      data: [nearbyPage[1]],
+      total: 1,
+      skip: 0,
+      take: 20,
+    });
+    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
+      applicationsPage(),
+    );
+    await settle();
 
     expect(q('distance-empty')?.textContent).toContain('Nenhuma das vagas carregadas fica a até 10 km');
   });
@@ -273,6 +304,16 @@ describe('JobsFeed', () => {
     loadJobs({ data: [nearbyPage[0]], total: 2, skip: 0, take: 20 });
     await settle();
     setMaxDistance('10');
+    http.expectOne((request) => request.url === '/api/jobs/search').flush({
+      data: [nearbyPage[0]],
+      total: 2,
+      skip: 0,
+      take: 20,
+    });
+    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
+      applicationsPage(),
+    );
+    await settle();
 
     (el().querySelector('.load-more') as HTMLButtonElement).click();
     http
