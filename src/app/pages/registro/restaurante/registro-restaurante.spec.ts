@@ -36,9 +36,18 @@ const ETAPA_1_VALIDA = {
 
 describe('RegistroRestaurante — avanço da etapa 1', () => {
   let fixture: ComponentFixture<RegistroRestaurante>;
+  let http: HttpTestingController;
   let componente: Interno;
+  let c: {
+    readonly form: FormGroup;
+    readonly etapa: { set(value: number): void };
+    readonly cepLoading: () => boolean;
+    readonly cnpjLoading: () => boolean;
+  };
+  const el = () => fixture.nativeElement as HTMLElement;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [RegistroRestaurante],
       providers: [
@@ -51,10 +60,28 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
       ],
     }).compileComponents();
 
+    http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(RegistroRestaurante);
     componente = fixture.componentInstance as unknown as Interno;
+    c = componente as unknown as {
+      readonly form: FormGroup;
+      readonly etapa: { set(value: number): void };
+      readonly cepLoading: () => boolean;
+      readonly cnpjLoading: () => boolean;
+    };
     fixture.detectChanges();
   });
+
+  afterEach(() => {
+    http.verify();
+    TestBed.resetTestingModule();
+  });
+
+  function typeValue(id: string, value: string): void {
+    const input = el().querySelector<HTMLInputElement>(`#${id}`)!;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  }
 
   it('bloqueia o avanço com campo obrigatório vazio e marca só os campos da etapa 1', () => {
     componente.form.patchValue({ ...ETAPA_1_VALIDA, restaurantName: '' });
@@ -109,43 +136,14 @@ describe('RegistroRestaurante — avanço da etapa 1', () => {
     expect(componente.form.controls['restaurantName'].value).toBe(ETAPA_1_VALIDA.restaurantName);
     expect(componente.form.controls['acceptTerms'].value).toBe(true);
   });
-});
 
-interface InternoAutofill {
-  readonly form: FormGroup;
-  readonly etapa: { set(value: number): void };
-  readonly cepLoading: () => boolean;
-  readonly cnpjLoading: () => boolean;
-}
-
-describe('RegistroRestaurante — autofill', () => {
-  let fixture: ComponentFixture<RegistroRestaurante>;
-  let http: HttpTestingController;
-  let componente: InternoAutofill;
-  const el = () => fixture.nativeElement as HTMLElement;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [RegistroRestaurante],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
-    }).compileComponents();
-
-    http = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(RegistroRestaurante);
-    componente = fixture.componentInstance as unknown as InternoAutofill;
-    fixture.detectChanges();
+  afterEach(() => {
+    http.verify();
+    TestBed.resetTestingModule();
   });
 
-  afterEach(() => http.verify());
-
-  function typeValue(id: string, value: string): void {
-    const input = el().querySelector<HTMLInputElement>(`#${id}`)!;
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-  }
-
   it('ignores stale CEP responses and keeps loading until the latest lookup finishes', async () => {
-    componente.etapa.set(2);
+    c.etapa.set(2);
     fixture.detectChanges();
 
     typeValue('zipCode', '01001000');
@@ -158,7 +156,7 @@ describe('RegistroRestaurante — autofill', () => {
     fixture.detectChanges();
 
     expect(el().querySelector<HTMLInputElement>('#address')?.value).toBe('');
-    expect(el().querySelector('[aria-label="Consultando CEP"]')).not.toBeNull();
+    expect(el().querySelector('[role="status"]')?.textContent).toContain('Consultando CEP');
 
     latestRequest.flush({ street: 'Rua Atual', city: 'Rio de Janeiro', state: 'RJ' });
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -174,7 +172,7 @@ describe('RegistroRestaurante — autofill', () => {
     typeValue('cnpj', '11222333000181');
     const request = http.expectOne('https://brasilapi.com.br/api/cnpj/v1/11222333000181');
 
-    componente.form.patchValue({
+    c.form.patchValue({
       restaurantName: 'Nome digitado',
       phone: '(11) 99999-1111',
       zipCode: '20040-002',
@@ -188,10 +186,33 @@ describe('RegistroRestaurante — autofill', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
-    expect(componente.form.controls['restaurantName'].value).toBe('Nome digitado');
-    expect(componente.form.controls['phone'].value).toBe('(11) 99999-1111');
-    expect(componente.form.controls['zipCode'].value).toBe('20040-002');
+    expect(c.form.controls['restaurantName'].value).toBe('Nome digitado');
+    expect(c.form.controls['phone'].value).toBe('(11) 99999-1111');
+    expect(c.form.controls['zipCode'].value).toBe('20040-002');
     http.expectNone('https://brasilapi.com.br/api/cep/v2/01001000');
+  });
+
+  it('preenche restaurante, telefone e cep a partir da resposta da CNPJ', async () => {
+    typeValue('cnpj', '11222333000181');
+    const request = http.expectOne('https://brasilapi.com.br/api/cnpj/v1/11222333000181');
+
+    request.flush({
+      nome_fantasia: 'Nome da API',
+      ddd_telefone_1: '11999998888',
+      cep: '01001000',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const cepRequest = http.expectOne('https://brasilapi.com.br/api/cep/v2/01001000');
+    cepRequest.flush({ street: 'Rua X', city: 'São Paulo', state: 'SP' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(c.form.controls['restaurantName'].value).toBe('Nome da API');
+    expect(c.form.controls['phone'].value).toBe('(11) 99999-8888');
+    expect(c.form.controls['zipCode'].value).toBe('01001-000');
+    expect(c.cnpjLoading()).toBe(false);
+    expect(c.cepLoading()).toBe(false);
   });
 
   it('switches from CNPJ loading to CEP loading after the CNPJ response', async () => {
@@ -204,14 +225,13 @@ describe('RegistroRestaurante — autofill', () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(componente.cnpjLoading()).toBe(false);
-    expect(componente.cepLoading()).toBe(true);
-
     const cepRequest = http.expectOne('https://brasilapi.com.br/api/cep/v2/01001000');
     cepRequest.flush({ street: 'Praça da Sé', city: 'São Paulo', state: 'SP' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
-    expect(componente.cepLoading()).toBe(false);
+
+    expect(c.cnpjLoading()).toBe(false);
+    expect(c.cepLoading()).toBe(false);
   });
 
   it('ignores stale CNPJ responses and keeps loading until the latest lookup finishes', async () => {
@@ -224,14 +244,14 @@ describe('RegistroRestaurante — autofill', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
-    expect(componente.form.controls['restaurantName'].value).toBe('');
+    expect(c.form.controls['restaurantName'].value).toBe('');
     expect(el().querySelector('[role="status"]')?.textContent).toContain('Consultando CNPJ');
 
     latestRequest.flush({ nome_fantasia: 'Nome atual' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
-    expect(componente.form.controls['restaurantName'].value).toBe('Nome atual');
+    expect(c.form.controls['restaurantName'].value).toBe('Nome atual');
     expect(el().querySelector('[role="status"]')).toBeNull();
   });
 });

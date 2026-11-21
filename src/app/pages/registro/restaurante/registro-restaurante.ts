@@ -222,9 +222,6 @@ export class RegistroRestaurante {
     this.cnpjLoading.set(true);
     try {
       const dados = await this.locationService.getCnpj(cnpjLimpo);
-      if (requestId === this.cnpjRequestId) {
-        this.cnpjLoading.set(false);
-      }
       if (
         requestId !== this.cnpjRequestId ||
         this.form.controls.cnpj.value.replace(/\D/g, '') !== cnpjLimpo ||

@@ -115,7 +115,7 @@ describe('RegistroProfissional — CEP', () => {
     fixture.detectChanges();
 
     expect(el().querySelector<HTMLInputElement>('#city')?.value).toBe('');
-    expect(el().querySelector('[aria-label="Consultando CEP"]')).not.toBeNull();
+    expect(el().querySelector('[role="status"]')?.textContent).toContain('Consultando CEP');
 
     latestRequest.flush({ state: 'RJ', city: 'Rio de Janeiro', neighborhood: 'Centro' });
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -124,7 +124,7 @@ describe('RegistroProfissional — CEP', () => {
     expect(el().querySelector<HTMLInputElement>('#state')?.value).toBe('RJ');
     expect(el().querySelector<HTMLInputElement>('#city')?.value).toBe('Rio de Janeiro');
     expect(el().querySelector<HTMLInputElement>('#neighborhood')?.value).toBe('Centro');
-    expect(el().querySelector('[aria-label="Consultando CEP"]')).toBeNull();
+    expect(el().querySelector('[role="status"]')).toBeNull();
   });
 
   it('does not replace location fields edited while the CEP lookup is pending', async () => {

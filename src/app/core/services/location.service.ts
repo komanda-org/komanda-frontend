@@ -12,24 +12,20 @@ export type UserLocation =
   | { status: 'granted'; coordinates: Coordinates }
   | { status: 'denied' | 'unavailable' };
 
-interface BrasilApiCepResponse {
+export interface BrasilApiCepData {
   street?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
+}
+
+interface BrasilApiCepResponse extends BrasilApiCepData {
   location?: {
     coordinates?: {
       latitude?: number | string;
       longitude?: number | string;
     };
   };
-}
-
-export interface BrasilApiCepData {
-  street?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
 }
 
 export interface BrasilApiCnpjData {
@@ -87,7 +83,7 @@ export class LocationService {
 
     try {
       const response = await firstValueFrom(
-        this.http.get<BrasilApiCepResponse>(
+        this.http.get<BrasilApiCepData>(
           `https://brasilapi.com.br/api/cep/v2/${normalizedZipCode}`,
         ),
       );
