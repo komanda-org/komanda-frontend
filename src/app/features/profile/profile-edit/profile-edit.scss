@@ -1,0 +1,161 @@
+@use '../../restaurant/restaurant-ui';
+@use '../../restaurant/restaurant-form';
+
+.page {
+  max-width: 760px;
+}
+
+.page-title--light {
+  font-weight: 300;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: var(--k-s-3);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--k-ouro);
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 160px;
+  gap: var(--k-s-4);
+}
+
+.row--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field--spaced {
+  margin-top: var(--k-s-4);
+  margin-bottom: 0;
+}
+
+select.input {
+  appearance: auto;
+}
+
+// --- Especialidades ---
+.tag-input {
+  display: flex;
+  gap: var(--k-s-2);
+
+  .btn {
+    flex: 0 0 auto;
+  }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+  margin: var(--k-s-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-s-1);
+  padding: 0.3rem 0.4rem 0.3rem 0.8rem;
+  color: var(--k-ouro);
+  background: var(--k-ouro-fosco);
+  border-radius: var(--k-raio-pilula);
+  font-size: var(--k-t-sm);
+}
+
+.tag-chip__remove {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(242 202 80 / 15%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+  }
+}
+
+.link {
+  padding: 0.45rem 0.4rem;
+  color: var(--k-ouro);
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 2px;
+  }
+}
+
+.link--danger {
+  color: var(--k-erro);
+}
+
+// --- Trajetoria ---
+.experiences {
+  display: grid;
+  gap: var(--k-s-4);
+  margin: 0 0 var(--k-s-4);
+  padding: 0;
+  list-style: none;
+}
+
+.experience {
+  padding: var(--k-s-5);
+}
+
+.experience__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--k-s-4);
+}
+
+.experience__title {
+  margin: 0;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-base);
+}
+
+.empty {
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+}
+
+@media (max-width: 700px) {
+  .row,
+  .row--2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .tag-input {
+    flex-direction: column;
+  }
+}

@@ -7,7 +7,7 @@ import { MensagensLista } from './lista/mensagens-lista';
 /**
  * Duas colunas: a lista de conversas fica montada sempre e o painel da direita
  * mostra a conversa aberta — ou o estado vazio, quando nenhuma foi escolhida.
- * Por isso a rota mensagens/:jobId carrega este mesmo shell.
+ * Por isso a rota mensagens/:jobId/:professionalId carrega este mesmo shell.
  */
 @Component({
   selector: 'app-mensagens-shell',
@@ -17,6 +17,7 @@ import { MensagensLista } from './lista/mensagens-lista';
 })
 export class MensagensShell implements OnDestroy {
   readonly jobId = signal<string | null>(null);
+  readonly professionalId = signal<string | null>(null);
 
   private readonly paramSub: Subscription;
 
@@ -24,6 +25,7 @@ export class MensagensShell implements OnDestroy {
     const route = inject(ActivatedRoute);
     this.paramSub = route.paramMap.subscribe((params) => {
       this.jobId.set(params.get('jobId'));
+      this.professionalId.set(params.get('professionalId'));
     });
   }
 

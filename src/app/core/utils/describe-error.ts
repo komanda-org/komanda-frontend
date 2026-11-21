@@ -30,6 +30,21 @@ const COMMON: Partial<Record<number, string>> = {
  * Espera o erro ja normalizado pelo apiErrorInterceptor (ApiError). Qualquer
  * outra coisa (Error de JS, valor desconhecido) cai no fallback da tela.
  */
+/**
+ * Texto que o back mandou em `message`, pronto para a tela ("A. B."), ou null.
+ * So usar em status cujo texto o back escreve para o usuario (validacao, regra de negocio).
+ */
+export function apiMessage(error: unknown): string | null {
+  if (!isApiError(error)) {
+    return null;
+  }
+  const sentences = error.messages
+    .map((message) => message.trim())
+    .filter(Boolean)
+    .map((message) => (/[.!?]$/.test(message) ? message : `${message}.`));
+  return sentences.length > 0 ? sentences.join(' ') : null;
+}
+
 export function describeError(error: unknown, copy: ErrorCopy): string {
   if (!isApiError(error)) {
     return copy.fallback;

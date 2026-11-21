@@ -1,0 +1,129 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h1 class="page-title">Minhas vagas</h1>
+      <p class="page-subtitle">Gerencie suas oportunidades em aberto.</p>
+    </div>
+    <a class="btn btn--primary" routerLink="/my-jobs/new" data-testid="new-job">+ Nova vaga</a>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Filtrar vagas">
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.tab--active]="tab() === 'active'"
+      [attr.aria-selected]="tab() === 'active'"
+      (click)="selectTab('active')"
+      data-testid="tab-active"
+    >
+      Ativas ({{ active().length }})
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.tab--active]="tab() === 'closed'"
+      [attr.aria-selected]="tab() === 'closed'"
+      (click)="selectTab('closed')"
+      data-testid="tab-closed"
+    >
+      Encerradas ({{ closed().length }})
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="status" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando vagas...</p>
+    </div>
+  } @else if (loadError(); as message) {
+    <div class="status status--error" role="alert" data-testid="load-error">
+      <p>{{ message }}</p>
+      <button type="button" class="btn btn--outline" (click)="load()">Tentar novamente</button>
+    </div>
+  } @else if (visible().length === 0) {
+    <div class="status card" data-testid="empty">
+      @if (tab() === 'active') {
+        <p>Você não tem vagas ativas.</p>
+        <a class="btn btn--primary" routerLink="/my-jobs/new">Publicar vaga</a>
+      } @else {
+        <p>Nenhuma vaga encerrada.</p>
+      }
+    </div>
+  } @else {
+    <ul class="grid">
+      @for (item of visible(); track item.job.id) {
+        <li class="job card" data-testid="job-card">
+          <div class="job__tags">
+            @if (item.job.urgent && item.job.status !== 'ENCERRADA') {
+              <span class="tag tag--urgent">● Urgente</span>
+            }
+            <span class="tag" [class.tag--status]="item.job.status !== 'ENCERRADA'" [class.tag--muted]="item.job.status === 'ENCERRADA'">
+              {{ jobStatusLabel(item.job.status) }}
+            </span>
+          </div>
+
+          <h2 class="job__title">{{ item.job.title }}</h2>
+          <p class="job__meta">{{ jobMeta(item.job.shifts, item.job.contractType) }}</p>
+
+          <dl class="job__numbers">
+            <div>
+              <dt>Candidatos</dt>
+              <dd data-testid="applicants-count">{{ item.applicants.length }}</dd>
+            </div>
+            <div>
+              <dt>Pendentes</dt>
+              <dd>{{ pendingOf(item) }}</dd>
+            </div>
+          </dl>
+
+          <p class="job__salary">{{ formatSalary(item.job.salary) }}</p>
+
+          <div class="job__actions">
+            @if (confirmingId() === item.job.id) {
+              <button
+                type="button"
+                class="btn btn--danger"
+                [disabled]="closingId() === item.job.id"
+                (click)="confirmClose(item.job.id)"
+                data-testid="confirm-close"
+              >
+                {{ closingId() === item.job.id ? 'Encerrando...' : 'Sim, encerrar' }}
+              </button>
+              <button type="button" class="btn btn--ghost" (click)="cancelClose()">Cancelar</button>
+            } @else {
+              <a class="btn btn--gold-outline" [routerLink]="['/pipeline']" [queryParams]="{ job: item.job.id }">
+                Ver pipeline
+              </a>
+              <a
+                class="btn btn--ghost"
+                [routerLink]="['/my-jobs', item.job.id, 'preview']"
+                [state]="{ job: item.job }"
+                data-testid="view-job"
+              >
+                Ver vaga
+              </a>
+              @if (item.job.status === 'ABERTA' || item.job.status === 'PAUSADA') {
+                <a
+                  class="btn btn--ghost"
+                  [routerLink]="['/my-jobs', item.job.id, 'edit']"
+                  [state]="{ job: item.job }"
+                  data-testid="edit-job"
+                >
+                  Editar
+                </a>
+                <button type="button" class="btn btn--ghost" (click)="askClose(item.job.id)" data-testid="close-job">
+                  Encerrar vaga
+                </button>
+              }
+            }
+          </div>
+          @if (closeError()?.jobId === item.job.id) {
+            <p class="inline-error" role="alert">{{ closeError()?.message }}</p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

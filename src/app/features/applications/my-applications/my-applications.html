@@ -60,12 +60,18 @@
               @let badge = toBadge(app.status);
               <li class="card card--{{ badge.tone }}" data-testid="application-card">
                 <div class="card-top">
-                  <span class="logo" aria-hidden="true">{{ initials(app.restaurant.name, 1) }}</span>
+                  <a class="logo" [routerLink]="['/restaurantes', app.restaurant.id]" tabindex="-1" aria-hidden="true">
+                    {{ initials(app.restaurant.name, 1) }}
+                  </a>
 
                   <div class="info">
-                    <p class="restaurant" data-testid="card-restaurant">
+                    <a
+                      class="restaurant"
+                      [routerLink]="['/restaurantes', app.restaurant.id]"
+                      data-testid="card-restaurant"
+                    >
                       {{ app.restaurant.name }}
-                    </p>
+                    </a>
                     <p class="role" [class.role--struck]="badge.tone === 'rejected'" data-testid="card-role">
                       {{ app.job.title }}
                     </p>
@@ -93,6 +99,15 @@
                     </svg>
                     Abrir chat
                   </button>
+                  <div class="review">
+                    <app-review-button
+                      label="Avaliar restaurante"
+                      [jobId]="app.job.id"
+                      [jobTitle]="app.job.title"
+                      [receiverId]="app.restaurant.id"
+                      [receiverName]="app.restaurant.name"
+                    />
+                  </div>
                 }
 
                 @if (badge.tone === 'pending') {

@@ -1,7 +1,6 @@
 :host {
   display: block;
   --urgente: #e5533d;
-  --estrela-vazia: #3a3a3a;
 }
 
 p,
@@ -26,7 +25,13 @@ blockquote {
   gap: 40px;
 }
 
-/* --- Coluna do restaurante: capa, logo, selos, nome, local, sobre, remuneracao --- */
+.feedback-title {
+  font-family: var(--k-serif);
+  font-size: 20px;
+  color: var(--k-texto);
+}
+
+/* --- Coluna do restaurante: logo, selos, nome, nota, contato, sobre --- */
 .identity {
   display: flex;
   flex-direction: column;
@@ -35,29 +40,10 @@ blockquote {
   min-width: 0;
 }
 
-/* Sem foto, a capa vira um gradiente escuro: o frame pede "tons escuros", nunca um buraco cinza. */
-.cover {
-  width: 100%;
-  aspect-ratio: 2 / 1;
-  overflow: hidden;
-  border-radius: var(--k-raio-lg);
-  background:
-    radial-gradient(120% 90% at 20% 10%, rgb(242 202 80 / 14%), transparent 60%),
-    linear-gradient(160deg, #2a2418, #121212 70%);
-}
-
-.cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(0.6);
-}
-
-/* Logo sobreposto a capa: sobe metade da propria altura. */
 .logo {
   width: 88px;
   height: 88px;
-  margin: -56px 0 4px 20px;
+  margin-bottom: 4px;
   overflow: hidden;
   border: 2px solid var(--k-ouro);
   border-radius: var(--k-raio-lg);
@@ -115,16 +101,49 @@ blockquote {
   line-height: 1.2;
 }
 
-.location {
+.rating {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.rating strong {
+  color: var(--k-ouro);
+}
+
+.rating-count,
+.rating--none {
+  color: var(--k-texto-muted);
+}
+
+.contact {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
   gap: 8px;
   font-size: 14px;
   color: var(--k-texto-muted);
 }
 
-.location svg {
+.contact-item svg {
   flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--k-ouro);
+}
+
+.contact-link {
+  color: inherit;
+}
+
+.contact-link:hover {
   color: var(--k-ouro);
 }
 
@@ -150,29 +169,6 @@ blockquote {
   font-family: var(--k-serif);
   font-size: 18px;
   font-weight: 400;
-  color: var(--k-ouro);
-}
-
-.pay {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 16px 20px;
-  border-left: 2px solid var(--k-ouro);
-}
-
-.pay-label {
-  font-size: var(--k-t-xs);
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--k-texto-fraco);
-}
-
-.pay-value {
-  font-family: var(--k-serif);
-  font-size: 22px;
   color: var(--k-ouro);
 }
 
@@ -210,32 +206,6 @@ blockquote {
   font-size: 18px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.see-all {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.see-all-btn {
-  padding: 4px 0;
-  background: none;
-  border: none;
-  font-family: var(--k-sans);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--k-ouro);
-  cursor: not-allowed;
-}
-
-.see-all-btn[aria-disabled='true'] {
-  opacity: 0.6;
-}
-
-.see-all-reason {
-  font-size: var(--k-t-xs);
-  color: var(--k-texto-fraco);
 }
 
 .jobs,
@@ -281,18 +251,6 @@ blockquote {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--k-texto-fraco);
-}
-
-/* O frame corta a descricao com reticencias em 2 linhas. */
-.job-description {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--k-texto-muted);
 }
 
 .job-foot {
@@ -367,75 +325,6 @@ blockquote {
   font-style: italic;
   line-height: 1.6;
   color: var(--k-texto-muted);
-}
-
-/* --- Estados de lista e estrelas: blocos locais enquanto nao existem no _ui.scss --- */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--k-texto-fraco);
-}
-
-.link {
-  padding: 4px 0;
-  background: none;
-  border: none;
-  font-family: var(--k-sans);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--k-ouro);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.feedback {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  font-size: var(--k-t-base);
-  color: var(--k-texto-fraco);
-}
-
-.action {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
-  border: none;
-  border-radius: var(--k-raio);
-  font-family: var(--k-sans);
-  font-size: 13px;
-  font-weight: 700;
-  color: #3c2f00;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* Estrela por mascara: o gradiente pinta 100%, 50% ou 0% de dourado — meia estrela sem SVG duplicado. */
-.stars {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.star {
-  --fill: 0%;
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  background: linear-gradient(90deg, var(--k-ouro) var(--fill), var(--estrela-vazia) var(--fill));
-  mask: url('/icons/star.svg') center / contain no-repeat;
-  -webkit-mask: url('/icons/star.svg') center / contain no-repeat;
-}
-
-.star--full {
-  --fill: 100%;
-}
-
-.star--half {
-  --fill: 50%;
 }
 
 /* --- Desktop: restaurante a esquerda, vagas e avaliacoes a direita --- */

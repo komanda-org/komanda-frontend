@@ -1,17 +1,14 @@
 <section class="page" data-testid="professional-profile">
   <header class="bar">
     <h1 class="bar-title">Meu perfil</h1>
-    <!-- aria-disabled (e nao disabled) mantem o foco e o title acessiveis ate a rota de edicao existir -->
-    <button
-      type="button"
-      class="edit"
-      aria-disabled="true"
-      title="A edição do perfil chega em breve."
-      data-testid="edit-btn"
-    >
-      Editar
-    </button>
+    @if (state() === 'ready') {
+      <a class="edit" routerLink="/perfil/editar" data-testid="edit-btn">Editar</a>
+    }
   </header>
+
+  @if (notice(); as message) {
+    <p class="notice" role="status" data-testid="notice">{{ message }}</p>
+  }
 
   @switch (state()) {
     @case ('loading') {
@@ -51,7 +48,6 @@
             @if (rating(); as score) {
               <p
                 class="rating"
-                role="img"
                 data-testid="profile-rating"
                 [attr.aria-label]="'Nota ' + formatRating(score) + ' de 5 em ' + reviews().length + (reviews().length === 1 ? ' recomendação' : ' recomendações')"
               >
@@ -129,11 +125,15 @@
                   <dt>Modelo</dt>
                   @for (model of availability.workModels; track model) {
                     <dd data-testid="availability-model">{{ workModelLabel(model) }}</dd>
+                  } @empty {
+                    <dd>Não informado</dd>
                   }
                 </div>
                 <div class="availability-col">
                   <dt>Mobilidade</dt>
-                  <dd data-testid="availability-mobility">{{ mobilityLabel(availability.mobility) }}</dd>
+                  <dd data-testid="availability-mobility">
+                    {{ availability.mobility ? mobilityLabel(availability.mobility) : 'Não informada' }}
+                  </dd>
                 </div>
               </dl>
             } @else {
@@ -171,13 +171,10 @@
                           <span class="star star--{{ fill }}"></span>
                         }
                       </span>
-                      <blockquote class="review-text" data-testid="review-text">“{{ review.comment }}”</blockquote>
-                      <p class="review-author">
-                        <span data-testid="review-author">{{ review.author.name }}</span>
-                        @if (review.author.role) {
-                          <span class="review-author-role" data-testid="review-author-role">{{ review.author.role }}</span>
-                        }
-                      </p>
+                      @if (review.comment) {
+                        <blockquote class="review-text" data-testid="review-text">“{{ review.comment }}”</blockquote>
+                      }
+                      <p class="review-author" data-testid="review-author">Restaurante</p>
                     </li>
                   }
                 </ul>

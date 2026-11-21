@@ -1,0 +1,136 @@
+@let current = job();
+<div class="layout">
+  <div class="main">
+    <article class="hero" data-testid="job-hero">
+      <div class="hero__top">
+        <a class="restaurant" [routerLink]="['/restaurantes', current.restaurantId]" data-testid="restaurant-hero-link">
+          @if (current.restaurant.logoUrl) {
+            <img class="restaurant__logo" [src]="current.restaurant.logoUrl" alt="" width="56" height="56">
+          } @else {
+            <span class="restaurant__logo restaurant__logo--initial" aria-hidden="true">{{ restaurantInitial(current) }}</span>
+          }
+          <div>
+            <p class="restaurant__name" data-testid="restaurant-name">{{ current.restaurant.restaurantName }}</p>
+            @if (current.restaurant.cuisineType) {
+              <p class="restaurant__cuisine">{{ current.restaurant.cuisineType }}</p>
+            }
+          </div>
+        </a>
+        @if (current.urgent) {
+          <span class="urgent" data-testid="urgent-badge">Urgente</span>
+        }
+      </div>
+
+      <h1 class="hero__title" data-testid="job-title">{{ current.title }}</h1>
+
+      <ul class="badges" aria-label="Características da vaga">
+        @if (shiftsLabel(current.shifts); as shift) {
+          <li class="badge">{{ shift }}</li>
+        }
+        <li class="badge">{{ contractLabel(current.contractType) }}</li>
+      </ul>
+
+      <p class="salary" data-testid="job-salary">{{ formatSalary(current.salary) }}@if (current.salary) {<span class="salary__unit"> / mês</span>}</p>
+    </article>
+
+    <section class="block" aria-labelledby="about-title">
+      <h2 class="block__title" id="about-title">Sobre a vaga</h2>
+      <p class="block__text" data-testid="job-description">{{ current.description }}</p>
+    </section>
+
+    @if (current.requirements) {
+      <section class="block" aria-labelledby="requirements-title">
+        <h2 class="block__title" id="requirements-title">Requisitos</h2>
+        <p class="block__text" data-testid="job-requirements">{{ current.requirements }}</p>
+      </section>
+    }
+
+    <section class="establishment" aria-labelledby="establishment-title">
+      <div>
+        <h2 class="establishment__title" id="establishment-title">O Estabelecimento</h2>
+        <p class="establishment__meta">
+          @if (current.restaurant.averageRating) {
+            <span class="rating">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"></path></svg>
+              {{ current.restaurant.averageRating }}
+            </span>
+          }
+          <span>{{ current.restaurant.cuisineType || current.restaurant.restaurantName }}</span>
+        </p>
+        @if (current.restaurant.address) {
+          <p class="establishment__address">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+            {{ current.restaurant.address }}
+          </p>
+        }
+      </div>
+      <a class="establishment__link" [routerLink]="['/restaurantes', current.restaurantId]" data-testid="restaurant-link">
+        Ver perfil completo <span aria-hidden="true">→</span>
+      </a>
+    </section>
+  </div>
+
+  <aside class="side">
+    <div class="side__card">
+      @if (mode() === 'preview') {
+        <!-- Botao desabilitado nao dispara hover: o tooltip fica no involucro e o motivo tambem aparece em texto. -->
+        <span class="apply-wrap" [title]="previewHint" data-testid="apply-tooltip">
+          <button type="button" class="apply" disabled data-testid="apply-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
+            Candidatar-se
+          </button>
+        </span>
+        <p class="apply-hint" data-testid="apply-hint">{{ previewHint }}</p>
+      } @else if (applicationStatus() === 'APROVADA') {
+        <div class="application application--approved" role="status" data-testid="application-status">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"></path></svg>
+          Você foi aprovado(a)!
+        </div>
+        <a class="apply" [routerLink]="['/mensagens', current.id]" data-testid="open-chat">Abrir conversa</a>
+      } @else if (applicationStatus() === 'REJEITADA') {
+        <div class="application application--rejected" role="status" data-testid="application-status">
+          Não foi dessa vez
+        </div>
+      } @else if (applicationStatus() === 'PENDENTE') {
+        <div class="application application--pending" role="status" data-testid="application-status">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"></path></svg>
+          Candidatura enviada
+        </div>
+      } @else if (acceptingApplications()) {
+        <button type="button" class="apply" [disabled]="applying()" (click)="onApply()" data-testid="apply-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>
+          {{ applying() ? 'Enviando...' : 'Candidatar-se' }}
+        </button>
+      }
+      @if (applyError(); as message) {
+        <p class="apply-error" role="alert">{{ message }}</p>
+      }
+
+      <ng-content />
+
+      <h2 class="side__title">Informações rápidas</h2>
+      <ul class="facts">
+        @if (current.urgent) {
+          <li class="fact">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M9 3v4m6-4v4"></path></svg>
+            <div><p class="fact__label">Início imediato</p><p class="fact__hint">Vaga marcada como urgente</p></div>
+          </li>
+        }
+        @if (shiftsLabel(current.shifts); as shift) {
+          <li class="fact">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+            <div><p class="fact__label">Turno</p><p class="fact__hint">{{ shift }}</p></div>
+          </li>
+        }
+        <li class="fact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5M10 13h6m-6 4h6"></path></svg>
+          <div><p class="fact__label">Contrato</p><p class="fact__hint">{{ contractLabel(current.contractType) }}</p></div>
+        </li>
+        <li class="fact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8 12h8"></path></svg>
+          <div><p class="fact__label">Publicada em</p><p class="fact__hint">{{ formatPublishedAt(current.createdAt) }}</p></div>
+        </li>
+      </ul>
+    </div>
+  </aside>
+</div>

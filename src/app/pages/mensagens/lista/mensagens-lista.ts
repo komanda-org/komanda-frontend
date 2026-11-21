@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MessagingService } from '../../../core/services/messaging/messaging.service';
-import { ChatListItem } from '../../../core/models/messaging/chat.model';
+import { ChatListItem, chatKey, isSameChat } from '../../../core/models/messaging/chat.model';
 
 @Component({
   selector: 'app-mensagens-lista',
@@ -29,7 +29,8 @@ export class MensagensLista implements OnInit, OnDestroy {
   });
 
   readonly pendentes = computed(() => this.messagingService.pendingApplications());
-  readonly jobIdAtivo = computed(() => this.messagingService.currentJobId());
+  readonly conversaAtiva = computed(() => this.messagingService.currentChat());
+  readonly chatKey = chatKey;
 
   constructor(public readonly messagingService: MessagingService) {}
 
@@ -46,7 +47,12 @@ export class MensagensLista implements OnInit, OnDestroy {
   }
 
   isActive(chat: ChatListItem): boolean {
-    return this.jobIdAtivo() === chat.jobId;
+    return isSameChat(chat, this.conversaAtiva());
+  }
+
+  /** Restaurante com 2 aprovados na mesma vaga: o nome do profissional distingue as conversas. */
+  chatTitle(chat: ChatListItem): string {
+    return chat.otherPartyRole === 'PROFISSIONAL' ? `${chat.otherPartyName} · ${chat.jobTitle}` : chat.otherPartyName;
   }
 
   isToday(date: Date | string | undefined): boolean {

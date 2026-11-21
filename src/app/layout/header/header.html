@@ -1,10 +1,7 @@
-<header class="header" data-testid="header">
+<header class="header" [class.header--panel-open]="notificationsOpen()" data-testid="header">
   <span class="logo" data-testid="logo">Komanda</span>
   <div class="actions">
-    <button type="button" class="bell" data-testid="notifications-btn" aria-label="Notificações">
-      <img src="/icons/bell.svg" alt="" aria-hidden="true" width="17" height="22" />
-      <span class="badge" aria-hidden="true"></span>
-    </button>
+    <app-notifications (openChange)="notificationsOpen.set($event)" />
     <button type="button" class="logout" data-testid="logout-btn" (click)="logout()">Sair</button>
   </div>
 </header>

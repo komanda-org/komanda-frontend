@@ -133,7 +133,7 @@
   color: var(--k-texto-fraco);
   font-size: var(--k-t-2xs);
 
-  input,
+  input:not([type='range']),
   select {
     min-width: 10rem;
     min-height: 36px;
@@ -230,6 +230,7 @@
   border-radius: var(--k-raio);
   font-family: var(--k-serif);
   font-size: 1.35rem;
+  text-decoration: none;
 
   &--1 {
     color: #e9b4a0;
@@ -252,10 +253,12 @@
 }
 
 .restaurant__name {
+  display: block;
   overflow: hidden;
   margin: 0 0 0.25rem;
   color: var(--k-texto-fraco);
   font-size: var(--k-t-xs);
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -297,6 +300,59 @@
   border-radius: var(--k-raio);
   font-size: var(--k-t-2xs);
   letter-spacing: 0.035em;
+}
+
+.badge--muted {
+  color: var(--k-texto-fraco);
+  background: transparent;
+  border-style: dashed;
+}
+
+.filter-hint {
+  max-width: 14rem;
+  line-height: 1.4;
+}
+
+.range {
+  width: 14rem;
+  accent-color: var(--k-ouro);
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.range-scale {
+  display: flex;
+  justify-content: space-between;
+}
+
+.distance-note {
+  margin: 1rem 0 0;
+  padding: 0.7rem 0.9rem;
+  color: var(--k-texto-muted);
+  border-left: 3px solid var(--k-ouro);
+  font-size: var(--k-t-xs);
+}
+
+.details-link {
+  display: inline-block;
+  margin: -0.25rem 0 1.25rem;
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    border-radius: var(--k-raio);
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
 }
 
 .job-card__footer {

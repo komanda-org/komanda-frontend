@@ -459,7 +459,9 @@
               rotulo="Localização (CEP)"
               para="zipCode"
               [controle]="form.controls.zipCode"
-              [opcional]="true"
+              [required]="true"
+              dica="Usamos o CEP para mostrar vagas perto de você."
+              [customErrorMessage]="zipCodeError()"
             >
               <div class="campo-icone">
                 <input
@@ -469,6 +471,7 @@
                   inputmode="numeric"
                   autocomplete="postal-code"
                   placeholder="00000-000"
+                  aria-required="true"
                   formControlName="zipCode"
                   (input)="aplicarCep($event)"
                 />

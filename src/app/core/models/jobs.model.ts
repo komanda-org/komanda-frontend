@@ -1,12 +1,17 @@
+import { ApplicationStatus } from './applications.model';
+
 export type ContractType = 'CLT' | 'PJ' | 'FREELANCER' | 'ESTAGIO';
+
+export type JobShift = 'MANHA' | 'TARDE' | 'NOITE' | 'INTEGRAL';
 
 export interface JobRestaurant {
   restaurantName: string;
   logoUrl: string | null;
-  address?: string;
-  zipCode?: string;
-  cuisineType?: string;
-  averageRating?: number | null;
+  address: string;
+  /** `null` = restaurante itinerante (so eventos). */
+  zipCode: string | null;
+  cuisineType: string;
+  averageRating: number | null;
 }
 
 export interface Job {
@@ -20,11 +25,14 @@ export interface Job {
   restaurantId: string;
   restaurant: JobRestaurant;
   createdAt: string;
-  shift?: string | null;
+  /** Lista vazia = turno nao informado. */
+  shifts: JobShift[];
+  /** Calculada no navegador: `undefined` = ainda calculando; `null` = nao foi possivel. */
   distanceKm?: number | null;
   urgent?: boolean;
   hasApplied?: boolean;
-  application?: Application | null;
+  /** So em GET /jobs/:id: a candidatura de quem esta logado. */
+  application?: JobApplication | null;
 }
 
 export interface JobsResponse {
@@ -34,6 +42,13 @@ export interface JobsResponse {
   take: number;
 }
 
+export interface JobApplication {
+  id: string;
+  status: ApplicationStatus;
+  createdAt: string;
+}
+
+/** Resposta de POST /jobs/:id/applications. */
 export interface Application {
   id: string;
   jobId: string;

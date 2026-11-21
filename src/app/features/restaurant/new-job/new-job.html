@@ -1,0 +1,10 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h1 class="page-title page-title--light">Nova Vaga</h1>
+      <p class="page-subtitle">Preencha as informações da vaga para atrair os melhores candidatos para a sua cozinha.</p>
+    </div>
+  </header>
+
+  <app-job-form [submitting]="submitting()" [submitError]="submitError()" (save)="submit($event)" />
+</section>

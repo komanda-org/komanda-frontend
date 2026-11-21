@@ -1,27 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
+import { of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { MessagingService } from '../../core/services/messaging/messaging.service';
 import { MensagensShell } from './mensagens-shell';
 
-function createMockRoute(jobId: string | null) {
+function createMockRoute(jobId: string | null, professionalId: string | null = jobId ? 'p1' : null) {
+  const values: Record<string, string | null> = { jobId, professionalId };
   const paramMap = {
-    get: vi.fn().mockReturnValue(jobId),
-    has: vi.fn().mockReturnValue(jobId !== null),
-    getAll: vi.fn().mockReturnValue(jobId ? [jobId] : []),
-    keys: jobId ? ['jobId'] : [],
+    get: (key: string) => values[key] ?? null,
+    has: (key: string) => values[key] != null,
+    getAll: (key: string) => (values[key] ? [values[key]] : []),
+    keys: Object.keys(values).filter((key) => values[key] !== null),
   };
-  return {
-    paramMap: {
-      ...paramMap,
-      subscribe: (fn: (value: typeof paramMap) => void) => {
-        fn(paramMap);
-        return { unsubscribe: () => undefined };
-      },
-    },
-    snapshot: { paramMap },
-  } as unknown as ActivatedRoute;
+  return { paramMap: of(paramMap), snapshot: { paramMap } } as unknown as ActivatedRoute;
 }
 
 function createMockMessaging() {
@@ -31,7 +24,8 @@ function createMockMessaging() {
     pendingApplications: signal([]),
     connecting: signal(false),
     connected: signal(false),
-    currentJobId: signal<string | null>(null),
+    currentChat: signal<{ jobId: string; professionalId: string } | null>(null),
+    otherPartyOnline: signal(false),
     hasMore: signal(false),
     error: signal<string | null>(null),
     connect: vi.fn(),
@@ -75,7 +69,7 @@ describe('MensagensShell', () => {
     expect(el.querySelector('app-mensagens-lista')).toBeTruthy();
   });
 
-  it('abre o chat quando ha jobId na rota', async () => {
+  it('abre o chat quando ha jobId e professionalId na rota', async () => {
     const { fixture } = await setup('job-1');
     const el: HTMLElement = fixture.nativeElement;
 

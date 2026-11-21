@@ -1,24 +1,32 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
 import { RestaurantsService } from './restaurants.service';
 
 describe('RestaurantsService', () => {
+  let http: HttpTestingController;
   let service: RestaurantsService;
 
   beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    http = TestBed.inject(HttpTestingController);
     service = TestBed.inject(RestaurantsService);
   });
 
-  it('returns the restaurant and its open jobs by slug', async () => {
-    const restaurant = await firstValueFrom(service.getBySlug('l-atelier-des-sens'));
-    const jobs = await firstValueFrom(service.listOpenJobs('l-atelier-des-sens'));
+  afterEach(() => http.verify());
 
-    expect(restaurant.restaurantName).toBe("L'Atelier des Sens");
-    expect(jobs.map((job) => job.title)).toEqual(['Chef de Partie', 'Sommelier Pleno']);
-  });
+  it('GETs the public profile by id, escaping the path segment', () => {
+    let name = '';
+    service.getById('701cce5e-1cc4').subscribe((restaurant) => (name = restaurant.restaurantName));
 
-  it('fails with a normalized 404 for an unknown slug', async () => {
-    await expect(firstValueFrom(service.getBySlug('nao-existe'))).rejects.toMatchObject({ status: 404 });
-    await expect(firstValueFrom(service.listOpenJobs('nao-existe'))).rejects.toMatchObject({ status: 404 });
+    const request = http.expectOne('/api/restaurants/701cce5e-1cc4');
+    expect(request.request.method).toBe('GET');
+    request.flush({ id: '701cce5e-1cc4', restaurantName: 'Cantina Bella Massa', openJobs: [] });
+    expect(name).toBe('Cantina Bella Massa');
+
+    service.getById('a/b').subscribe();
+    http.expectOne('/api/restaurants/a%2Fb').flush({});
   });
 });

@@ -1,0 +1,184 @@
+<section class="page">
+  <header class="page-head page-head--stack">
+    <h1 class="page-title">Pipeline de Gestão</h1>
+    @if (jobs().length > 0) {
+      <div class="job-picker">
+        <label class="visually-hidden" for="job-select">Vaga</label>
+        <select
+          id="job-select"
+          class="select"
+          [value]="selectedJobId() ?? ''"
+          (change)="selectJob($any($event.target).value)"
+          data-testid="job-select"
+        >
+          @for (job of jobs(); track job.id) {
+            <option [value]="job.id" [selected]="job.id === selectedJobId()">{{ jobOptionLabel(job) }}</option>
+          }
+        </select>
+        <span class="meta">({{ applicants().length }} {{ applicants().length === 1 ? 'candidato' : 'candidatos' }})</span>
+      </div>
+    }
+  </header>
+
+  <p class="info" role="note">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v.01M12 11v5"></path></svg>
+    O chat é liberado automaticamente ao aprovar um candidato.
+  </p>
+
+  @if (loadingJobs()) {
+    <div class="status" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando vagas...</p>
+    </div>
+  } @else if (jobs().length === 0 && !loadError()) {
+    <div class="status card" data-testid="no-jobs">
+      <p>Publique uma vaga para começar a receber candidatos.</p>
+      <a class="btn btn--primary" routerLink="/my-jobs/new">Publicar vaga</a>
+    </div>
+  } @else {
+    <div class="tabs" role="tablist" aria-label="Etapas do pipeline">
+      @for (item of tabs; track item.status) {
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.tab--active]="tab() === item.status"
+          [attr.aria-selected]="tab() === item.status"
+          (click)="tab.set(item.status)"
+          [attr.data-testid]="'tab-' + item.status"
+        >
+          {{ item.label }} ({{ count(item.status) }})
+        </button>
+      }
+    </div>
+
+    @if (loadingApplicants()) {
+      <div class="status" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Carregando candidatos...</p>
+      </div>
+    } @else if (loadError(); as message) {
+      <div class="status status--error" role="alert" data-testid="load-error">
+        <p>{{ message }}</p>
+        <button type="button" class="btn btn--outline" (click)="jobs().length ? loadApplicants() : loadJobs()">
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="status card" data-testid="empty-tab">
+        <p>
+          @switch (tab()) {
+            @case ('PENDENTE') { Nenhum candidato aguardando sua decisão. }
+            @case ('APROVADA') { Nenhum candidato aprovado nesta vaga ainda. }
+            @default { Nenhum candidato recusado. }
+          }
+        </p>
+      </div>
+    } @else {
+      <ul class="list">
+        @for (applicant of visible(); track applicant.applicationId) {
+          <li class="row card" data-testid="applicant-row">
+            <a
+              class="row__main row__link"
+              [routerLink]="['/profissionais', applicant.professional.id]"
+              [queryParams]="{ job: selectedJobId() }"
+              [state]="profileState(applicant)"
+              [attr.aria-label]="'Ver perfil de ' + applicant.professional.fullName"
+              data-testid="applicant-link"
+            >
+              @if (applicant.professional.profilePhoto) {
+                <img class="avatar" [src]="applicant.professional.profilePhoto" alt="" width="48" height="48" />
+              } @else {
+                <span class="avatar avatar--initials" aria-hidden="true">{{ initials(applicant.professional.fullName) }}</span>
+              }
+              <div class="row__who">
+                <p class="row__name">
+                  <span data-testid="applicant-name">{{ applicant.professional.fullName }}</span>
+                  <span
+                    class="rating"
+                    [class.rating--new]="!applicant.professional.averageRating"
+                    data-testid="applicant-rating"
+                  >{{ ratingBadge(applicant.professional.averageRating) }}</span>
+                </p>
+                <p class="meta">{{ appliedAt(applicant) }} · {{ applicant.professional.mainRole }}</p>
+                @if (applicant.status === 'APROVADA') {
+                  <span class="tag tag--ok">✓ Aprovado</span>
+                }
+              </div>
+            </a>
+
+            <div class="row__actions">
+              @if (applicant.professional.experienceSummary) {
+                <button
+                  type="button"
+                  class="btn btn--ghost"
+                  [attr.aria-expanded]="expandedId() === applicant.applicationId"
+                  (click)="toggleSummary(applicant.applicationId)"
+                >
+                  {{ expandedId() === applicant.applicationId ? 'Ocultar resumo' : 'Ver resumo' }}
+                </button>
+              }
+              @switch (applicant.status) {
+                @case ('PENDENTE') {
+                  <button
+                    type="button"
+                    class="btn btn--outline"
+                    [disabled]="busyId() === applicant.applicationId"
+                    (click)="decide(applicant, 'REJEITADA')"
+                    data-testid="reject-btn"
+                  >
+                    Recusar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    [disabled]="busyId() === applicant.applicationId"
+                    (click)="decide(applicant, 'APROVADA')"
+                    data-testid="approve-btn"
+                  >
+                    {{ busyId() === applicant.applicationId ? 'Salvando...' : 'Aprovar' }}
+                  </button>
+                }
+                @case ('APROVADA') {
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', selectedJobId(), applicant.professional.id]" data-testid="chat-link">
+                    Abrir chat
+                  </a>
+                  <app-review-button
+                    label="Avaliar profissional"
+                    [jobId]="selectedJobId()!"
+                    [jobTitle]="selectedJob()?.title ?? ''"
+                    [shift]="selectedJobShift()"
+                    [receiverId]="applicant.professional.id"
+                    [receiverName]="applicant.professional.fullName"
+                  />
+                }
+              }
+            </div>
+
+            @if (expandedId() === applicant.applicationId) {
+              <p class="row__summary">{{ applicant.professional.experienceSummary }}</p>
+            }
+            @if (rowError()?.id === applicant.applicationId) {
+              <p class="inline-error row__error" role="alert">{{ rowError()?.message }}</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <dl class="stats">
+      <div class="stat card">
+        <dt>Candidatos nesta vaga</dt>
+        <dd>{{ stats().total }}</dd>
+      </div>
+      <div class="stat card">
+        <dt>Taxa de aprovação</dt>
+        <dd data-testid="approval-rate">{{ stats().approvalRate === null ? '—' : stats().approvalRate + '%' }}</dd>
+      </div>
+      <div class="stat card">
+        <dt>Vagas abertas</dt>
+        <dd>{{ stats().openJobs }}</dd>
+      </div>
+    </dl>
+  }
+</section>

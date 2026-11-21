@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.detail {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--k-s-5) var(--k-gutter) var(--k-s-7);
+}
+
+/* --- Barra do topo --- */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-bottom: var(--k-s-5);
+
+  .icon-button {
+    justify-self: end;
+  }
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  padding: 0;
+  color: var(--k-ouro);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.icon-button {
+  display: inline-flex;
+  padding: var(--k-s-2);
+  color: var(--k-texto-fraco);
+  background: none;
+  border: none;
+  border-radius: var(--k-raio);
+  cursor: pointer;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    color: var(--k-ouro);
+  }
+}
+
+.back,
+.icon-button,
+.ghost-button {
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
+}
+
+.closed-banner {
+  margin: 0 0 var(--k-s-5);
+  padding: var(--k-s-3) var(--k-s-4);
+  color: var(--k-texto-muted);
+  background: var(--k-ouro-fosco);
+  border: 1px solid rgb(242 202 80 / 30%);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+}
+
+/* --- Estados --- */
+.status {
+  display: grid;
+  justify-items: center;
+  gap: var(--k-s-4);
+  padding: var(--k-s-7) var(--k-s-4);
+  color: var(--k-texto-muted);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+.status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--k-s-3);
+}
+
+.ghost-button {
+  padding: var(--k-s-2) var(--k-s-4);
+  color: var(--k-ouro);
+  background: transparent;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-sm);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--k-linha-forte);
+  border-top-color: var(--k-ouro);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

@@ -1,10 +1,26 @@
 :host {
   display: block;
+  --estrela-vazia: #3a3a3a;
+  --perigo-borda: rgb(229 83 61 / 45%);
+}
+
+p,
+h1,
+h2,
+h3,
+dl,
+dd,
+ol,
+ul,
+blockquote {
+  margin: 0;
 }
 
 .page {
   max-width: 64rem;
   margin-inline: auto;
+  font-family: var(--k-sans);
+  color: var(--k-texto);
 }
 
 /* --- Barra da pagina --- */
@@ -18,23 +34,32 @@
 .bar-title {
   font-family: var(--k-serif);
   font-size: 22px;
+  font-weight: 400;
   line-height: 28px;
   color: var(--k-ouro);
 }
 
 .edit {
   padding: 8px 0 8px 12px;
+  background: none;
+  border: none;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--k-ouro);
-  cursor: not-allowed;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.edit[aria-disabled='true'],
-.delete[aria-disabled='true'] {
-  opacity: 0.8;
+.notice {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--k-ouro-fosco);
+  border-left: 3px solid var(--k-ouro);
+  border-radius: var(--k-raio);
+  font-size: 14px;
+  color: var(--k-texto);
 }
 
 /* --- Abertura: foto, nome, cargo, nota, local, biografia, tags --- */
@@ -83,6 +108,7 @@
 .name {
   font-family: var(--k-serif);
   font-size: 26px;
+  font-weight: 700;
   line-height: 32px;
 }
 
@@ -137,6 +163,29 @@
   list-style: none;
 }
 
+/* Estrela por mascara: o gradiente pinta 100%, 50% ou 0% de dourado — meia estrela sem SVG duplicado. */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  --fill: 0%;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--k-ouro) var(--fill), var(--estrela-vazia) var(--fill));
+  mask: url('/icons/star.svg') center / contain no-repeat;
+  -webkit-mask: url('/icons/star.svg') center / contain no-repeat;
+}
+
+.star--full {
+  --fill: 100%;
+}
+
+.star--half {
+  --fill: 50%;
+}
+
 /* --- Secoes --- */
 .section {
   display: flex;
@@ -147,11 +196,22 @@
 }
 
 .label {
+  font-family: var(--k-sans);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--k-ouro);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--k-texto-fraco);
 }
 
 /* --- Trajetoria --- */
@@ -242,6 +302,17 @@
 }
 
 /* --- Recomendacoes --- */
+.link {
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font-family: var(--k-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--k-ouro);
+  cursor: pointer;
+}
+
 .reviews {
   display: grid;
   gap: 16px;
@@ -274,23 +345,53 @@
   font-weight: 700;
 }
 
-.review-author-role {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--k-texto-fraco);
-}
-
 /* --- Excluir conta --- */
 .delete {
   width: 100%;
   height: 44px;
   margin-top: 28px;
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--k-erro) 45%, transparent);
+  border: 1px solid var(--perigo-borda);
   border-radius: var(--k-raio);
+  font-family: var(--k-sans);
   font-size: 13px;
   color: var(--k-erro);
   cursor: not-allowed;
+}
+
+.delete[aria-disabled='true'] {
+  opacity: 0.85;
+}
+
+/* --- Estados da pagina --- */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: var(--k-t-base);
+  color: var(--k-texto-fraco);
+}
+
+.action {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+  font-family: var(--k-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #3c2f00;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.edit:focus-visible,
+.link:focus-visible,
+.action:focus-visible,
+.delete:focus-visible {
+  outline: 2px solid var(--k-ouro);
+  outline-offset: 2px;
 }
 
 /* --- Tablet: foto ao lado dos dados, recomendacoes lado a lado --- */

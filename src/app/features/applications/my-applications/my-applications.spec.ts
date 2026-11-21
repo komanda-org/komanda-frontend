@@ -149,6 +149,9 @@ describe('MyApplications', () => {
       'Restaurante 1',
     );
     expect(first.querySelector('.logo')?.textContent?.trim()).toBe('R');
+    expect(first.querySelector('[data-testid="card-restaurant"]')?.getAttribute('href')).toBe(
+      '/restaurantes/rest-1',
+    );
     expect(first.querySelector('[data-testid="card-date"]')?.textContent?.trim()).toBe('12 OUT');
   });
 
@@ -199,6 +202,29 @@ describe('MyApplications', () => {
     el().querySelector<HTMLButtonElement>('[data-testid="open-chat-btn"]')!.click();
 
     expect(navigate).toHaveBeenCalledWith(['/mensagens', 'job-1']);
+  });
+
+  it('avalia o restaurante da vaga aprovada com job.id e restaurant.id', async () => {
+    await render();
+    await respond(SAMPLE);
+
+    expect(cards()[1].querySelector('[data-testid="review-btn"]')).toBeNull();
+    const review = cards()[0].querySelector<HTMLButtonElement>('[data-testid="review-btn"]')!;
+    expect(review.textContent).toContain('Avaliar restaurante');
+
+    review.click();
+    fixture.detectChanges();
+    el().querySelector<HTMLInputElement>('[data-testid="star-4"]')!.click();
+    fixture.detectChanges();
+    el().querySelector<HTMLButtonElement>('[data-testid="review-submit"]')!.click();
+
+    const request = http.expectOne('/api/users/reviews');
+    expect(request.request.body).toEqual({ jobId: 'job-1', receiverId: 'rest-1', rating: 4 });
+    request.flush({ message: 'Você já avaliou' }, { status: 409, statusText: 'Conflict' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(cards()[0].querySelector('[data-testid="reviewed"]')?.textContent).toContain('Avaliado ✓');
   });
 
   it('estado vazio leva a /vagas', async () => {

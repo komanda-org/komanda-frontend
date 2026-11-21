@@ -13,6 +13,11 @@ export interface ApiError {
   status: number;
   /** Always an array, even when the server sent a single string. */
   messages: string[];
+  /**
+   * Validation errors keyed by field path ("state", "experiences.0.endDate"),
+   * present when the 400 body carries class-validator objects.
+   */
+  fieldErrors?: Record<string, string>;
 }
 
 /**

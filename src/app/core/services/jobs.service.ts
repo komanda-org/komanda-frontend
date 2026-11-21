@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { JobsResponse } from '../models/jobs.model';
+import { Job, JobsResponse } from '../models/jobs.model';
 
 @Injectable({ providedIn: 'root' })
 export class JobsService {
@@ -11,6 +11,10 @@ export class JobsService {
 
   list(): Observable<JobsResponse> {
     return this.http.get<JobsResponse>(`${this.base}/jobs`);
+  }
+
+  getById(id: string): Observable<Job> {
+    return this.http.get<Job>(`${this.base}/jobs/${encodeURIComponent(id)}`);
   }
 
   search(params: {

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
-import { Experience, Mobility, ProfessionalProfile, Review, WorkModel } from '../../../core/models/profile.model';
+import { Experience, ProfessionalMe, Review } from '../../../core/models/profile.model';
 import {
   ProfessionalProfilePage,
   averageRating,
@@ -11,10 +11,8 @@ import {
   formatLocation,
   formatPeriod,
   formatRating,
-  mobilityLabel,
   sortExperiences,
   starFills,
-  workModelLabel,
 } from './professional-profile';
 
 const FOGO: Experience = {
@@ -46,8 +44,9 @@ const BOEUF: Experience = {
 
 const SPECIALTIES = ['Parrilla', 'Carnes Especiais', 'Cozinha Autoral', 'Gestão de Equipe'];
 
-function profile(overrides: Partial<ProfessionalProfile> = {}): ProfessionalProfile {
+function profile(overrides: Partial<ProfessionalMe> = {}): ProfessionalMe {
   return {
+    role: 'PROFISSIONAL',
     id: 'u1',
     fullName: 'João Alberto',
     mainRole: 'Chef de Cuisine Especialista em Carnes',
@@ -69,16 +68,22 @@ const REVIEWS: Review[] = [
     rating: 5,
     comment: 'Domínio absoluto do fogo.',
     createdAt: '2024-03-01T12:00:00Z',
-    author: { name: 'Carlos Mendes', role: 'Restauranteur, Grupo Alma' },
+    jobId: 'j1',
+    reviewerId: 'rest-1',
   },
   {
     id: 'r2',
     rating: 4.5,
     comment: 'Liderança e técnica impecáveis.',
     createdAt: '2024-05-01T12:00:00Z',
-    author: { name: 'Chef Roberto Silva', role: 'Chef Executivo, Origem' },
+    jobId: 'j2',
+    reviewerId: 'rest-2',
   },
 ];
+
+function reviewsPage(data: Review[]) {
+  return { data, total: data.length, skip: 0, take: 20, averageRating: null };
+}
 
 describe('ProfessionalProfile — pure functions', () => {
   it('sorts experiences from the most recent, current job first', () => {
@@ -98,25 +103,8 @@ describe('ProfessionalProfile — pure functions', () => {
   it('computes the average and the star fills, half star included', () => {
     expect(averageRating(REVIEWS)).toBe(4.8);
     expect(averageRating([])).toBeNull();
-    expect(starFills(4.5)).toEqual(['full', 'full', 'full', 'full', 'half']);
+    expect(starFills(4.8)).toEqual(['full', 'full', 'full', 'full', 'half']);
     expect(starFills(3)).toEqual(['full', 'full', 'full', 'empty', 'empty']);
-  });
-
-  it('rounds the stars to the nearest half, so the drawing matches the written rating', () => {
-    expect(starFills(4.8)).toEqual(['full', 'full', 'full', 'full', 'full']);
-    expect(starFills(4.7)).toEqual(['full', 'full', 'full', 'full', 'half']);
-    expect(starFills(4.2)).toEqual(['full', 'full', 'full', 'full', 'empty']);
-  });
-
-  it('labels the work models and the mobility, keeping unknown values readable', () => {
-    expect(workModelLabel('CLT')).toBe('CLT');
-    expect(workModelLabel('FREELANCER')).toBe('Freelance');
-    expect(workModelLabel('TEMPORARIO')).toBe('Temporário');
-    expect(workModelLabel('OUTRO' as WorkModel)).toBe('OUTRO');
-
-    expect(mobilityLabel('NACIONAL')).toBe('Nacional');
-    expect(mobilityLabel('INTERNACIONAL')).toBe('Internacional');
-    expect(mobilityLabel('OUTRO' as Mobility)).toBe('OUTRO');
   });
 
   it('formats ratings with the pt-BR decimal comma', () => {
@@ -151,11 +139,11 @@ describe('ProfessionalProfilePage', () => {
     await fixture.whenStable();
   }
 
-  async function render(me: ProfessionalProfile = profile(), reviews: Review[] = REVIEWS): Promise<void> {
+  async function render(me: ProfessionalMe = profile(), reviews: Review[] = REVIEWS): Promise<void> {
     await start();
     http.expectOne('/api/users/me').flush(me);
     await settle();
-    http.expectOne(`/api/users/${me.id}/reviews`).flush(reviews);
+    http.expectOne(`/api/users/${me.id}/reviews`).flush(reviewsPage(reviews));
     await settle();
   }
 
@@ -188,17 +176,8 @@ describe('ProfessionalProfilePage', () => {
     expect(text('profile-name')).toBe('João Alberto');
     expect(text('profile-role')).toBe('Chef de Cuisine Especialista em Carnes');
     expect(text('profile-location')).toBe('São Paulo, SP');
-    expect(text('profile-photo')).toBe('JA');
     expect(all('specialty')).toEqual(SPECIALTIES);
     expect(el().querySelector('[data-testid="specialty"]')?.classList).toContain('k-tag');
-  });
-
-  it('exposes the rating as an image with a label, so the number is announced', async () => {
-    await render();
-
-    const rating = el().querySelector('[data-testid="profile-rating"]');
-    expect(rating?.getAttribute('role')).toBe('img');
-    expect(rating?.getAttribute('aria-label')).toBe('Nota 4,8 de 5 em 2 recomendações');
   });
 
   it('lists role, company and period from the most recent, with the description', async () => {
@@ -238,16 +217,15 @@ describe('ProfessionalProfilePage', () => {
 
     const terms = Array.from(el().querySelectorAll('[data-testid="availability"] dt')).map((n) => n.textContent?.trim());
     expect(terms).toEqual(['Modelo', 'Mobilidade']);
-    expect(all('availability-model')).toEqual(['PJ', 'Freelance']);
+    expect(all('availability-model')).toEqual(['PJ', 'Freelancer']);
     expect(text('availability-mobility')).toBe('Nacional');
   });
 
-  it('renders one card per recommendation with stars, text and author with role', async () => {
+  it('renders one card per recommendation with stars, text and a generic author', async () => {
     await render();
 
     expect(all('review')).toHaveLength(2);
-    expect(all('review-author')).toEqual(['Chef Roberto Silva', 'Carlos Mendes']);
-    expect(all('review-author-role')).toEqual(['Chef Executivo, Origem', 'Restauranteur, Grupo Alma']);
+    expect(all('review-author')).toEqual(['Restaurante', 'Restaurante']);
     expect(all('review-text')).toEqual(['“Liderança e técnica impecáveis.”', '“Domínio absoluto do fogo.”']);
     expect(el().querySelector('[data-testid="review"] .stars')?.getAttribute('aria-label')).toBe('Nota 4,5 de 5');
   });
@@ -259,15 +237,30 @@ describe('ProfessionalProfilePage', () => {
     expect(el().querySelector('[data-testid="profile-rating"]')).toBeNull();
   });
 
-  it('keeps EDIT and delete account flagged as pending, not dead links', async () => {
+  it('enables EDIT as a link to the edit page once the profile loads', async () => {
+    await start();
+    expect(el().querySelector('[data-testid="edit-btn"]')).toBeNull();
+    http.expectOne('/api/users/me').flush(profile());
+    await settle();
+    http.expectOne('/api/users/u1/reviews').flush(reviewsPage(REVIEWS));
+    await settle();
+
+    const edit = el().querySelector('[data-testid="edit-btn"]')!;
+    expect(edit.getAttribute('href')).toBe('/perfil/editar');
+    expect(edit.hasAttribute('aria-disabled')).toBe(false);
+  });
+
+  it('keeps delete account flagged as pending', async () => {
     await render();
 
-    for (const id of ['edit-btn', 'delete-account-btn']) {
-      const button = el().querySelector<HTMLButtonElement>(`[data-testid="${id}"]`)!;
-      expect(button.tagName).toBe('BUTTON');
-      expect(button.getAttribute('aria-disabled')).toBe('true');
-      expect(button.getAttribute('title')).toBeTruthy();
-    }
+    const button = el().querySelector<HTMLButtonElement>('[data-testid="delete-account-btn"]')!;
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('shows "Não informada" when availability has no mobility', async () => {
+    await render(profile({ availability: { workModels: ['CLT'], mobility: null } }));
+
+    expect(text('availability-mobility')).toBe('Não informada');
   });
 
   it('shows actionable copy on failure and retries', async () => {
@@ -281,7 +274,7 @@ describe('ProfessionalProfilePage', () => {
     el().querySelector<HTMLButtonElement>('[data-testid="retry-btn"]')!.click();
     http.expectOne('/api/users/me').flush(profile());
     await settle();
-    http.expectOne('/api/users/u1/reviews').flush(REVIEWS);
+    http.expectOne('/api/users/u1/reviews').flush(reviewsPage(REVIEWS));
     await settle();
 
     expect(text('profile-name')).toBe('João Alberto');

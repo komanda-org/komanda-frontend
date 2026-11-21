@@ -1,15 +1,16 @@
 import { Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
+import { map } from 'rxjs';
 import {
   Experience,
-  Mobility,
   ProfessionalProfile,
   Review,
-  WorkModel,
+  requireProfessional,
 } from '../../../core/models/profile.model';
 import { ProfileService } from '../../../core/services/profile.service';
+import { mobilityLabel, workModelLabel } from '../profile-labels';
 
 type LoadState = 'loading' | 'error' | 'ready';
 export type StarFill = 'full' | 'half' | 'empty';
@@ -50,43 +51,11 @@ export function averageRating(reviews: readonly Review[]): number | null {
 }
 
 export function starFills(rating: number): StarFill[] {
-  // Meia estrela e a mais proxima: 4,8 desenha 5 cheias, igual ao numero mostrado.
-  const rounded = Math.round(rating * 2) / 2;
   return [1, 2, 3, 4, 5].map((position) => {
-    if (rounded >= position) return 'full';
-    if (rounded >= position - 0.5) return 'half';
+    if (rating >= position) return 'full';
+    if (rating >= position - 0.5) return 'half';
     return 'empty';
   });
-}
-
-export function workModelLabel(model: WorkModel): string {
-  switch (model) {
-    case 'CLT':
-      return 'CLT';
-    case 'PJ':
-      return 'PJ';
-    case 'FREELANCER':
-      return 'Freelance';
-    case 'TEMPORARIO':
-      return 'Temporário';
-    default:
-      return model;
-  }
-}
-
-export function mobilityLabel(mobility: Mobility): string {
-  switch (mobility) {
-    case 'LOCAL':
-      return 'Local';
-    case 'REGIONAL':
-      return 'Regional';
-    case 'NACIONAL':
-      return 'Nacional';
-    case 'INTERNACIONAL':
-      return 'Internacional';
-    default:
-      return mobility;
-  }
 }
 
 export function describeError(error: unknown): string {
@@ -131,6 +100,7 @@ export class ProfessionalProfilePage {
   /** 401: tentar de novo falharia para sempre; o caminho e entrar de novo. */
   protected readonly sessionExpired = signal(false);
   protected readonly profile = signal<ProfessionalProfile | null>(null);
+  protected readonly notice = signal<string | null>(null);
 
   protected readonly reviewsState = signal<LoadState>('loading');
   protected readonly reviews = signal<Review[]>([]);
@@ -143,6 +113,9 @@ export class ProfessionalProfilePage {
   protected readonly rating = computed(() => averageRating(this.reviews()));
 
   constructor() {
+    // `state` da navegacao so existe durante ela; some no F5.
+    const state = inject(Router).getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
+    this.notice.set(state?.notice ?? null);
     // A rota e pre-renderizada no build (Node, sem API): a chamada so roda no browser.
     afterNextRender(() => this.load());
   }
@@ -152,7 +125,7 @@ export class ProfessionalProfilePage {
 
     this.service
       .getMe()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(map(requireProfessional), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (profile) => {
           this.profile.set(profile);

@@ -1,12 +1,12 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { InjectionToken, Injectable, inject, signal, computed } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../auth.service';
-import { Message, MessageResponse } from '../../models/messaging/message.model';
-import { ChatListItem } from '../../models/messaging/chat.model';
+import { MessageResponse } from '../../models/messaging/message.model';
+import { ChatListItem, ChatRef, isSameChat } from '../../models/messaging/chat.model';
 
 /** Forma de /users/me/applications?status=PENDENTE (KMD-79). */
 export interface PendingApplication {
@@ -17,17 +17,26 @@ export interface PendingApplication {
   restaurant: { id: string; name: string };
 }
 
+interface ChatPayload {
+  jobId: string;
+  /** Obrigatorio para restaurante; para profissional a API usa o id do token. */
+  professionalId?: string;
+}
+
 interface ServerToClientEvents {
   'chat:message': (message: MessageResponse) => void;
   'chat:error': (error: { statusCode: number; message: string }) => void;
-  'chat:presence': (data: { jobId: string; online: boolean }) => void;
+  'chat:presence': (data: { jobId: string; professionalId?: string; online: boolean }) => void;
 }
 
 interface ClientToServerEvents {
-  'chat:join': (data: { jobId: string; take?: number }, ack: (response: JoinResponse) => void) => void;
-  'chat:leave': (data: { jobId: string }, ack: (response: { ok: boolean; error?: any }) => void) => void;
-  'chat:send': (data: { jobId: string; content: string }, ack: (response: SendResponse) => void) => void;
-  'chat:history': (data: { jobId: string; before?: string; take?: number }, ack: (response: HistoryResponse) => void) => void;
+  'chat:join': (data: ChatPayload & { take?: number }, ack: (response: JoinResponse) => void) => void;
+  'chat:leave': (data: ChatPayload, ack: (response: { ok: boolean; error?: any }) => void) => void;
+  'chat:send': (data: ChatPayload & { content: string }, ack: (response: SendResponse) => void) => void;
+  'chat:history': (
+    data: ChatPayload & { before?: string; take?: number },
+    ack: (response: HistoryResponse) => void,
+  ) => void;
 }
 
 interface JoinResponse {
@@ -50,18 +59,25 @@ interface HistoryResponse {
   error?: { statusCode: number; message: string };
 }
 
+/** Troca o socket.io real por um falso nos testes. */
+export const SOCKET_FACTORY = new InjectionToken<typeof io>('SOCKET_FACTORY', { factory: () => io });
+
+const byCreatedAt = (a: MessageResponse, b: MessageResponse) =>
+  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
 @Injectable({ providedIn: 'root' })
 export class MessagingService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
+  private readonly createSocket = inject(SOCKET_FACTORY);
 
   private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
   /** Token usado para abrir o socket atual — muda quando a sessao troca. */
   private socketToken: string | null = null;
   private connectionPromise: Promise<void> | null = null;
   private readonly _connected = signal(false);
-  private readonly _currentJobId = signal<string | null>(null);
+  private readonly _currentChat = signal<ChatRef | null>(null);
   private readonly _messages = signal<MessageResponse[]>([]);
   private readonly _hasMore = signal(false);
   private readonly _error = signal<string | null>(null);
@@ -72,7 +88,7 @@ export class MessagingService {
   private readonly _otherPartyOnline = signal(false);
 
   readonly connected = this._connected.asReadonly();
-  readonly currentJobId = this._currentJobId.asReadonly();
+  readonly currentChat = this._currentChat.asReadonly();
   readonly messages = this._messages.asReadonly();
   readonly hasMore = this._hasMore.asReadonly();
   readonly error = this._error.asReadonly();
@@ -83,9 +99,9 @@ export class MessagingService {
   readonly otherPartyOnline = this._otherPartyOnline.asReadonly();
 
   readonly currentChatMessages = computed(() => {
-    const jobId = this._currentJobId();
-    if (!jobId) return [];
-    return this._messages().filter(m => m.jobId === jobId);
+    const chat = this._currentChat();
+    if (!chat) return [];
+    return this._messages().filter((m) => isSameChat(m, chat));
   });
 
   connect(): Promise<void> {
@@ -119,7 +135,7 @@ export class MessagingService {
     const wsUrl = environment.apiUrl.replace('/api', '');
 
     this.socketToken = token;
-    this.socket = io(wsUrl, {
+    this.socket = this.createSocket(wsUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -132,7 +148,7 @@ export class MessagingService {
       this._connecting.set(false);
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', () => {
       this._connected.set(false);
       this._connecting.set(false);
     });
@@ -142,18 +158,15 @@ export class MessagingService {
       this._error.set(`Erro de conexão: ${err.message}`);
     });
 
-    this.socket.on('chat:message', (message) => {
-      this.upsertMessage(message);
-      this.markUnread(message);
-    });
+    this.socket.on('chat:message', (message) => this.receiveMessage(message));
 
     this.socket.on('chat:error', (error) => {
       this._error.set(error.message);
     });
 
     // Presença do outro participante: o servidor avisa quando entra/sai do chat.
-    this.socket.on('chat:presence', (data: { jobId: string; online: boolean }) => {
-      if (data.jobId === this._currentJobId()) {
+    this.socket.on('chat:presence', (data) => {
+      if (isSameChat({ jobId: data.jobId, professionalId: data.professionalId ?? '' }, this._currentChat())) {
         this._otherPartyOnline.set(data.online);
       }
     });
@@ -183,18 +196,17 @@ export class MessagingService {
       this.socket.disconnect();
       this.socket = null;
       this._connected.set(false);
-      this._currentJobId.set(null);
-      this._messages.set([]);
-      this._hasMore.set(false);
-      this._otherPartyOnline.set(false);
+      this.resetConversation();
     }
   }
 
   async joinChat(
     jobId: string,
+    professionalId: string,
     take = 20,
   ): Promise<{ messages: MessageResponse[]; hasMore: boolean }> {
     await this.connect();
+    const chat = this.toChatRef(jobId, professionalId);
 
     return new Promise((resolve, reject) => {
       if (!this.socket?.connected) {
@@ -202,16 +214,19 @@ export class MessagingService {
         return;
       }
 
-      this._currentJobId.set(jobId);
-      this._messages.set([]);
-      this._hasMore.set(false);
-      this._otherPartyOnline.set(false);
+      this.resetConversation();
+      this._currentChat.set(chat);
 
-      this.socket.emit('chat:join', { jobId, take }, (response: JoinResponse) => {
+      this.socket.emit('chat:join', { ...chat, take }, (response: JoinResponse) => {
+        // A pessoa pode ter trocado de conversa antes do ack chegar.
+        if (!isSameChat(chat, this._currentChat())) {
+          resolve({ messages: [], hasMore: false });
+          return;
+        }
         if (response.ok && response.messages) {
           this._messages.set(response.messages);
           this._hasMore.set(response.hasMore ?? false);
-          this.updateChat(jobId, { unreadCount: 0 });
+          this.updateChat(chat, { unreadCount: 0 });
           resolve({ messages: response.messages, hasMore: response.hasMore ?? false });
         } else {
           this._error.set(response.error?.message || 'Erro ao entrar no chat');
@@ -221,20 +236,19 @@ export class MessagingService {
     });
   }
 
-  leaveChat(jobId: string): Promise<void> {
+  leaveChat(jobId: string, professionalId: string): Promise<void> {
+    const chat = this.toChatRef(jobId, professionalId);
+
     return new Promise((resolve, reject) => {
       if (!this.socket?.connected) {
         resolve();
         return;
       }
 
-      this.socket.emit('chat:leave', { jobId }, (response) => {
+      this.socket.emit('chat:leave', chat, (response) => {
         if (response.ok) {
-          if (this._currentJobId() === jobId) {
-            this._currentJobId.set(null);
-            this._messages.set([]);
-            this._hasMore.set(false);
-            this._otherPartyOnline.set(false);
+          if (isSameChat(chat, this._currentChat())) {
+            this.resetConversation();
           }
           resolve();
         } else {
@@ -244,8 +258,9 @@ export class MessagingService {
     });
   }
 
-  async sendMessage(jobId: string, content: string): Promise<MessageResponse> {
+  async sendMessage(jobId: string, professionalId: string, content: string): Promise<MessageResponse> {
     await this.connect();
+    const chat = this.toChatRef(jobId, professionalId);
 
     return new Promise((resolve, reject) => {
       if (!this.socket?.connected) {
@@ -253,11 +268,11 @@ export class MessagingService {
         return;
       }
 
-      this.socket.emit('chat:send', { jobId, content }, (response: SendResponse) => {
+      this.socket.emit('chat:send', { ...chat, content }, (response: SendResponse) => {
         if (response.ok && response.message) {
           // O ack garante que o remetente veja a mensagem mesmo se o broadcast
           // da room chegar antes do join ou for perdido.
-          this.upsertMessage(response.message);
+          this.receiveMessage(response.message);
           resolve(response.message);
         } else {
           this._error.set(response.error?.message || 'Erro ao enviar mensagem');
@@ -269,10 +284,12 @@ export class MessagingService {
 
   async loadHistory(
     jobId: string,
+    professionalId: string,
     before?: Date,
     take = 20,
   ): Promise<{ messages: MessageResponse[]; hasMore: boolean }> {
     await this.connect();
+    const chat = this.toChatRef(jobId, professionalId);
 
     return new Promise((resolve, reject) => {
       if (!this.socket?.connected) {
@@ -282,52 +299,22 @@ export class MessagingService {
 
       this.socket.emit(
         'chat:history',
-        { jobId, before: before?.toISOString(), take },
+        { ...chat, before: before?.toISOString(), take },
         (response: HistoryResponse) => {
           if (response.ok && response.messages) {
-            const newMessages = response.messages.filter(
-              (m) => !this._messages().some((existing) => existing.id === m.id)
-            );
-            this._messages.update((current) => {
-              const combined = [...newMessages, ...current].sort(
-                (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-              );
-              return combined;
-            });
-            this._hasMore.set(response.hasMore ?? false);
+            if (isSameChat(chat, this._currentChat())) {
+              const known = new Set(this._messages().map((m) => m.id));
+              const older = response.messages.filter((m) => !known.has(m.id));
+              this._messages.update((current) => [...older, ...current].sort(byCreatedAt));
+              this._hasMore.set(response.hasMore ?? false);
+            }
             resolve({ messages: response.messages, hasMore: response.hasMore ?? false });
           } else {
             reject(new Error(response.error?.message || 'Erro ao carregar histórico'));
           }
-        }
+        },
       );
     });
-  }
-
-  private upsertMessage(message: MessageResponse): void {
-    this._messages.update((current) => {
-      if (current.some((m) => m.id === message.id)) {
-        return current;
-      }
-
-      return [...current, message].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
-    });
-  }
-
-  // Badge da lista: mensagem de outro em chat aberto nao conta; em chat
-  // fechado, conta na hora. Ceiling: volta a 0 no reload (sem leitura
-  // persistida no backend).
-  private markUnread(message: MessageResponse): void {
-    if (message.senderId === this.authService.getUser()?.id) return;
-    if (message.jobId === this._currentJobId()) return;
-
-    this._chats.update((chats) =>
-      chats.map((c) =>
-        c.jobId === message.jobId ? { ...c, unreadCount: c.unreadCount + 1 } : c,
-      ),
-    );
   }
 
   clearError(): void {
@@ -336,8 +323,7 @@ export class MessagingService {
 
   addChat(chat: ChatListItem): void {
     this._chats.update((current) => {
-      const exists = current.some(c => c.jobId === chat.jobId);
-      if (exists) return current;
+      if (current.some((c) => isSameChat(c, chat))) return current;
       return [...current, chat].sort((a, b) => {
         const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
         const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
@@ -346,14 +332,12 @@ export class MessagingService {
     });
   }
 
-  updateChat(jobId: string, updates: Partial<ChatListItem>): void {
-    this._chats.update((current) =>
-      current.map((c) => (c.jobId === jobId ? { ...c, ...updates } : c))
-    );
+  updateChat(chat: ChatRef, updates: Partial<ChatListItem>): void {
+    this._chats.update((current) => current.map((c) => (isSameChat(c, chat) ? { ...c, ...updates } : c)));
   }
 
-  removeChat(jobId: string): void {
-    this._chats.update((current) => current.filter((c) => c.jobId !== jobId));
+  removeChat(chat: ChatRef): void {
+    this._chats.update((current) => current.filter((c) => !isSameChat(c, chat)));
   }
 
   clearChats(): void {
@@ -395,5 +379,40 @@ export class MessagingService {
       .toPromise()
       .then((response) => this._pending.set(response?.data ?? []))
       .catch(() => this._pending.set([]));
+  }
+
+  /** Para o profissional a conversa e sempre com ele mesmo: o id vem da sessao. */
+  private toChatRef(jobId: string, professionalId: string): ChatRef {
+    const user = this.authService.getUser();
+    return { jobId, professionalId: user?.role === 'PROFISSIONAL' ? user.id : professionalId };
+  }
+
+  private resetConversation(): void {
+    this._currentChat.set(null);
+    this._messages.set([]);
+    this._hasMore.set(false);
+    this._otherPartyOnline.set(false);
+  }
+
+  // Mensagem de outra conversa nao entra na tela aberta: so conta como nao lida.
+  private receiveMessage(message: MessageResponse): void {
+    this.updateChat(message, {
+      lastMessageContent: message.content,
+      lastMessageTime: message.createdAt,
+    });
+
+    if (isSameChat(message, this._currentChat())) {
+      this._messages.update((current) =>
+        current.some((m) => m.id === message.id) ? current : [...current, message].sort(byCreatedAt),
+      );
+      return;
+    }
+
+    // Ceiling: volta a 0 no reload (sem leitura persistida no backend).
+    if (message.senderId !== this.authService.getUser()?.id) {
+      this._chats.update((chats) =>
+        chats.map((c) => (isSameChat(c, message) ? { ...c, unreadCount: c.unreadCount + 1 } : c)),
+      );
+    }
   }
 }

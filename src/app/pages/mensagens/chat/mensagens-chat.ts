@@ -1,10 +1,12 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect, viewChild, ElementRef, afterNextRender } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, signal, computed, effect, viewChild, ElementRef, afterNextRender, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { MessagingService } from '../../../core/services/messaging/messaging.service';
 import { MessageResponse } from '../../../core/models/messaging/message.model';
+import { ChatRef, isSameChat } from '../../../core/models/messaging/chat.model';
 
 @Component({
   selector: 'app-mensagens-chat',
@@ -14,31 +16,29 @@ import { MessageResponse } from '../../../core/models/messaging/message.model';
 })
 export class MensagensChat implements OnInit, OnDestroy {
   readonly jobId = signal<string>('');
+  readonly professionalId = signal<string>('');
+  private readonly chatRef = computed<ChatRef>(() => ({ jobId: this.jobId(), professionalId: this.professionalId() }));
+  private readonly destroyRef = inject(DestroyRef);
   readonly sending = signal(false);
   readonly newMessage = signal('');
 
   // Use computed to access messagingService after constructor initialization
   readonly messages = computed(() => this.messagingService.messages());
-  readonly currentJobId = computed(() => this.messagingService.currentJobId());
+  readonly currentChat = computed(() => this.messagingService.currentChat());
   readonly hasMore = computed(() => this.messagingService.hasMore());
   readonly loading = computed(() => this.messagingService.connecting());
   readonly error = computed(() => this.messagingService.error());
   readonly currentUser = computed(() => this.authService.getUser());
   readonly otherPartyOnline = computed(() => this.messagingService.otherPartyOnline());
-  readonly otherPartyName = computed(
-    () => this.messagingService.chats().find((c) => c.jobId === this.jobId())?.otherPartyName ?? '',
+  private readonly chatItem = computed(() =>
+    this.messagingService.chats().find((c) => isSameChat(c, this.chatRef())),
   );
-  readonly isInChat = computed(() => this.currentJobId() === this.jobId());
-  readonly titulo = computed(
-    () => this.messagingService.chats().find((c) => c.jobId === this.jobId())?.otherPartyName ?? this.jobId(),
-  );
-  readonly subtitulo = computed(
-    () => this.messagingService.chats().find((c) => c.jobId === this.jobId())?.jobTitle ?? '',
-  );
+  readonly otherPartyName = computed(() => this.chatItem()?.otherPartyName ?? '');
+  readonly isInChat = computed(() => isSameChat(this.currentChat(), this.chatRef()));
+  readonly titulo = computed(() => this.chatItem()?.otherPartyName ?? '');
+  readonly subtitulo = computed(() => this.chatItem()?.jobTitle ?? '');
 
-  readonly chatMessages = computed(() =>
-    this.messages().filter((m) => m.jobId === this.jobId())
-  );
+  readonly chatMessages = computed(() => this.messages().filter((m) => isSameChat(m, this.chatRef())));
 
   /** Agrupa mensagens consecutivas do mesmo remetente para mostrar o avatar so no primeiro. */
   readonly messageGroups = computed(() => {
@@ -79,25 +79,37 @@ export class MensagensChat implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const jobId = this.route.snapshot.paramMap.get('jobId');
-    if (!jobId) {
-      this.router.navigate(['/mensagens']);
-      return;
-    }
-
-    this.jobId.set(jobId);
     this.messagingService.connect();
-
-    this.loadChat(jobId);
+    // O shell reaproveita este componente ao trocar de conversa: reage a cada troca de rota.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const jobId = params.get('jobId');
+      const professionalId = params.get('professionalId');
+      if (!jobId || !professionalId) {
+        this.router.navigate(['/mensagens']);
+        return;
+      }
+      if (jobId === this.jobId() && professionalId === this.professionalId()) {
+        return;
+      }
+      if (this.jobId()) {
+        this.messagingService.leaveChat(this.jobId(), this.professionalId());
+      }
+      this.jobId.set(jobId);
+      this.professionalId.set(professionalId);
+      this.newMessage.set('');
+      this.loadChat(jobId, professionalId);
+    });
   }
 
   ngOnDestroy(): void {
-    this.messagingService.leaveChat(this.jobId());
+    if (this.jobId()) {
+      this.messagingService.leaveChat(this.jobId(), this.professionalId());
+    }
   }
 
-  private async loadChat(jobId: string): Promise<void> {
+  private async loadChat(jobId: string, professionalId: string): Promise<void> {
     try {
-      await this.messagingService.joinChat(jobId);
+      await this.messagingService.joinChat(jobId, professionalId);
       this.shouldScrollToBottom = true;
     } catch (err) {
       console.error('Erro ao carregar chat:', err);
@@ -127,7 +139,7 @@ export class MensagensChat implements OnInit, OnDestroy {
     this.newMessage.set('');
 
     try {
-      await this.messagingService.sendMessage(this.jobId(), content);
+      await this.messagingService.sendMessage(this.jobId(), this.professionalId(), content);
       this.shouldScrollToBottom = true;
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
@@ -141,7 +153,7 @@ export class MensagensChat implements OnInit, OnDestroy {
 
     const oldest = this.chatMessages()[0];
     try {
-      await this.messagingService.loadHistory(this.jobId(), new Date(oldest.createdAt));
+      await this.messagingService.loadHistory(this.jobId(), this.professionalId(), new Date(oldest.createdAt));
     } catch (err) {
       console.error('Erro ao carregar mais mensagens:', err);
     }

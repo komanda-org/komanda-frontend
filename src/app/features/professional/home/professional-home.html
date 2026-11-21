@@ -1,0 +1,103 @@
+<section class="page">
+  <header class="hello">
+    <h1 class="page-title" data-testid="greeting">
+      {{ greeting() }}{{ name() ? ', ' + name() : '' }}!
+    </h1>
+    @if (today()) {
+      <p class="meta">{{ today() }}</p>
+    }
+  </header>
+
+  @if (loading()) {
+    <div class="status" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando seu painel...</p>
+    </div>
+  } @else if (loadError(); as message) {
+    <div class="status status--error" role="alert" data-testid="load-error">
+      <p>{{ message }}</p>
+      <button type="button" class="btn btn--outline" (click)="load()">Tentar novamente</button>
+    </div>
+  } @else {
+    @if (stats().matches > 0) {
+      <div class="alert" role="status" data-testid="matches-alert">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-9A5.3 5.3 0 0 1 12 6.4 5.3 5.3 0 0 1 21.3 12C19 16.6 12 21 12 21z"></path></svg>
+        <p>
+          {{ stats().matches === 1 ? 'Um restaurante aprovou' : stats().matches + ' restaurantes aprovaram' }}
+          sua candidatura. O chat já está liberado.
+        </p>
+        <a routerLink="/mensagens">Abrir mensagens</a>
+      </div>
+    }
+
+    <dl class="stats">
+      <div class="stat card">
+        <dt>Em análise</dt>
+        <dd data-testid="stat-pending">{{ stats().pending }}</dd>
+      </div>
+      <div class="stat card">
+        <dt>Matches</dt>
+        <dd data-testid="stat-matches">{{ stats().matches }}</dd>
+      </div>
+      <div class="stat card">
+        <dt>Vagas abertas</dt>
+        <dd data-testid="stat-jobs">{{ openJobs() }}</dd>
+      </div>
+    </dl>
+
+    <div class="actions">
+      <a class="btn btn--primary" routerLink="/vagas">Buscar vagas</a>
+      <a class="btn btn--outline" routerLink="/matches">Minhas candidaturas</a>
+    </div>
+
+    <section aria-labelledby="recent-title">
+      <h2 class="section-title" id="recent-title">Suas candidaturas</h2>
+      @if (recent().length === 0) {
+        <div class="status card" data-testid="empty">
+          <p>Você ainda não se candidatou a nenhuma vaga.</p>
+          <a class="btn btn--primary" routerLink="/vagas">Ver vagas abertas</a>
+        </div>
+      } @else {
+        <ul class="list">
+          @for (application of recent(); track application.applicationId) {
+            <li
+              class="row card"
+              [class.row--approved]="application.status === 'APROVADA'"
+              data-testid="application-row"
+            >
+              <div class="row__info">
+                <div class="row__title-line">
+                  <h3 class="row__title">{{ application.job.title }}</h3>
+                  <span
+                    class="tag"
+                    [class.tag--status]="application.status === 'PENDENTE'"
+                    [class.tag--ok]="application.status === 'APROVADA'"
+                    [class.tag--muted]="application.status === 'REJEITADA'"
+                  >
+                    {{ statusLabel(application.status) }}
+                  </span>
+                </div>
+                <p class="meta">{{ application.restaurant.name }} · {{ appliedAt(application) }}</p>
+              </div>
+              @if (application.status === 'APROVADA') {
+                <div class="row__actions">
+                  <a class="btn btn--gold-outline" [routerLink]="['/mensagens', application.job.id]">Abrir chat</a>
+                  <app-review-button
+                    label="Avaliar restaurante"
+                    [jobId]="application.job.id"
+                    [jobTitle]="application.job.title"
+                    [receiverId]="application.restaurant.id"
+                    [receiverName]="application.restaurant.name"
+                  />
+                </div>
+              }
+            </li>
+          }
+        </ul>
+        @if (applications().length > recent().length) {
+          <a class="see-all" routerLink="/matches">Ver todas as candidaturas →</a>
+        }
+      }
+    </section>
+  }
+</section>

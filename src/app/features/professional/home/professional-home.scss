@@ -1,0 +1,145 @@
+@use '../../restaurant/restaurant-ui';
+
+.hello {
+  margin-bottom: var(--k-s-5);
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-5);
+  padding: var(--k-s-3) var(--k-s-4);
+  color: var(--k-texto);
+  background: rgb(242 202 80 / 6%);
+  border: 1px solid rgb(242 202 80 / 30%);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+
+  svg {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    color: var(--k-ouro);
+  }
+
+  p {
+    flex: 1;
+    margin: 0;
+  }
+
+  a {
+    color: var(--k-ouro);
+    font-size: var(--k-t-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--k-s-4);
+  margin: 0 0 var(--k-s-5);
+}
+
+.stat {
+  padding: var(--k-s-4) var(--k-s-5);
+
+  dt {
+    color: var(--k-texto-fraco);
+    font-size: var(--k-t-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: var(--k-s-2) 0 0;
+    color: var(--k-texto);
+    font-family: var(--k-serif);
+    font-size: var(--k-t-xl);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-3);
+  margin-bottom: var(--k-s-6);
+}
+
+.list {
+  display: grid;
+  gap: var(--k-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--k-s-4);
+  padding: var(--k-s-4) var(--k-s-5);
+  border-left: 3px solid var(--k-linha-forte);
+
+  &--approved {
+    border-left-color: var(--k-ouro);
+  }
+}
+
+.row__info {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.row__title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-s-3);
+}
+
+.row__title {
+  margin: 0;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.tag--ok {
+  color: #c6f0d8;
+  background: var(--k-ok-fundo);
+}
+
+.see-all {
+  display: inline-block;
+  margin-top: var(--k-s-4);
+  color: var(--k-ouro);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}

@@ -1,0 +1,53 @@
+<section class="page plans">
+  <header class="hero">
+    <p class="eyebrow">Escolha seu plano</p>
+    <h1 class="hero__title">Encontre os melhores talentos para o seu negócio</h1>
+    <p class="hero__subtitle">Sem taxas escondidas. Cancele quando quiser.</p>
+  </header>
+
+  <ul class="grid">
+    @for (plan of plans; track plan.id) {
+      <li class="plan card" [class.plan--featured]="plan.featured" data-testid="plan-card">
+        @if (plan.featured) {
+          <span class="plan__badge">Mais popular</span>
+        }
+        <h2 class="plan__name">{{ plan.name }}</h2>
+        <p class="plan__price">
+          {{ plan.price }}
+          @if (plan.priceSuffix) {
+            <span class="plan__suffix">{{ plan.priceSuffix }}</span>
+          }
+        </p>
+        <p class="plan__tagline">{{ plan.tagline }}</p>
+
+        <ul class="features">
+          @for (feature of plan.features; track feature.label) {
+            <li class="feature" [class.feature--off]="!feature.included">
+              <span class="feature__icon" aria-hidden="true">{{ feature.included ? '✓' : '×' }}</span>
+              <span>
+                {{ feature.label }}
+                @if (!feature.included) {
+                  <span class="visually-hidden">(não incluso)</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+
+        <button
+          type="button"
+          class="btn plan__cta"
+          [class.btn--primary]="plan.featured"
+          [class.btn--gold-outline]="!plan.featured"
+          disabled
+        >
+          Em breve
+        </button>
+      </li>
+    }
+  </ul>
+
+  <p class="footnote">
+    Todos os planos incluem acesso ao banco de talentos da Komanda. A assinatura online ainda não está disponível.
+  </p>
+</section>

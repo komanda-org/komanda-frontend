@@ -1,0 +1,430 @@
+:host {
+  display: block;
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.apply,
+.establishment__link,
+.restaurant {
+  &:focus-visible {
+    outline: 2px solid var(--k-ouro);
+    outline-offset: 3px;
+  }
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: var(--k-s-5);
+}
+
+.main {
+  display: grid;
+  min-width: 0;
+  gap: var(--k-s-6);
+}
+
+/* --- Cartao principal --- */
+.hero {
+  padding: var(--k-s-5);
+  background:
+    radial-gradient(circle at 90% 0%, rgb(242 202 80 / 7%), transparent 45%),
+    var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--k-s-3);
+}
+
+.restaurant {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.restaurant:hover .restaurant__name {
+  color: var(--k-ouro);
+}
+
+.restaurant__logo {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  object-fit: cover;
+
+  &--initial {
+    display: grid;
+    place-items: center;
+    color: var(--k-ouro);
+    background: #111;
+    font-family: var(--k-serif);
+    font-size: 24px;
+  }
+}
+
+.restaurant__name {
+  margin: 0;
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+}
+
+.restaurant__cuisine {
+  margin: var(--k-s-1) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.urgent {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.6rem;
+  color: #ffaaa0;
+  background: var(--k-erro-fundo);
+  border: 1px solid rgb(229 83 61 / 50%);
+  border-radius: var(--k-raio-pilula);
+  font-size: var(--k-t-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero__title {
+  margin: var(--k-s-5) 0 var(--k-s-4);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-xl);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge {
+  padding: 0.35rem 0.75rem;
+  color: var(--k-texto-muted);
+  background: #2a2928;
+  border-radius: var(--k-raio-pilula);
+  font-size: var(--k-t-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.salary {
+  margin: var(--k-s-5) 0 0;
+  color: var(--k-ok);
+  font-size: var(--k-t-lg);
+  font-weight: 700;
+}
+
+.salary__unit {
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+  font-weight: 400;
+}
+
+/* --- Sobre a vaga / requisitos --- */
+.block__title {
+  display: flex;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin: 0 0 var(--k-s-4);
+  color: var(--k-ouro);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--k-ouro);
+  }
+}
+
+.block__text {
+  margin: 0;
+  color: var(--k-texto-muted);
+  font-size: var(--k-t-base);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+/* --- Estabelecimento --- */
+.establishment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--k-s-4);
+  padding: var(--k-s-5);
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.establishment__title {
+  margin: 0 0 var(--k-s-3);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  font-weight: 400;
+}
+
+.establishment__meta,
+.establishment__address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-s-3);
+  margin: 0;
+  color: var(--k-texto-muted);
+  font-size: var(--k-t-sm);
+}
+
+.establishment__address {
+  margin-top: var(--k-s-3);
+  color: var(--k-texto-fraco);
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-s-1);
+  color: var(--k-texto);
+  font-weight: 700;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--k-ouro);
+    fill: currentColor;
+  }
+}
+
+.establishment__link {
+  flex: 0 0 auto;
+  color: var(--k-ouro);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* --- Coluna lateral --- */
+.side {
+  position: sticky;
+  top: calc(var(--k-header-h) + var(--k-s-5));
+}
+
+.side__card {
+  padding: var(--k-s-5);
+  background: var(--k-superficie-2);
+  border: 1px solid var(--k-linha);
+  border-radius: var(--k-raio-lg);
+}
+
+.apply-wrap {
+  display: block;
+}
+
+.apply {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  color: #1a160d;
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-escuro));
+  border: none;
+  border-radius: var(--k-raio);
+  font: inherit;
+  font-size: var(--k-t-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  .apply-wrap &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  &--done {
+    color: #c6f0d8;
+    background: var(--k-ok-fundo);
+    border: 1px solid #28543d;
+  }
+}
+
+a.apply {
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.application {
+  display: flex;
+  min-height: 48px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-s-2);
+  margin-bottom: var(--k-s-3);
+  padding: var(--k-s-2) var(--k-s-3);
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-sm);
+  font-weight: 700;
+  text-align: center;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  &--pending,
+  &--approved {
+    color: #c6f0d8;
+    background: var(--k-ok-fundo);
+    border-color: #28543d;
+  }
+
+  &--rejected {
+    color: var(--k-texto-fraco);
+    background: var(--k-superficie);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.apply-hint {
+  margin: var(--k-s-2) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  text-align: center;
+}
+
+.apply-error {
+  margin: var(--k-s-3) 0 0;
+  color: var(--k-erro);
+  font-size: var(--k-t-sm);
+}
+
+.side__title {
+  margin: var(--k-s-5) 0 var(--k-s-4);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: grid;
+  gap: var(--k-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fact {
+  display: flex;
+  gap: var(--k-s-3);
+
+  svg {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    color: var(--k-ouro);
+  }
+}
+
+.fact__label {
+  margin: 0;
+  color: var(--k-texto);
+  font-size: var(--k-t-sm);
+  font-weight: 600;
+}
+
+.fact__hint {
+  margin: 2px 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-xs);
+}
+
+/* --- Celular: uma coluna, candidatura logo apos o cartao --- */
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    position: static;
+    order: -1;
+  }
+
+  .main {
+    display: contents;
+  }
+
+  .hero {
+    order: -2;
+  }
+
+  .establishment {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

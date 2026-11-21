@@ -1,6 +1,6 @@
 <section class="feed" aria-labelledby="greeting">
   <header class="feed__header">
-    <h1 id="greeting">Olá!</h1>
+    <h1 id="greeting">Olá, João</h1>
     <p>
       {{ totalJobs() }} {{ totalJobs() === 1 ? 'vaga' : 'vagas' }} perto de você
     </p>
@@ -93,7 +93,7 @@
             <option value="MANHA">Manhã</option>
             <option value="TARDE">Tarde</option>
             <option value="NOITE">Noite</option>
-            <option value="MADRUGADA">Madrugada</option>
+            <option value="INTEGRAL">Integral</option>
           </select>
         </label>
         <label class="filter-control">
@@ -108,18 +108,55 @@
           />
         </label>
         <label class="filter-control">
-          <span>Distância máxima (km)</span>
+          <span>
+            Distância máxima:
+            <strong data-testid="distance-value">{{ distanceLabel() }}</strong>
+          </span>
           <input
-            type="number"
+            class="range"
+            type="range"
             name="maxDistance"
-            min="0"
-            step="1"
-            [ngModel]="maxDistanceKm()"
+            [min]="distanceMin"
+            [max]="noLimit"
+            [step]="distanceStep"
+            [ngModel]="maxDistanceKm() ?? noLimit"
             (ngModelChange)="setMaxDistance($event)"
+            [disabled]="locationBlocked()"
+            [attr.aria-valuetext]="distanceLabel()"
+            aria-describedby="distance-hint"
+            data-testid="distance-input"
           />
+          <span class="range-scale" aria-hidden="true">
+            <span>{{ distanceMin }} km</span>
+            <span>{{ distanceMax }} km</span>
+            <span>Sem limite</span>
+          </span>
+          <span id="distance-hint" class="filter-hint" data-testid="distance-hint">
+            @if (locationBlocked()) {
+              Ative a localização do navegador para filtrar por distância.
+            } @else if (pendingDistances() > 0) {
+              Calculando distâncias…
+            }
+          </span>
         </label>
       </div>
     </nav>
+  }
+
+  @if (!loading() && !loadError() && distanceActive()) {
+    <p class="distance-note" role="status" data-testid="distance-note">
+      Mostrando vagas até {{ maxDistanceKm() }} km entre as {{ jobs().length }} carregadas.
+      @if (distanceView().hidden > 0) {
+        {{ distanceView().hidden }}
+        {{ distanceView().hidden === 1 ? 'vaga fora do raio foi ocultada.' : 'vagas fora do raio foram ocultadas.' }}
+      }
+      @if (distanceView().unknown > 0 && pendingDistances() === 0) {
+        As vagas sem distância calculada aparecem no fim.
+      }
+      @if (jobs().length < totalJobs()) {
+        Carregue mais vagas para ampliar a busca.
+      }
+    </p>
   }
 
   @if (loading()) {
@@ -141,7 +178,13 @@
         </svg>
       </span>
       <h2>Nenhuma vaga encontrada</h2>
-      <p>Tente ajustar a busca ou os filtros para ver mais oportunidades.</p>
+      @if (distanceActive() && distanceView().hidden > 0) {
+        <p data-testid="distance-empty">
+          Nenhuma das vagas carregadas fica a até {{ maxDistanceKm() }} km. Aumente a distância ou carregue mais vagas.
+        </p>
+      } @else {
+        <p>Tente ajustar a busca ou os filtros para ver mais oportunidades.</p>
+      }
       @if (
         submittedQuery() ||
         activeFilter() !== 'para-voce' ||
@@ -174,17 +217,25 @@
         <article class="job-card">
           <div class="job-card__topline">
             <div class="restaurant">
-              <span
+              <a
                 class="restaurant__initial"
                 [class.restaurant__initial--1]="index % 4 === 1"
                 [class.restaurant__initial--2]="index % 4 === 2"
                 [class.restaurant__initial--3]="index % 4 === 3"
+                [routerLink]="['/restaurantes', job.restaurantId]"
+                tabindex="-1"
                 aria-hidden="true"
               >
                 {{ restaurantInitial(job) }}
-              </span>
+              </a>
               <div class="restaurant__details">
-                <p class="restaurant__name">{{ job.restaurant.restaurantName }}</p>
+                <a
+                  class="restaurant__name"
+                  [routerLink]="['/restaurantes', job.restaurantId]"
+                  data-testid="restaurant-link"
+                >
+                  {{ job.restaurant.restaurantName }}
+                </a>
                 <h2 class="job-card__title">{{ job.title }}</h2>
               </div>
             </div>
@@ -194,14 +245,25 @@
           </div>
 
           <ul class="badges" aria-label="Detalhes da vaga">
-            @if (job.shift) {
-              <li class="badge">{{ shiftLabel(job.shift) }}</li>
+            @if (shiftsLabel(job.shifts); as shift) {
+              <li class="badge">{{ shift }}</li>
             }
-            <li class="badge">{{ contractLabel(job.contractType) }}</li>
+            <li class="badge">{{ job.contractType }}</li>
             @if (job.distanceKm !== null && job.distanceKm !== undefined) {
-              <li class="badge">{{ formatDistance(job.distanceKm) }}</li>
+              <li class="badge" data-testid="distance-badge">{{ formatDistance(job.distanceKm) }}</li>
+            } @else if (locationStatus() === 'granted' && job.distanceKm === null) {
+              <li class="badge badge--muted" data-testid="distance-unavailable">Distância indisponível</li>
             }
           </ul>
+
+          <a
+            class="details-link"
+            data-testid="job-details-link"
+            [routerLink]="['/vagas', job.id]"
+            [state]="{ job }"
+          >
+            Ver vaga completa <span aria-hidden="true">→</span>
+          </a>
 
           <footer class="job-card__footer">
             <div class="salary">

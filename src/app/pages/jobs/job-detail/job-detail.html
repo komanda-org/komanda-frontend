@@ -1,0 +1,47 @@
+<section class="detail">
+  <header class="topbar">
+    <button type="button" class="back" (click)="goBack()" aria-label="Voltar" data-testid="back-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"></path></svg>
+      <span>Voltar</span>
+    </button>
+    <p class="eyebrow">Detalhes da vaga</p>
+    @if (job()) {
+      <button type="button" class="icon-button" aria-label="Compartilhar vaga" data-testid="share-btn" (click)="share()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="18" cy="5" r="2.5"></circle>
+          <circle cx="6" cy="12" r="2.5"></circle>
+          <circle cx="18" cy="19" r="2.5"></circle>
+          <path d="m8.2 10.8 7.6-4.4m-7.6 6.8 7.6 4.4"></path>
+        </svg>
+      </button>
+    }
+  </header>
+
+  @if (loading()) {
+    <div class="status" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando vaga...</p>
+    </div>
+  } @else if (loadError(); as message) {
+    <div class="status status--error" role="alert" data-testid="load-error">
+      <p>{{ message }}</p>
+      <div class="status__actions">
+        <button type="button" class="ghost-button" (click)="load()">Tentar novamente</button>
+        <a class="ghost-button" routerLink="/vagas">Voltar para as vagas</a>
+      </div>
+    </div>
+  } @else if (job(); as job) {
+    @if (!acceptingApplications()) {
+      <p class="closed-banner" role="status" data-testid="closed-banner">Esta vaga não está recebendo candidaturas</p>
+    }
+    <app-job-view
+      [job]="job"
+      mode="professional"
+      [applicationStatus]="applicationStatus()"
+      [acceptingApplications]="acceptingApplications()"
+      [applying]="applying()"
+      [applyError]="applyError()"
+      (apply)="apply()"
+    />
+  }
+</section>

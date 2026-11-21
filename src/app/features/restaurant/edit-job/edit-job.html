@@ -1,0 +1,36 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h1 class="page-title page-title--light">Editar vaga</h1>
+      <p class="page-subtitle">Ajuste as informações da vaga. Só o que você mudar será salvo.</p>
+    </div>
+  </header>
+
+  @if (loadError(); as message) {
+    <div class="status status--error" role="alert" data-testid="load-error">
+      <p>{{ message }}</p>
+      <button type="button" class="btn btn--outline" (click)="load()">Tentar novamente</button>
+      <a class="btn btn--ghost" routerLink="/my-jobs">Voltar para Minhas vagas</a>
+    </div>
+  } @else if (job(); as current) {
+    @if (current.status === 'ENCERRADA') {
+      <div class="status card" data-testid="closed">
+        <p>Esta vaga está encerrada e não pode mais ser editada.</p>
+        <a class="btn btn--ghost" routerLink="/my-jobs">Voltar para Minhas vagas</a>
+      </div>
+    } @else {
+      <app-job-form
+        mode="edit"
+        [initial]="initial()"
+        [submitting]="submitting()"
+        [submitError]="submitError()"
+        (save)="save($event)"
+      />
+    }
+  } @else {
+    <div class="status" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Carregando vaga...</p>
+    </div>
+  }
+</section>

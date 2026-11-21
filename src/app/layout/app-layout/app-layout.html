@@ -1,6 +1,15 @@
 <div class="layout">
   <app-header class="header" />
-  <app-sidebar class="sidebar" />
+  <app-sidebar class="sidebar" [class.sidebar--open]="drawerOpen()" />
+  @if (drawerOpen()) {
+    <button
+      type="button"
+      class="backdrop"
+      data-testid="drawer-backdrop"
+      aria-label="Fechar menu"
+      (click)="closeDrawer()"
+    ></button>
+  }
   <main class="main" data-testid="content">
     <router-outlet />
   </main>

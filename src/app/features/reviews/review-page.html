@@ -1,0 +1,19 @@
+@if (loading()) {
+  <div class="state" role="status">
+    <p>Carregando vaga...</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state" role="alert" data-testid="review-page-error">
+    <p>{{ message }}</p>
+    <a routerLink="/vagas">Voltar para as vagas</a>
+  </div>
+} @else if (job(); as job) {
+  <app-review-dialog
+    [jobId]="job.id"
+    [receiverId]="job.restaurantId"
+    [receiverName]="job.restaurant.restaurantName"
+    [jobTitle]="job.title"
+    [shift]="shift()"
+    (closed)="onClosed($event)"
+  />
+}

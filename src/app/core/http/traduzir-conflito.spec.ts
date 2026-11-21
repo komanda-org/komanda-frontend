@@ -1,12 +1,12 @@
-import { ErroApi } from '../models/erro-api.model';
+import { ApiError } from '../models/api-error.model';
 import { traduzirConflito } from './traduzir-conflito';
 
 /**
  * As mensagens abaixo NAO foram inventadas: sao as respostas reais do
  * komanda-api, capturadas em POST /api/restaurants e /api/professionals.
  */
-function conflito(mensagem: string): ErroApi {
-  return { status: 409, mensagens: [mensagem] };
+function conflito(mensagem: string): ApiError {
+  return { status: 409, messages: [mensagem] };
 }
 
 describe('traduzirConflito', () => {
@@ -58,13 +58,13 @@ describe('traduzirConflito', () => {
 
   it('varre todas as mensagens do array, nao so a primeira', () => {
     expect(
-      traduzirConflito({ status: 409, mensagens: ['Algo estranho', 'User already exists'] })
+      traduzirConflito({ status: 409, messages: ['Algo estranho', 'User already exists'] })
         .campo,
     ).toBe('email');
   });
 
   it('nao navega para lugar nenhum quando nao identifica o campo', () => {
     // campo null e o sinal para o componente deixar o usuario onde esta.
-    expect(traduzirConflito({ status: 409, mensagens: [] }).campo).toBeNull();
+    expect(traduzirConflito({ status: 409, messages: [] }).campo).toBeNull();
   });
 });

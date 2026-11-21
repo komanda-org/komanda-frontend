@@ -1,0 +1,388 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <a class="back" routerLink="/perfil">← Meu perfil</a>
+      <h1 class="page-title page-title--light">Editar perfil</h1>
+      <p class="page-subtitle">Mantenha seus dados em dia para os restaurantes conhecerem seu trabalho.</p>
+    </div>
+  </header>
+
+  @switch (loadState()) {
+    @case ('loading') {
+      <div class="status" role="status" data-testid="loading">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Carregando seu perfil…</p>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="status status--error" role="alert" data-testid="load-error">
+        <p>{{ loadError() }}</p>
+        <button type="button" class="btn btn--outline" (click)="load()">Tentar de novo</button>
+      </div>
+    }
+
+    @case ('ready') {
+      <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate data-testid="profile-form">
+        <h2 class="group-title">Dados pessoais</h2>
+
+        <label class="field">
+          <span class="field__label">Nome completo</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="fullName"
+            autocomplete="name"
+            maxlength="100"
+            [attr.aria-invalid]="!!error(form.controls.fullName, 'fullName')"
+            data-testid="fullName-input"
+          />
+          @if (error(form.controls.fullName, 'fullName'); as message) {
+            <span class="field__error" data-testid="fullName-error">{{ message }}</span>
+          }
+        </label>
+
+        <label class="field">
+          <span class="field__label">Função principal</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="mainRole"
+            placeholder="Ex.: Sushiman"
+            maxlength="100"
+            [attr.aria-invalid]="!!error(form.controls.mainRole, 'mainRole')"
+            data-testid="mainRole-input"
+          />
+          @if (error(form.controls.mainRole, 'mainRole'); as message) {
+            <span class="field__error">{{ message }}</span>
+          }
+        </label>
+
+        <label class="field">
+          <span class="field__label">Foto de perfil</span>
+          <input
+            class="input"
+            type="url"
+            formControlName="profilePhoto"
+            placeholder="https://…"
+            inputmode="url"
+            [attr.aria-invalid]="!!error(form.controls.profilePhoto, 'profilePhoto')"
+            data-testid="profilePhoto-input"
+          />
+          @if (error(form.controls.profilePhoto, 'profilePhoto'); as message) {
+            <span class="field__error" data-testid="profilePhoto-error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">Cole o link de uma imagem. Deixe em branco para remover a foto.</span>
+          }
+        </label>
+
+        <label class="field">
+          <span class="field__label">Sobre você</span>
+          <textarea
+            class="input textarea"
+            rows="5"
+            formControlName="experienceSummary"
+            maxlength="1000"
+            placeholder="Conte sua experiência, o tipo de cozinha em que trabalha e o que você procura."
+            [attr.aria-invalid]="!!error(form.controls.experienceSummary, 'experienceSummary')"
+          ></textarea>
+          @if (error(form.controls.experienceSummary, 'experienceSummary'); as message) {
+            <span class="field__error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">{{ form.controls.experienceSummary.value.length }}/1000</span>
+          }
+        </label>
+
+        <h2 class="group-title">Localização</h2>
+
+        <div class="row">
+          <label class="field">
+            <span class="field__label">Bairro</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="neighborhood"
+              maxlength="100"
+              [attr.aria-invalid]="!!error(form.controls.neighborhood, 'neighborhood')"
+            />
+            @if (error(form.controls.neighborhood, 'neighborhood'); as message) {
+              <span class="field__error">{{ message }}</span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="field__label">Cidade</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="city"
+              autocomplete="address-level2"
+              maxlength="100"
+              [attr.aria-invalid]="!!error(form.controls.city, 'city')"
+            />
+            @if (error(form.controls.city, 'city'); as message) {
+              <span class="field__error">{{ message }}</span>
+            }
+          </label>
+
+          <label class="field field--narrow">
+            <span class="field__label">Estado</span>
+            <select
+              class="input"
+              formControlName="state"
+              [attr.aria-invalid]="!!error(form.controls.state, 'state')"
+              data-testid="state-select"
+            >
+              <option value="">Selecione</option>
+              @for (uf of states; track uf.code) {
+                <option [value]="uf.code">{{ uf.code }} · {{ uf.name }}</option>
+              }
+            </select>
+            @if (error(form.controls.state, 'state'); as message) {
+              <span class="field__error">{{ message }}</span>
+            }
+          </label>
+        </div>
+
+        <h2 class="group-title">Especialidades</h2>
+
+        <div class="field">
+          <label class="field__label" for="specialty-input">Adicione o que você faz de melhor</label>
+          <div class="tag-input">
+            <input
+              id="specialty-input"
+              class="input"
+              type="text"
+              [formControl]="specialtyDraft"
+              placeholder="Ex.: Cozinha japonesa"
+              maxlength="60"
+              (keydown.enter)="addSpecialty($event)"
+              [attr.aria-invalid]="!!specialtyError()"
+              data-testid="specialty-input"
+            />
+            <button type="button" class="btn btn--outline" (click)="addSpecialty()" data-testid="specialty-add">
+              Adicionar
+            </button>
+          </div>
+          @if (specialtyError(); as message) {
+            <span class="field__error" role="alert" data-testid="specialty-error">{{ message }}</span>
+          } @else if (error(form.controls.specialties, 'specialties'); as message) {
+            <span class="field__error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">
+              Pressione Enter para adicionar. {{ form.controls.specialties.value.length }}/{{ maxSpecialties }}
+            </span>
+          }
+          @if (form.controls.specialties.value.length > 0) {
+            <ul class="tags" aria-label="Especialidades adicionadas">
+              @for (specialty of form.controls.specialties.value; track specialty) {
+                <li class="tag-chip" data-testid="specialty-chip">
+                  {{ specialty }}
+                  <button
+                    type="button"
+                    class="tag-chip__remove"
+                    [attr.aria-label]="'Remover ' + specialty"
+                    (click)="removeSpecialty(specialty)"
+                  >
+                    ×
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <h2 class="group-title">Disponibilidade</h2>
+
+        <fieldset class="field">
+          <legend class="field__label">Modelos de trabalho</legend>
+          <div class="chips">
+            @for (model of workModels; track model) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="form.controls.workModels.value.includes(model)"
+                [attr.aria-pressed]="form.controls.workModels.value.includes(model)"
+                (click)="toggleWorkModel(model)"
+                data-testid="work-model"
+              >
+                {{ workModelLabel(model) }}
+              </button>
+            }
+          </div>
+          @if (error(form.controls.workModels, 'workModels'); as message) {
+            <span class="field__error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">Escolha quantos quiser.</span>
+          }
+        </fieldset>
+
+        <fieldset class="field">
+          <legend class="field__label">Mobilidade</legend>
+          <div class="chips">
+            @for (option of mobilities; track option) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="form.controls.mobility.value === option"
+                [attr.aria-pressed]="form.controls.mobility.value === option"
+                (click)="setMobility(option)"
+                data-testid="mobility"
+              >
+                {{ mobilityLabel(option) }}
+              </button>
+            }
+            @if (form.controls.mobility.value) {
+              <button type="button" class="link" (click)="setMobility(null)" data-testid="mobility-clear">
+                Limpar
+              </button>
+            }
+          </div>
+          @if (error(form.controls.mobility, 'mobility'); as message) {
+            <span class="field__error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">Até onde você topa trabalhar.</span>
+          }
+        </fieldset>
+
+        <h2 class="group-title">Trajetória</h2>
+
+        @if (error(form.controls.experiences, 'experiences'); as message) {
+          <p class="field__error">{{ message }}</p>
+        }
+
+        <ol class="experiences" formArrayName="experiences">
+          @for (group of experiences.controls; track group; let i = $index) {
+            <li class="experience card" [formGroupName]="i" data-testid="experience-form">
+              <div class="experience__head">
+                <p class="experience__title">Experiência {{ i + 1 }}</p>
+                <button
+                  type="button"
+                  class="link link--danger"
+                  (click)="removeExperience(i)"
+                  [attr.aria-label]="'Remover experiência ' + (i + 1)"
+                  data-testid="experience-remove"
+                >
+                  Remover
+                </button>
+              </div>
+
+              <div class="row row--2">
+                <label class="field">
+                  <span class="field__label">Restaurante ou empresa</span>
+                  <input
+                    class="input"
+                    type="text"
+                    formControlName="company"
+                    maxlength="100"
+                    [attr.aria-invalid]="!!experienceError(i, 'company')"
+                    data-testid="experience-company"
+                  />
+                  @if (experienceError(i, 'company'); as message) {
+                    <span class="field__error">{{ message }}</span>
+                  }
+                </label>
+
+                <label class="field">
+                  <span class="field__label">Cargo</span>
+                  <input
+                    class="input"
+                    type="text"
+                    formControlName="role"
+                    maxlength="100"
+                    [attr.aria-invalid]="!!experienceError(i, 'role')"
+                    data-testid="experience-role"
+                  />
+                  @if (experienceError(i, 'role'); as message) {
+                    <span class="field__error">{{ message }}</span>
+                  }
+                </label>
+              </div>
+
+              <div class="row row--2">
+                <label class="field">
+                  <span class="field__label">Início</span>
+                  <input
+                    class="input"
+                    type="date"
+                    formControlName="startDate"
+                    [attr.aria-invalid]="!!experienceError(i, 'startDate')"
+                    data-testid="experience-start"
+                  />
+                  @if (experienceError(i, 'startDate'); as message) {
+                    <span class="field__error">{{ message }}</span>
+                  }
+                </label>
+
+                @if (!group.value.current) {
+                  <label class="field">
+                    <span class="field__label">Fim</span>
+                    <input
+                      class="input"
+                      type="date"
+                      formControlName="endDate"
+                      [attr.min]="group.value.startDate || null"
+                      [attr.aria-invalid]="!!experienceError(i, 'endDate')"
+                      data-testid="experience-end"
+                    />
+                    @if (experienceError(i, 'endDate'); as message) {
+                      <span class="field__error" data-testid="experience-end-error">{{ message }}</span>
+                    }
+                  </label>
+                }
+              </div>
+
+              <label class="check">
+                <input type="checkbox" formControlName="current" data-testid="experience-current" />
+                <span>Emprego atual</span>
+              </label>
+
+              <label class="field field--spaced">
+                <span class="field__label">Descrição</span>
+                <textarea
+                  class="input textarea"
+                  rows="3"
+                  formControlName="description"
+                  maxlength="1000"
+                  placeholder="O que você fazia, praça, equipe, conquistas."
+                  [attr.aria-invalid]="!!experienceError(i, 'description')"
+                ></textarea>
+                @if (experienceError(i, 'description'); as message) {
+                  <span class="field__error">{{ message }}</span>
+                }
+              </label>
+            </li>
+          } @empty {
+            <li class="empty" data-testid="experiences-empty">
+              Você ainda não cadastrou experiências. Adicione os lugares onde já trabalhou.
+            </li>
+          }
+        </ol>
+
+        <button
+          type="button"
+          class="btn btn--gold-outline"
+          (click)="addExperience()"
+          [disabled]="experiences.length >= maxExperiences"
+          data-testid="experience-add"
+        >
+          + Adicionar experiência
+        </button>
+        @if (experiences.length >= maxExperiences) {
+          <p class="field__hint">Você chegou ao limite de {{ maxExperiences }} experiências.</p>
+        }
+
+        @if (saveError(); as message) {
+          <p class="inline-error" role="alert" data-testid="save-error">{{ message }}</p>
+        }
+
+        <div class="form__actions">
+          <a class="btn btn--ghost" routerLink="/perfil">Cancelar</a>
+          <button type="submit" class="btn btn--primary" [disabled]="saving()" data-testid="save-btn">
+            {{ saving() ? 'Salvando…' : 'Salvar alterações' }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

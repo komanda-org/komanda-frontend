@@ -1,4 +1,4 @@
-import { ErroApi } from '../models/erro-api.model';
+import { ApiError } from '../models/api-error.model';
 
 /**
  * Qual campo do formulario causou o 409. `null` = motivo nao mapeado: nesse
@@ -26,8 +26,8 @@ export interface ConflitoTraduzido {
  * Comparamos por trecho e em minusculas: uma mudanca pequena de texto no
  * back nao quebra a traducao.
  */
-export function traduzirConflito(erro: ErroApi): ConflitoTraduzido {
-  const texto = erro.mensagens.join(' ').toLowerCase();
+export function traduzirConflito(erro: ApiError): ConflitoTraduzido {
+  const texto = erro.messages.join(' ').toLowerCase();
 
   // CNPJ primeiro: e o caso mais especifico; depois do email cairia no ramo errado.
   if (texto.includes('cnpj')) {
@@ -41,6 +41,6 @@ export function traduzirConflito(erro: ErroApi): ConflitoTraduzido {
   // 409 nao mapeado: a frase do servidor e melhor que uma generica.
   return {
     campo: null,
-    mensagem: erro.mensagens[0] ?? 'Estes dados já estão cadastrados',
+    mensagem: erro.messages[0] ?? 'Estes dados já estão cadastrados',
   };
 }

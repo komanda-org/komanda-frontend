@@ -1,0 +1,111 @@
+@use '../restaurant-ui';
+@use '../restaurant-form';
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: var(--k-s-6);
+}
+
+.money {
+  position: relative;
+  display: block;
+
+  .input {
+    padding-left: 2.6rem;
+  }
+}
+
+.money__prefix {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  color: var(--k-texto-fraco);
+  transform: translateY(-50%);
+}
+
+// --- Previa ---
+.preview {
+  position: sticky;
+  top: var(--k-s-5);
+}
+
+.preview__card {
+  padding: var(--k-s-5);
+}
+
+.preview__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview__logo {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--k-ouro);
+  background: #111;
+  border: 1px solid var(--k-linha-forte);
+  border-radius: var(--k-raio);
+  font-family: var(--k-serif);
+}
+
+.preview__title {
+  margin: var(--k-s-4) 0 var(--k-s-3);
+  color: var(--k-texto);
+  font-family: var(--k-serif);
+  font-size: var(--k-t-lg);
+  overflow-wrap: anywhere;
+}
+
+.preview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}
+
+.preview__label {
+  margin: var(--k-s-5) 0 0;
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.preview__salary {
+  margin: var(--k-s-1) 0 0;
+  color: var(--k-ouro);
+  font-weight: 700;
+}
+
+.note {
+  display: flex;
+  gap: var(--k-s-2);
+  margin: var(--k-s-4) 0 0;
+  padding: var(--k-s-3);
+  color: var(--k-texto-fraco);
+  background: var(--k-superficie);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-xs);
+  line-height: 1.5;
+
+  svg {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--k-ouro);
+  }
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preview {
+    position: static;
+  }
+}

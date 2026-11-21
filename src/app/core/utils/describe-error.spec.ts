@@ -1,4 +1,17 @@
-import { ErrorCopy, describeError } from './describe-error';
+import { ErrorCopy, apiMessage, describeError } from './describe-error';
+
+describe('apiMessage', () => {
+  it('junta as mensagens do back em frases', () => {
+    expect(
+      apiMessage({ status: 400, messages: ['O titulo deve ter ao menos 5 caracteres', 'Salário inválido.'] }),
+    ).toBe('O titulo deve ter ao menos 5 caracteres. Salário inválido.');
+  });
+
+  it('devolve null sem mensagem ou quando nao e ApiError', () => {
+    expect(apiMessage({ status: 422, messages: [' '] })).toBeNull();
+    expect(apiMessage(new Error('boom'))).toBeNull();
+  });
+});
 
 const COPY: ErrorCopy = {
   fallback: 'Não foi possível carregar. Tente de novo.',

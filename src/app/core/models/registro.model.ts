@@ -18,7 +18,8 @@ export interface RegistrarProfissionalPayload {
   experienceSummary?: string;
   profilePhoto?: string;
   neighborhood?: string;
-  zipCode?: string;
+  /** Obrigatorio na API: e por ele que o feed calcula a distancia das vagas. */
+  zipCode: string;
 }
 
 /** POST /restaurants */

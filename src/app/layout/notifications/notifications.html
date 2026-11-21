@@ -1,0 +1,108 @@
+<button
+  #bell
+  type="button"
+  class="bell"
+  data-testid="notifications-btn"
+  [attr.aria-label]="bellLabel()"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="open()"
+  aria-controls="notifications-panel"
+  (click)="toggle()"
+>
+  <img src="/icons/bell.svg" alt="" aria-hidden="true" width="17" height="22" />
+  @if (unreadCount() > 0) {
+    <span class="badge" aria-hidden="true" data-testid="notifications-badge">{{ badge() }}</span>
+  }
+</button>
+
+@if (open()) {
+  <section
+    #panel
+    id="notifications-panel"
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="notifications-title"
+    tabindex="-1"
+    data-testid="notifications-panel"
+    (keydown)="trapFocus($event)"
+  >
+    <header class="panel__head">
+      <h2 class="panel__title" id="notifications-title">Notificações</h2>
+      <div class="panel__tools">
+        @if (unreadCount() > 0) {
+          <button
+            type="button"
+            class="link"
+            [disabled]="markingAll()"
+            (click)="markAllRead()"
+            data-testid="notifications-read-all"
+          >
+            Marcar todas como lidas
+          </button>
+        }
+        <button
+          type="button"
+          class="close"
+          aria-label="Fechar notificações"
+          (click)="close()"
+          data-testid="notifications-close"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="panel__body">
+      @if (loadError() && items().length === 0) {
+        <div class="state" role="alert" data-testid="notifications-error">
+          <p>{{ loadError() }}</p>
+          <button type="button" class="link" (click)="refresh()">Tentar de novo</button>
+        </div>
+      } @else if (!loaded()) {
+        <p class="state" aria-live="polite">Carregando notificações...</p>
+      } @else if (items().length === 0) {
+        <p class="state" data-testid="notifications-empty">Nenhuma notificação por enquanto</p>
+      } @else {
+        <ul class="list">
+          @for (item of items(); track item.id) {
+            <li>
+              <button
+                type="button"
+                class="item"
+                [class.item--unread]="!item.read"
+                (click)="select(item)"
+                data-testid="notification-item"
+                [attr.data-read]="item.read"
+              >
+                @if (!item.read) {
+                  <span class="item__dot" aria-hidden="true"></span>
+                  <span class="sr-only">Não lida: </span>
+                }
+                <span class="item__title">{{ item.title }}</span>
+                <span class="item__message">{{ item.message }}</span>
+                <time class="item__time" [attr.datetime]="item.createdAt">{{ relativeTime(item.createdAt, now()) }}</time>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (actionError(); as message) {
+        <p class="action-error" role="alert" data-testid="notifications-action-error">{{ message }}</p>
+      }
+
+      @if (loaded() && hasMore()) {
+        <button
+          type="button"
+          class="more"
+          [disabled]="loadingMore()"
+          (click)="loadMore()"
+          data-testid="notifications-more"
+        >
+          {{ loadingMore() ? 'Carregando...' : 'Carregar mais' }}
+        </button>
+      }
+    </div>
+  </section>
+}

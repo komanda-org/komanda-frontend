@@ -6,13 +6,15 @@ import { Router, ActivatedRoute, ActivatedRouteSnapshot, ParamMap } from '@angul
 import { provideZonelessChangeDetection } from '@angular/core';
 import { signal, Signal } from '@angular/core';
 import { MessageResponse } from '../../../core/models/messaging/message.model';
+import { BehaviorSubject } from 'rxjs';
 
-function createMockParamMap(jobId: string | null): ParamMap {
-  const keysList = jobId ? [jobId] : [];
+function createMockParamMap(jobId: string | null, professionalId: string | null = 'p1'): ParamMap {
+  const values: Record<string, string | null> = { jobId, professionalId };
+  const keysList = Object.keys(values).filter((key) => values[key] !== null);
   return {
-    get: vi.fn().mockReturnValue(jobId),
-    has: vi.fn().mockReturnValue(jobId !== null),
-    getAll: vi.fn().mockReturnValue(keysList),
+    get: vi.fn((key: string) => values[key] ?? null),
+    has: vi.fn((key: string) => values[key] != null),
+    getAll: vi.fn((key: string) => (values[key] ? [values[key]] : [])),
     keys: keysList,
   };
 }
@@ -46,11 +48,13 @@ describe('MensagensChat', () => {
   let mockAuthService: Partial<AuthService>;
   let mockRouter: Partial<Router>;
   let mockRoute: Partial<ActivatedRoute>;
+  let params: BehaviorSubject<ParamMap>;
 
   const mockMessages: MessageResponse[] = [
     {
       id: 'msg-1',
       jobId: 'job-1',
+      professionalId: 'p1',
       senderId: 'user-1',
       content: 'Olá, tudo bem?',
       createdAt: new Date('2024-01-15T10:00:00Z'),
@@ -58,6 +62,7 @@ describe('MensagensChat', () => {
     {
       id: 'msg-2',
       jobId: 'job-1',
+      professionalId: 'p1',
       senderId: 'user-2',
       content: 'Tudo ótimo! E com você?',
       createdAt: new Date('2024-01-15T10:05:00Z'),
@@ -65,6 +70,7 @@ describe('MensagensChat', () => {
     {
       id: 'msg-3',
       jobId: 'job-1',
+      professionalId: 'p1',
       senderId: 'user-1',
       content: 'Também estou bem.',
       createdAt: new Date('2024-01-15T10:10:00Z'),
@@ -73,7 +79,7 @@ describe('MensagensChat', () => {
 
   beforeEach(async () => {
     const messagesSignal = signal<MessageResponse[]>(mockMessages);
-    const currentJobIdSignal = signal<string>('job-1');
+    const currentChatSignal = signal({ jobId: 'job-1', professionalId: 'p1' });
     const hasMoreSignal = signal(false);
     const connectingSignal = signal(false);
     const errorSignal = signal<string | null>(null);
@@ -83,7 +89,7 @@ describe('MensagensChat', () => {
     mockMessagingService = {
       chats: signal([]),
       messages: messagesSignal,
-      currentJobId: currentJobIdSignal,
+      currentChat: currentChatSignal,
       hasMore: hasMoreSignal,
       connecting: connectingSignal,
       error: errorSignal,
@@ -105,8 +111,10 @@ describe('MensagensChat', () => {
       navigate: vi.fn(),
     };
 
+    params = new BehaviorSubject<ParamMap>(createMockParamMap('job-1', 'p1'));
     mockRoute = {
       snapshot: createMockRouteSnapshot('job-1'),
+      paramMap: params.asObservable(),
     };
 
     await TestBed.configureTestingModule({
@@ -133,16 +141,34 @@ describe('MensagensChat', () => {
     expect(mockMessagingService.connect).toHaveBeenCalled();
   });
 
+  it('joins the conversation of the job and professional in the route', () => {
+    expect(mockMessagingService.joinChat).toHaveBeenCalledWith('job-1', 'p1');
+  });
+
+  it('switches conversations without mixing messages from the same job', () => {
+    (mockMessagingService.messages as ReturnType<typeof signal<MessageResponse[]>>).set([
+      ...mockMessages,
+      { id: 'msg-9', jobId: 'job-1', professionalId: 'p2', senderId: 'user-9', content: 'Outro', createdAt: new Date() },
+    ]);
+    expect(component.chatMessages().map((m) => m.id)).toEqual(['msg-1', 'msg-2', 'msg-3']);
+
+    params.next(createMockParamMap('job-1', 'p2'));
+
+    expect(mockMessagingService.leaveChat).toHaveBeenCalledWith('job-1', 'p1');
+    expect(mockMessagingService.joinChat).toHaveBeenLastCalledWith('job-1', 'p2');
+    expect(component.chatMessages().map((m) => m.id)).toEqual(['msg-9']);
+  });
+
   it('should call messagingService.leaveChat on destroy', () => {
     component.ngOnDestroy();
-    expect(mockMessagingService.leaveChat).toHaveBeenCalledWith('job-1');
+    expect(mockMessagingService.leaveChat).toHaveBeenCalledWith('job-1', 'p1');
   });
 
   it('should send message when sendMessage is called', async () => {
     component.newMessage.set('Nova mensagem');
     await component.sendMessage();
 
-    expect(mockMessagingService.sendMessage).toHaveBeenCalledWith('job-1', 'Nova mensagem');
+    expect(mockMessagingService.sendMessage).toHaveBeenCalledWith('job-1', 'p1', 'Nova mensagem');
     expect(component.newMessage()).toBe('');
   });
 
@@ -209,7 +235,7 @@ describe('MensagensChat', () => {
   });
 
   it('should track messages by id', () => {
-    const msg: MessageResponse = { id: 'msg-1', jobId: 'job-1', senderId: 'user-1', content: 'test', createdAt: new Date() };
+    const msg: MessageResponse = { id: 'msg-1', jobId: 'job-1', professionalId: 'p1', senderId: 'user-1', content: 'test', createdAt: new Date() };
     expect(component.trackByMessageId(0, msg)).toBe('msg-1');
   });
 });

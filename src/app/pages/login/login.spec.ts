@@ -75,7 +75,7 @@ describe('Login', () => {
       user: { id: 'user-id', role: 'PROFISSIONAL' },
     });
 
-    expect(navigateSpy).toHaveBeenCalledWith('/vagas');
+    expect(navigateSpy).toHaveBeenCalledWith('/home');
   });
 
   it('navigates restaurant accounts to the dashboard after success', () => {
@@ -117,6 +117,26 @@ describe('Login', () => {
 
     expect(fixture.nativeElement.textContent).toContain(
       'Muitas tentativas. Aguarde um minuto antes de tentar novamente.',
+    );
+  });
+
+  it('links "Esqueceu a senha?" to the password recovery page', () => {
+    const link = fixture.nativeElement.querySelector('.login__forgot') as HTMLAnchorElement;
+
+    expect(link.textContent).toContain('Esqueceu a senha?');
+    expect(link.getAttribute('href')).toBe('/auth/recuperar-senha');
+  });
+
+  it('shows the notice carried by the password reset', async () => {
+    const harness = await RouterTestingHarness.create();
+
+    await router.navigate(['/login'], {
+      state: { mensagem: 'Senha alterada. Entre com a nova senha.' },
+    });
+    harness.detectChanges();
+
+    expect(harness.routeNativeElement?.querySelector('.aviso--ok')?.textContent).toContain(
+      'Senha alterada. Entre com a nova senha.',
     );
   });
 
