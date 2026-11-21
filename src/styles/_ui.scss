@@ -543,6 +543,13 @@ select.entrada option {
   font-variant-numeric: tabular-nums;
 }
 
+.campo__busca {
+  display: block;
+  margin-top: var(--k-s-1);
+  font-size: var(--k-t-xs);
+  color: var(--k-texto-fraco);
+}
+
 /* Campo com icone a direita (senha, CEP) ou a esquerda (tipo do campo). */
 .campo-icone {
   position: relative;

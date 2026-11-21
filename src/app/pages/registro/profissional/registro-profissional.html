@@ -476,6 +476,7 @@
                   (input)="aplicarCep($event)"
                 />
                 <span class="campo-icone__acao campo-icone__acao--estatico" aria-hidden="true">
+                  @if (!cepLoading()) {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="1.7" />
                     <circle cx="12" cy="12" r="2" fill="currentColor" />
@@ -486,8 +487,45 @@
                       stroke-linecap="round"
                     />
                   </svg>
+                  }
                 </span>
+                @if (cepLoading()) {
+                  <span class="campo__busca" role="status">Consultando CEP…</span>
+                }
               </div>
+            </app-campo>
+
+            <app-campo
+              rotulo="Estado"
+              para="state"
+              [controle]="form.controls.state"
+              [opcional]="true"
+            >
+              <input
+                id="state"
+                class="entrada"
+                type="text"
+                maxlength="2"
+                autocomplete="address-level1"
+                placeholder="BA"
+                formControlName="state"
+              />
+            </app-campo>
+
+            <app-campo
+              rotulo="Cidade"
+              para="city"
+              [controle]="form.controls.city"
+              [opcional]="true"
+            >
+              <input
+                id="city"
+                class="entrada"
+                type="text"
+                autocomplete="address-level2"
+                placeholder="Eunápolis"
+                formControlName="city"
+              />
             </app-campo>
 
             <app-campo
