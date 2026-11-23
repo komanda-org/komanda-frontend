@@ -9,6 +9,8 @@ import {
   ReviewsPage,
   UpdateProfilePayload,
   UpdateProfileResponse,
+  UpdateRestaurantPayload,
+  UpdateRestaurantResponse,
 } from '../models/profile.model';
 import { AuthService } from './auth.service';
 
@@ -32,6 +34,12 @@ export class ProfileService {
   updateMe(payload: UpdateProfilePayload): Observable<ProfessionalProfile> {
     return this.http
       .put<UpdateProfileResponse>(`${this.base}/users/me`, payload)
+      .pipe(map((response) => response.profile));
+  }
+
+  updateRestaurant(payload: UpdateRestaurantPayload): Observable<UpdateRestaurantResponse['profile']> {
+    return this.http
+      .put<UpdateRestaurantResponse>(`${this.base}/users/me`, payload)
       .pipe(map((response) => response.profile));
   }
 

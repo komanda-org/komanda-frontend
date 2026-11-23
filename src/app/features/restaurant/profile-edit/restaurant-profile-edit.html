@@ -1,0 +1,214 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <a class="back" [routerLink]="profileLink()">← Perfil do restaurante</a>
+      <h1 class="page-title page-title--light">Editar perfil</h1>
+      <p class="page-subtitle">É assim que os profissionais conhecem o seu restaurante.</p>
+    </div>
+  </header>
+
+  @switch (loadState()) {
+    @case ('loading') {
+      <div class="status" role="status" data-testid="loading">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Carregando o perfil…</p>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="status status--error" role="alert" data-testid="load-error">
+        <p>{{ loadError() }}</p>
+        <button type="button" class="btn btn--outline" (click)="load()">Tentar de novo</button>
+      </div>
+    }
+
+    @case ('ready') {
+      <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate data-testid="restaurant-form">
+        <h2 class="group-title">Identidade</h2>
+
+        <div class="field">
+          <span class="field__label" id="logo-label">Logo</span>
+          <div class="logo" role="group" aria-labelledby="logo-label">
+            @if (logoUrl(); as url) {
+              <img class="logo__image" [src]="url" alt="Logo do restaurante" width="80" height="80" data-testid="logo-image" />
+            } @else {
+              <span class="logo__image logo__image--initials" aria-hidden="true" data-testid="logo-initials">
+                {{ initials(form.controls.restaurantName.value) }}
+              </span>
+            }
+            <div class="logo__actions">
+              <button type="button" class="btn btn--gold-outline" [disabled]="logoBusy()" (click)="chooseLogo()" data-testid="logo-choose">
+                Escolher foto
+              </button>
+              @if (logoUrl()) {
+                <button type="button" class="btn btn--ghost" [disabled]="logoBusy()" (click)="removeLogo()" data-testid="logo-remove">
+                  {{ logoBusy() && !logoFile() ? 'Removendo…' : 'Remover foto' }}
+                </button>
+              }
+            </div>
+            <input
+              #logoInput
+              class="logo__file"
+              type="file"
+              [accept]="photoAccept"
+              tabindex="-1"
+              aria-hidden="true"
+              (change)="onLogoSelected($event)"
+              data-testid="logo-input"
+            />
+          </div>
+          @if (logoError(); as message) {
+            <span class="field__error" role="alert" data-testid="logo-error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">JPG, PNG ou WEBP de até 5 MB. O logo é salvo assim que você confirma o corte.</span>
+          }
+        </div>
+
+        @if (logoFile(); as file) {
+          <app-photo-cropper
+            [file]="file"
+            shape="rounded"
+            [busy]="logoBusy()"
+            [error]="logoUploadError()"
+            (cancelled)="cancelCrop()"
+            (saved)="uploadLogo($event)"
+          />
+        }
+
+        <div class="row">
+          <label class="field">
+            <span class="field__label">Nome do restaurante</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="restaurantName"
+              autocomplete="organization"
+              maxlength="255"
+              [attr.aria-invalid]="!!error('restaurantName')"
+              data-testid="restaurantName-input"
+            />
+            @if (error('restaurantName'); as message) {
+              <span class="field__error" data-testid="restaurantName-error">{{ message }}</span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="field__label">Tipo de cozinha</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="cuisineType"
+              placeholder="Ex.: Italiana"
+              maxlength="100"
+              [attr.aria-invalid]="!!error('cuisineType')"
+              data-testid="cuisineType-input"
+            />
+            @if (error('cuisineType'); as message) {
+              <span class="field__error" data-testid="cuisineType-error">{{ message }}</span>
+            }
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Sobre o restaurante</span>
+          <textarea
+            class="input textarea"
+            formControlName="description"
+            rows="5"
+            [attr.maxlength]="descriptionMax"
+            [attr.aria-invalid]="!!error('description')"
+            data-testid="description-input"
+          ></textarea>
+          @if (error('description'); as message) {
+            <span class="field__error" data-testid="description-error">{{ message }}</span>
+          } @else {
+            <span class="field__hint">{{ form.controls.description.value.length }}/{{ descriptionMax }} caracteres. Conte o ambiente, o estilo e o que esperar da equipe.</span>
+          }
+        </label>
+
+        <h2 class="group-title">Contato e endereço</h2>
+
+        <div class="row">
+          <label class="field">
+            <span class="field__label">Telefone</span>
+            <input
+              class="input"
+              type="tel"
+              formControlName="phone"
+              autocomplete="tel"
+              inputmode="tel"
+              placeholder="(11) 98765-4321"
+              (input)="maskPhone($event)"
+              [attr.aria-invalid]="!!error('phone')"
+              data-testid="phone-input"
+            />
+            @if (error('phone'); as message) {
+              <span class="field__error" data-testid="phone-error">{{ message }}</span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="field__label">CEP</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="zipCode"
+              autocomplete="postal-code"
+              inputmode="numeric"
+              placeholder="00000-000"
+              (input)="maskZipCode($event)"
+              [attr.aria-invalid]="!!error('zipCode')"
+              data-testid="zipCode-input"
+            />
+            @if (error('zipCode'); as message) {
+              <span class="field__error" data-testid="zipCode-error">{{ message }}</span>
+            } @else {
+              <span class="field__hint">Deixe em branco se o restaurante atende só em eventos.</span>
+            }
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Endereço</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="address"
+            autocomplete="street-address"
+            maxlength="255"
+            [attr.aria-invalid]="!!error('address')"
+            data-testid="address-input"
+          />
+          @if (error('address'); as message) {
+            <span class="field__error" data-testid="address-error">{{ message }}</span>
+          }
+        </label>
+
+        @if (me(); as account) {
+          <dl class="fixed" data-testid="fixed-data">
+            <div>
+              <dt>CNPJ</dt>
+              <dd>{{ account.cnpj }}</dd>
+            </div>
+            <div>
+              <dt>E-mail de acesso</dt>
+              <dd>{{ account.email }}</dd>
+            </div>
+          </dl>
+          <p class="field__hint">CNPJ e e-mail de acesso não podem ser alterados por aqui.</p>
+        }
+
+        @if (saveError(); as message) {
+          <p class="inline-error" role="alert" data-testid="save-error">{{ message }}</p>
+        }
+
+        <div class="form__actions">
+          <a class="btn btn--ghost" [routerLink]="profileLink()">Cancelar</a>
+          <button type="submit" class="btn btn--primary" [disabled]="saving()" data-testid="save-btn">
+            {{ saving() ? 'Salvando…' : 'Salvar alterações' }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

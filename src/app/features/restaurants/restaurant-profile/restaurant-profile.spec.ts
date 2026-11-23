@@ -208,6 +208,18 @@ describe('RestaurantProfile', () => {
     expect(TestBed.inject(Router).url).toBe('/my-jobs/job-1/preview');
   });
 
+  it('the owner sees the "Editar perfil" link', async () => {
+    user = { id: ID, role: 'RESTAURANTE' };
+    await render();
+    expect((node('edit-profile-link') as HTMLAnchorElement).getAttribute('href')).toBe('/restaurant-profile/edit');
+  });
+
+  it('another account does not see the "Editar perfil" link', async () => {
+    user = { id: 'r-9', role: 'RESTAURANTE' };
+    await render();
+    expect(node('edit-profile-link')).toBeNull();
+  });
+
   it('another restaurant sees the jobs without a link it could not open', async () => {
     user = { id: 'other', role: 'RESTAURANTE' };
     await render();

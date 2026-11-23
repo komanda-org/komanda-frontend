@@ -1,0 +1,86 @@
+@use '../restaurant-ui';
+@use '../restaurant-form';
+
+.page {
+  max-width: 760px;
+}
+
+.page-title--light {
+  font-weight: 300;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: var(--k-s-3);
+  color: var(--k-texto-fraco);
+  font-size: var(--k-t-sm);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--k-ouro);
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--k-s-4);
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.logo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-s-4);
+}
+
+.logo__image {
+  width: 80px;
+  height: 80px;
+  border-radius: 18%;
+  object-fit: cover;
+
+  &--initials {
+    display: grid;
+    place-items: center;
+    font-family: var(--k-serif);
+    font-size: 1.5rem;
+    color: var(--k-ouro);
+    background: var(--k-ouro-fosco);
+  }
+}
+
+.logo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}
+
+.logo__file {
+  display: none;
+}
+
+.fixed {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--k-s-4);
+  margin: var(--k-s-4) 0 var(--k-s-1);
+
+  dt {
+    font-size: var(--k-t-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--k-texto-fraco);
+  }
+
+  dd {
+    margin: var(--k-s-1) 0 0;
+    overflow-wrap: anywhere;
+  }
+}
