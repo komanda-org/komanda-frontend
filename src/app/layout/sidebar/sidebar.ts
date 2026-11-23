@@ -60,6 +60,8 @@ export class Sidebar {
   protected readonly photo = computed(() => {
     const me = this.me();
     if (!me) return null;
+    const change = this.profileService.photoChange();
+    if (change?.userId === me.id) return change.url;
     return me.role === 'RESTAURANTE' ? me.logoUrl : me.profilePhoto;
   });
   protected readonly initials = computed(() => initials(this.displayName() ?? ''));

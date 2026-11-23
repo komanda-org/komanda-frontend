@@ -98,7 +98,6 @@ export interface ExperiencePayload {
 export interface UpdateProfilePayload {
   fullName: string;
   mainRole: string;
-  profilePhoto: string | null;
   experienceSummary: string | null;
   neighborhood: string | null;
   city: string | null;

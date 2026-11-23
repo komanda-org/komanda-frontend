@@ -58,23 +58,54 @@
           }
         </label>
 
-        <label class="field">
-          <span class="field__label">Foto de perfil</span>
-          <input
-            class="input"
-            type="url"
-            formControlName="profilePhoto"
-            placeholder="https://…"
-            inputmode="url"
-            [attr.aria-invalid]="!!error(form.controls.profilePhoto, 'profilePhoto')"
-            data-testid="profilePhoto-input"
-          />
-          @if (error(form.controls.profilePhoto, 'profilePhoto'); as message) {
-            <span class="field__error" data-testid="profilePhoto-error">{{ message }}</span>
+        <div class="field">
+          <span class="field__label" id="photo-label">Foto de perfil</span>
+          <div class="photo" role="group" aria-labelledby="photo-label">
+            @if (photoUrl(); as url) {
+              <img class="photo__avatar" [src]="url" alt="Sua foto de perfil" width="80" height="80" data-testid="photo-avatar" />
+            } @else {
+              <span class="photo__avatar photo__avatar--initials" aria-hidden="true" data-testid="photo-initials">
+                {{ initials(form.controls.fullName.value) }}
+              </span>
+            }
+            <div class="photo__actions">
+              <button type="button" class="btn btn--gold-outline" [disabled]="photoBusy()" (click)="choosePhoto()" data-testid="photo-choose">
+                Escolher foto
+              </button>
+              @if (photoUrl()) {
+                <button type="button" class="btn btn--ghost" [disabled]="photoBusy()" (click)="removePhoto()" data-testid="photo-remove">
+                  {{ photoBusy() && !photoFile() ? 'Removendo…' : 'Remover foto' }}
+                </button>
+              }
+            </div>
+            <input
+              #photoInput
+              class="photo__file"
+              type="file"
+              [accept]="photoAccept"
+              tabindex="-1"
+              aria-hidden="true"
+              (change)="onPhotoSelected($event)"
+              data-testid="photo-input"
+            />
+          </div>
+          @if (photoError(); as message) {
+            <span class="field__error" role="alert" data-testid="photo-error">{{ message }}</span>
           } @else {
-            <span class="field__hint">Cole o link de uma imagem. Deixe em branco para remover a foto.</span>
+            <span class="field__hint">JPG, PNG ou WEBP de até 5 MB. A foto é salva assim que você confirma o corte.</span>
           }
-        </label>
+        </div>
+
+        @if (photoFile(); as file) {
+          <app-photo-cropper
+            [file]="file"
+            shape="circle"
+            [busy]="photoBusy()"
+            [error]="photoUploadError()"
+            (cancelled)="cancelCrop()"
+            (saved)="uploadPhoto($event)"
+          />
+        }
 
         <label class="field">
           <span class="field__label">Sobre você</span>

@@ -7,7 +7,12 @@
 
   <ul class="grid">
     @for (plan of plans; track plan.id) {
-      <li class="plan card" [class.plan--featured]="plan.featured" data-testid="plan-card">
+      <li
+        class="plan card"
+        [class.plan--featured]="plan.featured"
+        [class.plan--selected]="selectedId() === plan.id"
+        data-testid="plan-card"
+      >
         @if (plan.featured) {
           <span class="plan__badge">Mais popular</span>
         }
@@ -39,13 +44,22 @@
           class="btn plan__cta"
           [class.btn--primary]="plan.featured"
           [class.btn--gold-outline]="!plan.featured"
-          disabled
+          [attr.aria-pressed]="selectedId() === plan.id"
+          (click)="select(plan.id)"
         >
-          Em breve
+          {{ selectedId() === plan.id ? 'Selecionado' : 'Selecionar plano' }}
         </button>
       </li>
     }
   </ul>
+
+  @if (selectedPlan(); as plan) {
+    <p class="selection" role="status" data-testid="plan-selection">
+      Você selecionou o plano <strong>{{ plan.name }}</strong> ({{ plan.price
+      }}{{ plan.priceSuffix ?? '' }}). A assinatura online ainda não está disponível, então o plano
+      da sua conta não foi alterado.
+    </p>
+  }
 
   <p class="footnote">
     Todos os planos incluem acesso ao banco de talentos da Komanda. A assinatura online ainda não está disponível.

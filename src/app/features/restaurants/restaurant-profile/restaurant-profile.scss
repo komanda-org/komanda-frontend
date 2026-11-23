@@ -186,6 +186,32 @@ blockquote {
   gap: 16px;
 }
 
+.rate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rate-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rate-job {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .section-head {
   display: flex;
   align-items: baseline;

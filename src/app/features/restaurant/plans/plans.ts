@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 
 interface Plan {
   id: string;
@@ -10,7 +10,8 @@ interface Plan {
   features: { label: string; included: boolean }[];
 }
 
-// TODO API: sem endpoint de planos/assinatura; conteudo fixo do prototipo e precos a definir.
+// TODO API: sem endpoint de planos/assinatura. Precos provisorios; a selecao fica so na tela
+// e nao altera o plano da conta.
 export const PLANS: readonly Plan[] = [
   {
     id: 'free',
@@ -32,8 +33,8 @@ export const PLANS: readonly Plan[] = [
   {
     id: 'pro',
     name: 'Profissional',
-    price: 'Sob consulta',
-    priceSuffix: null,
+    price: 'R$ 89,90',
+    priceSuffix: '/mês',
     tagline: 'Para restaurantes em crescimento',
     featured: true,
     features: [
@@ -50,8 +51,8 @@ export const PLANS: readonly Plan[] = [
   {
     id: 'business',
     name: 'Empresarial',
-    price: 'Sob consulta',
-    priceSuffix: null,
+    price: 'R$ 199,90',
+    priceSuffix: '/mês',
     tagline: 'Para redes e grandes operações',
     featured: false,
     features: [
@@ -74,4 +75,12 @@ export const PLANS: readonly Plan[] = [
 })
 export class Plans {
   protected readonly plans = PLANS;
+  protected readonly selectedId = signal<string | null>(null);
+  protected readonly selectedPlan = computed(
+    () => this.plans.find((plan) => plan.id === this.selectedId()) ?? null,
+  );
+
+  protected select(id: string): void {
+    this.selectedId.set(id);
+  }
 }

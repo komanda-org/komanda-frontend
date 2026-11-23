@@ -1,4 +1,4 @@
-import { Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -23,6 +23,9 @@ import {
 } from '../../../core/models/profile.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
+import { apiMessage } from '../../../core/utils/describe-error';
+import { initials } from '../../../core/utils/text';
+import { PHOTO_ACCEPT, PhotoCropper, validatePhotoFile } from '../../../shared/ui/photo-cropper/photo-cropper';
 import { describeError } from '../professional-profile/professional-profile';
 import {
   BRAZIL_STATES,
@@ -50,7 +53,6 @@ export interface ExperienceFormValue {
 export interface ProfileFormValue {
   fullName: string;
   mainRole: string;
-  profilePhoto: string;
   experienceSummary: string;
   neighborhood: string;
   city: string;
@@ -72,19 +74,6 @@ export function trimmedLength(min: number, max: number): ValidatorFn {
   };
 }
 
-export function httpUrl(control: AbstractControl): ValidationErrors | null {
-  const value = String(control.value ?? '').trim();
-  if (!value) {
-    return null;
-  }
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? null : { url: true };
-  } catch {
-    return { url: true };
-  }
-}
-
 // Datas YYYY-MM-DD comparam certo como texto, sem passar por Date/fuso.
 export function experienceDates(group: AbstractControl): ValidationErrors | null {
   const { startDate, endDate, current } = group.value as ExperienceFormValue;
@@ -104,7 +93,6 @@ export function toFormValue(profile: ProfessionalProfile): ProfileFormValue {
   return {
     fullName: profile.fullName,
     mainRole: profile.mainRole,
-    profilePhoto: profile.profilePhoto ?? '',
     experienceSummary: profile.experienceSummary ?? '',
     neighborhood: profile.neighborhood ?? '',
     city: profile.city ?? '',
@@ -127,7 +115,6 @@ export function toPayload(value: ProfileFormValue): UpdateProfilePayload {
   return {
     fullName: value.fullName.trim(),
     mainRole: value.mainRole.trim(),
-    profilePhoto: orNull(value.profilePhoto),
     experienceSummary: orNull(value.experienceSummary),
     neighborhood: orNull(value.neighborhood),
     city: orNull(value.city),
@@ -143,6 +130,21 @@ export function toPayload(value: ProfileFormValue): UpdateProfilePayload {
       description: orNull(experience.description),
     })),
   };
+}
+
+export function describePhotoError(error: unknown): string {
+  switch (isApiError(error) ? error.status : -1) {
+    case 0:
+      return 'Não conseguimos conectar. Verifique sua internet e tente de novo.';
+    case 400:
+      return apiMessage(error) ?? 'Não foi possível usar esta imagem. Tente outra.';
+    case 413:
+      return 'A imagem deve ter no máximo 5 MB. Escolha uma menor.';
+    case 429:
+      return 'Muitas tentativas. Aguarde um minuto e tente de novo.';
+    default:
+      return 'Não foi possível salvar a foto. Tente de novo.';
+  }
 }
 
 export function describeSaveError(error: unknown): string {
@@ -180,7 +182,6 @@ const FIELD_MESSAGES: Record<string, Record<string, string>> = {
     required: 'Informe sua função principal.',
     length: 'Use até 100 caracteres.',
   },
-  profilePhoto: { url: 'Informe um link válido, começando com http:// ou https://.' },
   experienceSummary: { maxlength: 'Use até 1000 caracteres.' },
   neighborhood: { maxlength: 'Use até 100 caracteres.' },
   city: { maxlength: 'Use até 100 caracteres.' },
@@ -196,7 +197,7 @@ const FIELD_MESSAGES: Record<string, Record<string, string>> = {
 
 @Component({
   selector: 'app-profile-edit',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PhotoCropper],
   templateUrl: './profile-edit.html',
   styleUrl: './profile-edit.scss',
 })
@@ -221,12 +222,21 @@ export class ProfileEdit {
   protected readonly saveError = signal<string | null>(null);
   protected readonly specialtyError = signal<string | null>(null);
 
+  protected readonly photoAccept = PHOTO_ACCEPT;
+  protected readonly initials = initials;
+  protected readonly photoUrl = signal<string | null>(null);
+  /** Arquivo escolhido e ainda nao recortado: enquanto existe, o editor de corte fica aberto. */
+  protected readonly photoFile = signal<File | null>(null);
+  protected readonly photoBusy = signal(false);
+  protected readonly photoUploadError = signal<string | null>(null);
+  protected readonly photoError = signal<string | null>(null);
+  private readonly photoInput = viewChild<ElementRef<HTMLInputElement>>('photoInput');
+
   protected readonly specialtyDraft = this.fb.control('');
 
   protected readonly form = this.fb.group({
     fullName: ['', trimmedLength(3, 100)],
     mainRole: ['', trimmedLength(1, 100)],
-    profilePhoto: ['', httpUrl],
     experienceSummary: ['', Validators.maxLength(1000)],
     neighborhood: ['', Validators.maxLength(100)],
     city: ['', Validators.maxLength(100)],
@@ -253,6 +263,7 @@ export class ProfileEdit {
       .subscribe({
         next: (profile) => {
           this.fill(toFormValue(profile));
+          this.photoUrl.set(profile.profilePhoto);
           this.loadState.set('ready');
         },
         error: (error: unknown) => {
@@ -418,6 +429,81 @@ export class ProfileEdit {
     const messages = FIELD_MESSAGES[field] ?? {};
     const key = Object.keys(errors).find((name) => messages[name]);
     return key ? messages[key] : 'Revise este campo.';
+  }
+
+  protected choosePhoto(): void {
+    this.photoInput()?.nativeElement.click();
+  }
+
+  protected onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Sem limpar, escolher o mesmo arquivo de novo nao dispara `change`.
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    const problem = validatePhotoFile(file);
+    this.photoError.set(problem);
+    this.photoUploadError.set(null);
+    this.photoFile.set(problem ? null : file);
+  }
+
+  protected cancelCrop(): void {
+    this.photoFile.set(null);
+    this.photoUploadError.set(null);
+  }
+
+  protected uploadPhoto(image: Blob): void {
+    if (this.photoBusy()) {
+      return;
+    }
+    this.photoBusy.set(true);
+    this.photoUploadError.set(null);
+    const extension = image.type === 'image/webp' ? 'webp' : 'jpg';
+    this.service
+      .uploadPhoto(image, `foto.${extension}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (url) => {
+          this.photoBusy.set(false);
+          this.photoUrl.set(url);
+          this.photoFile.set(null);
+        },
+        error: (error: unknown) => {
+          this.photoBusy.set(false);
+          if (isApiError(error) && error.status === 401) {
+            this.goToLogin();
+            return;
+          }
+          this.photoUploadError.set(describePhotoError(error));
+        },
+      });
+  }
+
+  protected removePhoto(): void {
+    if (this.photoBusy()) {
+      return;
+    }
+    this.photoBusy.set(true);
+    this.photoError.set(null);
+    this.service
+      .removePhoto()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.photoBusy.set(false);
+          this.photoUrl.set(null);
+        },
+        error: (error: unknown) => {
+          this.photoBusy.set(false);
+          if (isApiError(error) && error.status === 401) {
+            this.goToLogin();
+            return;
+          }
+          this.photoError.set(describePhotoError(error));
+        },
+      });
   }
 
   private goToLogin(): void {

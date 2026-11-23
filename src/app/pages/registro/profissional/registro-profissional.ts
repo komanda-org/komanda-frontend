@@ -394,7 +394,6 @@ export class RegistroProfissional {
     return {
       fullName: profile.fullName,
       mainRole: profile.mainRole,
-      profilePhoto: profile.profilePhoto,
       experienceSummary: profile.experienceSummary,
       neighborhood: profile.neighborhood,
       city: profile.city,

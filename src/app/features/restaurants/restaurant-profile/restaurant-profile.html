@@ -85,6 +85,26 @@
           </article>
 
           <div class="side">
+            @if (hiredJobs().length > 0) {
+              <section class="card rate" aria-labelledby="rate-title" data-testid="rate-panel">
+                <h2 class="card-title" id="rate-title">Avaliar restaurante</h2>
+                <ul class="rate-list">
+                  @for (job of hiredJobs(); track job.id) {
+                    <li class="rate-item" data-testid="rate-item">
+                      <span class="rate-job">{{ job.title }}</span>
+                      <app-review-button
+                        label="Avaliar"
+                        [jobId]="job.id"
+                        [jobTitle]="job.title"
+                        [receiverId]="restaurantId()"
+                        [receiverName]="r.restaurantName"
+                      />
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+
             <section class="section" aria-labelledby="jobs-title">
               <header class="section-head">
                 <h2 class="section-title" id="jobs-title">Vagas Abertas</h2>

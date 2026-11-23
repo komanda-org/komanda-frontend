@@ -1,0 +1,76 @@
+<div class="backdrop" (click)="cancel()"></div>
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cropper-title" data-testid="photo-cropper">
+  <h2 class="dialog__title" id="cropper-title">Ajustar foto</h2>
+  <p class="dialog__hint">Arraste para posicionar e use o zoom para enquadrar.</p>
+
+  @if (loadFailed()) {
+    <p class="dialog__error" role="alert" data-testid="cropper-load-error">
+      Não foi possível abrir esta imagem. Escolha outro arquivo.
+    </p>
+  } @else {
+    <div class="stage">
+      <div
+        #viewport
+        class="viewport"
+        tabindex="0"
+        role="group"
+        aria-label="Área de corte. Use as setas para mover e + ou - para o zoom."
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp()"
+        (pointercancel)="onPointerUp()"
+        (wheel)="onWheel($event)"
+        (keydown)="onKeydown($event)"
+        data-testid="cropper-viewport"
+      >
+        @if (imageStyle(); as style) {
+          <img class="viewport__img" [src]="src()" alt="" draggable="false" [style]="style" />
+        }
+        <span class="viewport__mask viewport__mask--{{ shape() }}" aria-hidden="true"></span>
+      </div>
+
+      <div class="preview">
+        <span class="preview__label">Prévia</span>
+        <div class="preview__frame preview__frame--{{ shape() }}" data-testid="cropper-preview">
+          @if (imageStyle(); as style) {
+            <img class="viewport__img" [src]="src()" alt="Prévia da foto recortada" [style]="style" />
+          }
+        </div>
+      </div>
+    </div>
+
+    <label class="zoom">
+      <span class="zoom__label">Zoom</span>
+      <input
+        #slider
+        type="range"
+        min="1"
+        [max]="maxZoom"
+        step="0.01"
+        [value]="frame().zoom"
+        (input)="setZoom(+$any($event.target).value)"
+        data-testid="cropper-zoom"
+      />
+    </label>
+  }
+
+  @if (error() ?? (exportFailed() ? 'Não foi possível preparar a imagem. Tente outra foto.' : null); as message) {
+    <p class="dialog__error" role="alert" data-testid="cropper-error">{{ message }}</p>
+  }
+
+  <div class="actions">
+    <button type="button" class="action action--ghost" [disabled]="busy()" (click)="cancel()" data-testid="cropper-cancel">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="action action--primary"
+      [disabled]="busy() || loadFailed() || !imageStyle()"
+      [attr.aria-busy]="busy()"
+      (click)="save()"
+      data-testid="cropper-save"
+    >
+      {{ busy() ? 'Enviando…' : 'Salvar foto' }}
+    </button>
+  </div>
+</div>
