@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { switchMap, tap } from 'rxjs';
 import { CARGOS } from '../../../core/dados/opcoes';
 import { HABILIDADES } from '../../../core/dados/opcoes';
 import {
@@ -18,10 +19,22 @@ import {
   aplicarErrosDeValidacao,
 } from '../../../core/http/aplicar-erro-servidor';
 import { traduzirConflito } from '../../../core/http/traduzir-conflito';
+import { homeFor } from '../../../core/guards/role.guard';
 import { isApiError } from '../../../core/models/api-error.model';
 import { ProfessionalPreferences } from '../../../core/models/professional-preferences.model';
+import {
+  ExperiencePayload,
+  ProfessionalProfile,
+  UpdateProfilePayload,
+  Mobility,
+  WorkModel,
+  requireProfessional,
+} from '../../../core/models/profile.model';
 import { RegistrarProfissionalPayload } from '../../../core/models/registro.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import { MOBILITIES, mobilityLabel } from '../../../features/profile/profile-labels';
 import { RegistroService } from '../../../core/services/registro.service';
 import { mascararCep } from '../../../core/utils/mascaras';
 import {
@@ -61,6 +74,7 @@ type CampoProfissional =
   | 'profilePhoto'
   | 'neighborhood'
   | 'zipCode'
+  | 'mobility'
   | 'acceptedTerms';
 
 /**
@@ -88,6 +102,8 @@ export class RegistroProfissional {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly servico = inject(RegistroService);
   private readonly professionalPreferencesService = inject(ProfessionalPreferencesService);
+  private readonly authService = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -95,6 +111,8 @@ export class RegistroProfissional {
   protected readonly cargos = CARGOS;
   protected readonly habilidades = HABILIDADES;
   protected readonly contractTypes = ['CLT', 'PJ', 'Freelancer'] as const;
+  protected readonly mobilities = MOBILITIES;
+  protected readonly mobilityLabel = mobilityLabel;
   protected readonly totalDeEtapas = 3;
 
   protected readonly etapa = signal(1);
@@ -156,6 +174,7 @@ export class RegistroProfissional {
     profilePhoto: this.fb.control(''),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
     zipCode: this.fb.control('', [Validators.required, cepValido()]),
+    mobility: this.fb.control<Mobility | null>(null),
     acceptedTerms: this.fb.control(false, [obrigatorioTrue()]),
   });
 
@@ -163,7 +182,7 @@ export class RegistroProfissional {
   private readonly camposPorEtapa: readonly (readonly CampoProfissional[])[] = [
     ['profilePhoto', 'fullName', 'email', 'mainRole', 'contractType', 'password', 'confirmPassword', 'acceptedTerms'],
     ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
-    ['zipCode', 'neighborhood'],
+    ['zipCode', 'neighborhood', 'mobility'],
   ];
 
   protected zipCodeError(): string | undefined {
@@ -185,12 +204,6 @@ export class RegistroProfissional {
     alvo.value = formatado;
     this.form.controls.zipCode.setValue(formatado);
   }
-
-  protected readonly experienceSummary = computed(() => {
-    const exps = this.experienciasAdicionadas();
-    if (exps.length === 0) return '';
-    return exps.map(e => `${e.workPlace} — ${e.role} (${this.formatarPeriodo(e.startDate, e.endDate, e.currentJob)})\n${e.experienceDescription}`).join('\n\n');
-  });
 
   protected readonly skillsConcat = computed(() => this.experienciasAdicionadas().flatMap(e => e.skills));
 
@@ -283,9 +296,6 @@ export class RegistroProfissional {
 
   /** Sincroniza experiências estruturadas para os campos que a API aceita hoje. */
   private sincronizarCamposAPI(): void {
-    const exps = this.experienciasAdicionadas();
-    // experienceSummary: concatena tudo
-    this.form.controls.experienceSummary.setValue(this.experienceSummary());
     // interestedRoles: mergeia skills + interestedRoles originais
     const skillsUnicas = [...new Set(this.skillsConcat())];
     const rolesOriginais = this.form.controls.interestedRoles.value;
@@ -340,23 +350,71 @@ export class RegistroProfissional {
     this.enviando.set(true);
     this.limparErro();
 
+    const { email, password } = this.form.getRawValue();
+    let accountCreated = false;
+
+    // POST /professionals nao aceita trajetoria nem disponibilidade: entramos na
+    // conta recem-criada e gravamos esses dados pelo PUT /users/me.
     this.servico
       .registrarProfissional(this.montarPayload())
-      // Cancela a inscricao se o componente for destruido no meio da requisicao.
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        tap(() => {
+          accountCreated = true;
+          this.professionalPreferencesService.saveForEmail(email, this.montarPreferencias());
+        }),
+        switchMap(() => this.authService.login({ email: email.trim(), password })),
+        switchMap(() => this.profileService.getMe()),
+        switchMap((me) =>
+          this.profileService.updateMe(this.buildProfileUpdate(requireProfessional(me))),
+        ),
+        // Cancela a inscricao se o componente for destruido no meio da requisicao.
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: () => {
-          this.professionalPreferencesService.saveForEmail(
-            this.form.controls.email.value,
-            this.montarPreferencias(),
-          );
+        next: () => void this.router.navigate([homeFor('PROFISSIONAL')]),
+        error: (erro: unknown) => {
+          if (!accountCreated) {
+            this.tratarErro(erro);
+            return;
+          }
           void this.router.navigate(['/login'], {
             // `state` do Router: memoria pura, some no F5 e funciona no SSR.
-            state: { mensagem: 'Conta criada com sucesso. Entre para continuar.' },
+            state: {
+              mensagem:
+                'Conta criada! Entre e confira sua trajetória e disponibilidade em "Editar perfil".',
+            },
           });
         },
-        error: (erro: unknown) => this.tratarErro(erro),
       });
+  }
+
+  private buildProfileUpdate(profile: ProfessionalProfile): UpdateProfilePayload {
+    const experiences = this.experienciasAdicionadas();
+    const skills = experiences.flatMap((experience) => experience.skills);
+    return {
+      fullName: profile.fullName,
+      mainRole: profile.mainRole,
+      profilePhoto: profile.profilePhoto,
+      experienceSummary: profile.experienceSummary,
+      neighborhood: profile.neighborhood,
+      city: profile.city,
+      state: profile.state,
+      specialties: [...new Set([...profile.specialties, ...skills])],
+      workModels: toWorkModels(this.form.controls.contractType.value),
+      mobility: this.form.controls.mobility.value,
+      experiences: experiences.map(
+        (experience): ExperiencePayload => ({
+          company: experience.workPlace,
+          role: experience.role,
+          startDate: monthYearToIsoDate(experience.startDate),
+          endDate:
+            experience.currentJob || !experience.endDate
+              ? null
+              : monthYearToIsoDate(experience.endDate),
+          description: experience.experienceDescription || null,
+        }),
+      ),
+    };
   }
 
   private tratarErro(erro: unknown): void {
@@ -465,4 +523,17 @@ export class RegistroProfissional {
       contractType: values.contractType as ProfessionalPreferences['contractType'],
     };
   }
+}
+
+/** "MM/AAAA" do seletor de mes vira a data ISO que a API espera. */
+function monthYearToIsoDate(monthYear: string): string {
+  const [month, year] = monthYear.split('/');
+  return `${year}-${month.padStart(2, '0')}-01`;
+}
+
+function toWorkModels(contractType: string): WorkModel[] {
+  const normalized = contractType.toUpperCase();
+  return normalized === 'CLT' || normalized === 'PJ' || normalized === 'FREELANCER'
+    ? [normalized]
+    : [];
 }
