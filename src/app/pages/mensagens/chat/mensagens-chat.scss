@@ -55,6 +55,26 @@
     flex: 1;
     min-width: 0;
 
+    .chat-header-link {
+      max-width: 100%;
+      padding: 0;
+      overflow: hidden;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      background: none;
+      border: 0;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--k-ouro);
+        text-decoration: underline;
+      }
+    }
+
     h2 {
       margin: 0 0 0.125rem;
       overflow: hidden;

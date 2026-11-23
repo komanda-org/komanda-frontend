@@ -11,7 +11,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'registro',
+    redirectTo: 'login',
   },
   {
     path: 'registro',
@@ -190,6 +190,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'registro',
+    redirectTo: 'login',
   },
 ];

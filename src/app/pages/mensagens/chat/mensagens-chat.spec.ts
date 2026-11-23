@@ -2,11 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MensagensChat } from './mensagens-chat';
 import { MessagingService } from '../../../core/services/messaging/messaging.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { JobsService } from '../../../core/services/jobs.service';
 import { Router, ActivatedRoute, ActivatedRouteSnapshot, ParamMap } from '@angular/router';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { signal, Signal } from '@angular/core';
 import { MessageResponse } from '../../../core/models/messaging/message.model';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 function createMockParamMap(jobId: string | null, professionalId: string | null = 'p1'): ParamMap {
   const values: Record<string, string | null> = { jobId, professionalId };
@@ -46,6 +47,7 @@ describe('MensagensChat', () => {
   let fixture: ComponentFixture<MensagensChat>;
   let mockMessagingService: Partial<MessagingService>;
   let mockAuthService: Partial<AuthService>;
+  let mockJobsService: { getById: ReturnType<typeof vi.fn> };
   let mockRouter: Partial<Router>;
   let mockRoute: Partial<ActivatedRoute>;
   let params: BehaviorSubject<ParamMap>;
@@ -107,6 +109,10 @@ describe('MensagensChat', () => {
       getUser: vi.fn().mockReturnValue({ id: 'user-1', role: 'PROFISSIONAL' }),
     };
 
+    mockJobsService = {
+      getById: vi.fn().mockReturnValue(of({ id: 'job-1', restaurantId: 'r1' })),
+    };
+
     mockRouter = {
       navigate: vi.fn(),
     };
@@ -123,6 +129,7 @@ describe('MensagensChat', () => {
         provideZonelessChangeDetection(),
         { provide: MessagingService, useValue: mockMessagingService },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: JobsService, useValue: mockJobsService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockRoute },
       ],
@@ -237,5 +244,19 @@ describe('MensagensChat', () => {
   it('should track messages by id', () => {
     const msg: MessageResponse = { id: 'msg-1', jobId: 'job-1', professionalId: 'p1', senderId: 'user-1', content: 'test', createdAt: new Date() };
     expect(component.trackByMessageId(0, msg)).toBe('msg-1');
+  });
+
+  it('opens the restaurant profile when a professional clicks the name in the header', () => {
+    expect(mockJobsService.getById).toHaveBeenCalledWith('job-1');
+    component.openProfile();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/restaurantes', 'r1']);
+  });
+
+  it('opens the candidate profile when the restaurant clicks the name in the header', () => {
+    vi.mocked(mockAuthService.getUser!).mockReturnValue({ id: 'r1', role: 'RESTAURANTE' });
+    const restaurantFixture = TestBed.createComponent(MensagensChat);
+    restaurantFixture.detectChanges();
+    restaurantFixture.componentInstance.openProfile();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/profissionais', 'p1']);
   });
 });

@@ -6,7 +6,15 @@
       </svg>
     </button>
     <div class="chat-header-info">
-      <h2>{{ titulo() }}</h2>
+      <h2>
+        @if (profileLink()) {
+          <button type="button" class="chat-header-link" (click)="openProfile()" title="Ver perfil">
+            {{ titulo() }}
+          </button>
+        } @else {
+          {{ titulo() }}
+        }
+      </h2>
       <span class="chat-subtitulo">
         @if (subtitulo()) {
           <span>{{ subtitulo() }}</span>
