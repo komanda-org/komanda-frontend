@@ -18,6 +18,7 @@
   --k-campo: #201f1f; /* fundo dos inputs — Figma #201F1F */
   --k-linha: #2a2a2a; /* divisorias e bordas discretas */
   --k-linha-forte: #333;
+  --k-star-empty: #3a3a3a; /* estrela vazia da avaliacao */
 
   /* --- Dourado: o unico acento --- */
   --k-ouro: #f2ca50;
@@ -99,6 +100,7 @@
   --k-sidebar-w: 256px;
   --k-fundo-header: rgb(9 9 11 / 70%); /* translucido: o main aparece atras */
   --k-icone-nav: rgb(255 255 255 / 50%); /* icone mascarado fora do item ativo */
+  --k-bottom-nav-h: 64px; /* barra inferior do mobile (< 769px) */
   --estrela-vazia: #3a3a3a; /* estrela sem preenchimento da nota */
 
   /* --- O PALCO DO CADASTRO (mockups 3 e 4) ---

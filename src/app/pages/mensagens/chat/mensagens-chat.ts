@@ -48,7 +48,10 @@ export class MensagensChat implements OnInit, OnDestroy {
     return restaurantId ? ['/restaurantes', restaurantId] : null;
   });
 
-  readonly chatMessages = computed(() => this.messages().filter((m) => isSameChat(m, this.chatRef())));
+  readonly chatMessages = computed(() => this.messages().filter((m) => {
+    if (m.professionalId === '') return true; // mensagem do restaurante: exibe em toda conversa da vaga
+    return isSameChat(m, this.chatRef());
+  }));
 
   /** Agrupa mensagens consecutivas do mesmo remetente para mostrar o avatar so no primeiro. */
   readonly messageGroups = computed(() => {

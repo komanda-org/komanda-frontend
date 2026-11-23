@@ -10,6 +10,7 @@ import {
   requireProfessional,
 } from '../../../core/models/profile.model';
 import { ProfileService } from '../../../core/services/profile.service';
+import { DeleteAccount } from '../../../shared/ui/delete-account/delete-account';
 import { mobilityLabel, workModelLabel } from '../profile-labels';
 
 type LoadState = 'loading' | 'error' | 'ready';
@@ -81,12 +82,13 @@ export function describeError(error: unknown): string {
 
 @Component({
   selector: 'app-professional-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, DeleteAccount],
   templateUrl: './professional-profile.html',
   styleUrl: './professional-profile.scss',
 })
 export class ProfessionalProfilePage {
   private readonly service = inject(ProfileService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly formatPeriod = formatPeriod;
@@ -114,7 +116,7 @@ export class ProfessionalProfilePage {
 
   constructor() {
     // `state` da navegacao so existe durante ela; some no F5.
-    const state = inject(Router).getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
+    const state = this.router.getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
     this.notice.set(state?.notice ?? null);
     // A rota e pre-renderizada no build (Node, sem API): a chamada so roda no browser.
     afterNextRender(() => this.load());

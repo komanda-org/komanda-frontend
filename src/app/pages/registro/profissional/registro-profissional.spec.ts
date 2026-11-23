@@ -80,14 +80,26 @@ describe('RegistroProfissional — CEP', () => {
     expect(zipField().querySelector('.campo__erro')?.textContent).toBe('CEP inválido');
   });
 
-  it('always sends the CEP, masked as 00000-000', () => {
+  it('always sends the CEP, masked as 00000-000', async () => {
     typeZip('01001000');
-    submit();
 
+    http
+      .expectOne('https://brasilapi.com.br/api/cep/v2/01001000')
+      .flush({ state: 'SP', city: 'São Paulo', neighborhood: 'Sé' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el().querySelector<HTMLInputElement>('#state')?.value).toBe('SP');
+    expect(el().querySelector<HTMLInputElement>('#city')?.value).toBe('São Paulo');
+    expect(el().querySelector<HTMLInputElement>('#neighborhood')?.value).toBe('Sé');
+
+    submit();
     const request = http.expectOne('/api/professionals');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toMatchObject({ fullName: 'Ana Souza', zipCode: '01001-000' });
-    expect(request.request.body).not.toHaveProperty('neighborhood');
+    expect(request.request.body).toMatchObject({ neighborhood: 'Sé' });
+    expect(request.request.body).not.toHaveProperty('state');
+    expect(request.request.body).not.toHaveProperty('city');
     request.flush({ id: 'p1' });
     http.expectOne('/api/auth/login').flush({ access_token: 't', user: { id: 'p1', role: 'PROFISSIONAL' } });
     http.expectOne({ method: 'GET', url: '/api/users/me' }).flush(profile());
@@ -205,6 +217,47 @@ describe('RegistroProfissional — trajectory and availability', () => {
       .flush({ message: 'erro' }, { status: 500, statusText: 'Server Error' });
 
     expect(navigate).toHaveBeenCalledWith(['/login'], expect.anything());
+  });
+
+  it('ignores stale CEP responses and keeps loading until the latest lookup finishes', async () => {
+    typeZip('01001000');
+    const olderRequest = http.expectOne('https://brasilapi.com.br/api/cep/v2/01001000');
+
+    typeZip('20040002');
+    const latestRequest = http.expectOne('https://brasilapi.com.br/api/cep/v2/20040002');
+
+    olderRequest.flush({ state: 'SP', city: 'São Paulo', neighborhood: 'Sé' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(el().querySelector<HTMLInputElement>('#city')?.value).toBe('');
+    expect(el().querySelector('[role="status"]')?.textContent).toContain('Consultando CEP');
+
+    latestRequest.flush({ state: 'RJ', city: 'Rio de Janeiro', neighborhood: 'Centro' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(el().querySelector<HTMLInputElement>('#state')?.value).toBe('RJ');
+    expect(el().querySelector<HTMLInputElement>('#city')?.value).toBe('Rio de Janeiro');
+    expect(el().querySelector<HTMLInputElement>('#neighborhood')?.value).toBe('Centro');
+    expect(el().querySelector('[role="status"]')).toBeNull();
+  });
+
+  it('does not replace location fields edited while the CEP lookup is pending', async () => {
+    typeZip('01001000');
+    const request = http.expectOne('https://brasilapi.com.br/api/cep/v2/01001000');
+
+    const cityInput = el().querySelector<HTMLInputElement>('#city')!;
+    cityInput.value = 'Cidade informada';
+    cityInput.dispatchEvent(new Event('input'));
+
+    request.flush({ state: 'SP', city: 'São Paulo', neighborhood: 'Sé' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(cityInput.value).toBe('Cidade informada');
+    expect(el().querySelector<HTMLInputElement>('#state')?.value).toBe('SP');
+    expect(el().querySelector<HTMLInputElement>('#neighborhood')?.value).toBe('Sé');
   });
 });
 

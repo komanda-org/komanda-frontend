@@ -198,6 +198,7 @@ export class JobsFeed {
 
   protected setMaxDistance(value: number | string | null): void {
     this.maxDistanceKm.set(toMaxDistance(value));
+    this.load();
   }
 
   protected loadMore(): void {

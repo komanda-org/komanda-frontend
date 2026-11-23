@@ -60,6 +60,18 @@ export class AuthService {
     }
   }
 
+  getToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+
+    try {
+      return localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }
+
   getUser(): AuthUser | null {
     // localStorage doesn't exist during SSR: the page renders on the server
     // before ever reaching the browser.
@@ -98,13 +110,6 @@ export class AuthService {
       // Nothing gets persisted, but the credentials were accepted: let the
       // caller through rather than reporting a failure that didn't happen.
     }
-  }
-
-  getToken(): string | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
-    }
-    return localStorage.getItem(TOKEN_KEY);
   }
 
   /** Verdadeiro apenas enquanto houver um token armazenado. */

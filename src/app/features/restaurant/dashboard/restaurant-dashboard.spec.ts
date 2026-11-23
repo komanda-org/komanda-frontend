@@ -110,6 +110,31 @@ describe('RestaurantDashboard', () => {
     expect(el().querySelector('[data-testid="empty"]')).not.toBeNull();
   });
 
+  it('offers account deletion with the restaurant-specific consequence', async () => {
+    await render([], {});
+
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
+    expect(text('delete-account-btn')).toBe('Excluir minha conta');
+
+    (el().querySelector('[data-testid="delete-account-btn"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(text('delete-confirm')).toContain('Sua conta e suas vagas deixam de aparecer na plataforma.');
+  });
+
+  it('keeps account deletion available when the dashboard fails to load', async () => {
+    fixture = TestBed.createComponent(RestaurantDashboard);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    http.expectOne((r) => r.url === '/api/users/me/jobs').flush(null, { status: 500, statusText: 'Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(text('load-error')).toContain('Não foi possível carregar suas vagas');
+    expect(el().querySelector('app-delete-account')).not.toBeNull();
+  });
+
   it('shows an actionable message without the HTTP status when loading fails', async () => {
     fixture = TestBed.createComponent(RestaurantDashboard);
     fixture.detectChanges();

@@ -1,10 +1,11 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   ElementRef,
   computed,
   inject,
+  PLATFORM_ID,
   signal,
   viewChild,
 } from '@angular/core';
@@ -20,6 +21,7 @@ import { traduzirConflito } from '../../../core/http/traduzir-conflito';
 import { isApiError } from '../../../core/models/api-error.model';
 import { RegistrarRestaurantePayload } from '../../../core/models/registro.model';
 import { RegistroService } from '../../../core/services/registro.service';
+import { LocationService } from '../../../core/services/location.service';
 import { mascararCep, mascararCnpj, mascararTelefone } from '../../../core/utils/mascaras';
 import {
   cepValido,
@@ -82,6 +84,8 @@ export class RegistroRestaurante {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly locationService = inject(LocationService);
 
   protected readonly cozinhas = TIPOS_DE_COZINHA;
   protected readonly totalDeEtapas = 2;
@@ -91,6 +95,11 @@ export class RegistroRestaurante {
   protected readonly mostrarSenha = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly errosDetalhados = signal<string[]>([]);
+  protected readonly cepLoading = signal(false);
+  protected readonly cnpjLoading = signal(false);
+
+  private cepRequestId = 0;
+  private cnpjRequestId = 0;
 
   private readonly tituloEtapa = viewChild<ElementRef<HTMLElement>>('tituloEtapa');
 
@@ -185,10 +194,102 @@ export class RegistroRestaurante {
 
   protected aplicarCnpj(evento: Event): void {
     this.formatar(evento, mascararCnpj, 'cnpj');
+    void this.buscarCnpj(this.form.controls.cnpj.value);
   }
 
   protected aplicarCep(evento: Event): void {
     this.formatar(evento, mascararCep, 'zipCode');
+    void this.buscarCep(this.form.controls.zipCode.value);
+  }
+
+  private async buscarCnpj(cnpj: string): Promise<void> {
+    const requestId = ++this.cnpjRequestId;
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    if (cnpjLimpo.length !== 14) {
+      this.cnpjLoading.set(false);
+      return;
+    }
+
+    const valoresIniciais = {
+      restaurantName: this.form.controls.restaurantName.value,
+      phone: this.form.controls.phone.value,
+      zipCode: this.form.controls.zipCode.value,
+    };
+    this.cnpjLoading.set(true);
+    try {
+      const dados = await this.locationService.getCnpj(cnpjLimpo);
+      if (
+        requestId !== this.cnpjRequestId ||
+        this.form.controls.cnpj.value.replace(/\D/g, '') !== cnpjLimpo ||
+        !dados
+      ) {
+        return;
+      }
+
+      const nome = dados.nome_fantasia?.trim() || dados.razao_social?.trim();
+      if (nome && this.form.controls.restaurantName.value === valoresIniciais.restaurantName) {
+        this.form.controls.restaurantName.setValue(nome);
+      }
+      if (dados.ddd_telefone_1?.trim() && this.form.controls.phone.value === valoresIniciais.phone) {
+        this.form.controls.phone.setValue(mascararTelefone(dados.ddd_telefone_1));
+      }
+      if (dados.cep?.trim() && this.form.controls.zipCode.value === valoresIniciais.zipCode) {
+        const cepFormatado = mascararCep(dados.cep);
+        this.form.controls.zipCode.setValue(cepFormatado);
+        await this.buscarCep(cepFormatado);
+      }
+    } finally {
+      if (requestId === this.cnpjRequestId) {
+        this.cnpjLoading.set(false);
+      }
+    }
+  }
+
+  private async buscarCep(zipCode: string): Promise<void> {
+    const requestId = ++this.cepRequestId;
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const cepLimpo = zipCode.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) {
+      this.cepLoading.set(false);
+      return;
+    }
+
+    const enderecoInicial = this.form.controls.address.value;
+    this.cepLoading.set(true);
+    try {
+      const dados = await this.locationService.getCep(cepLimpo);
+      if (
+        requestId !== this.cepRequestId ||
+        this.form.controls.zipCode.value.replace(/\D/g, '') !== cepLimpo ||
+        this.form.controls.address.value !== enderecoInicial ||
+        !dados
+      ) {
+        return;
+      }
+
+      const endereco = [
+        dados.street?.trim(),
+        dados.neighborhood?.trim(),
+        dados.city?.trim() && dados.state?.trim()
+          ? `${dados.city.trim()}-${dados.state.trim()}`
+          : dados.city?.trim(),
+      ].filter((parte): parte is string => !!parte);
+
+      if (endereco.length > 0) {
+        this.form.controls.address.setValue(endereco.join(', '));
+      }
+    } finally {
+      if (requestId === this.cepRequestId) {
+        this.cepLoading.set(false);
+      }
+    }
   }
 
   protected aplicarTelefone(evento: Event): void {

@@ -1,10 +1,11 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   Component,
   DestroyRef,
   ElementRef,
   computed,
   inject,
+  PLATFORM_ID,
   signal,
   viewChild,
 } from '@angular/core';
@@ -36,6 +37,7 @@ import { ProfessionalPreferencesService } from '../../../core/services/professio
 import { ProfileService } from '../../../core/services/profile.service';
 import { MOBILITIES, mobilityLabel } from '../../../features/profile/profile-labels';
 import { RegistroService } from '../../../core/services/registro.service';
+import { LocationService } from '../../../core/services/location.service';
 import { mascararCep } from '../../../core/utils/mascaras';
 import {
   cepValido,
@@ -72,6 +74,8 @@ type CampoProfissional =
   | 'experienceDescription'
   | 'skills'
   | 'profilePhoto'
+  | 'state'
+  | 'city'
   | 'neighborhood'
   | 'zipCode'
   | 'mobility'
@@ -107,6 +111,8 @@ export class RegistroProfissional {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly locationService = inject(LocationService);
 
   protected readonly cargos = CARGOS;
   protected readonly habilidades = HABILIDADES;
@@ -120,6 +126,9 @@ export class RegistroProfissional {
   protected readonly mostrarSenha = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly errosDetalhados = signal<string[]>([]);
+  protected readonly cepLoading = signal(false);
+
+  private cepRequestId = 0;
 
   private readonly tituloEtapa = viewChild<ElementRef<HTMLElement>>('tituloEtapa');
 
@@ -172,6 +181,8 @@ export class RegistroProfissional {
     experienceDescription: this.fb.control('', [Validators.maxLength(1000)]),
     skills: this.fb.control<string[]>([], [itensAteTamanho(50)]),
     profilePhoto: this.fb.control(''),
+    state: this.fb.control('', [Validators.maxLength(2)]),
+    city: this.fb.control('', [Validators.maxLength(100)]),
     neighborhood: this.fb.control('', [Validators.maxLength(100)]),
     zipCode: this.fb.control('', [Validators.required, cepValido()]),
     mobility: this.fb.control<Mobility | null>(null),
@@ -182,7 +193,7 @@ export class RegistroProfissional {
   private readonly camposPorEtapa: readonly (readonly CampoProfissional[])[] = [
     ['profilePhoto', 'fullName', 'email', 'mainRole', 'contractType', 'password', 'confirmPassword', 'acceptedTerms'],
     ['experienceSummary', 'workPlace', 'role', 'startDate', 'endDate', 'currentJob', 'experienceDescription', 'skills', 'interestedRoles'],
-    ['zipCode', 'neighborhood', 'mobility'],
+    ['zipCode', 'state', 'city', 'neighborhood', 'mobility'],
   ];
 
   protected zipCodeError(): string | undefined {
@@ -203,6 +214,46 @@ export class RegistroProfissional {
     // Escrever de volta evita o cursor "pular" quando a mascara insere o hifen.
     alvo.value = formatado;
     this.form.controls.zipCode.setValue(formatado);
+    void this.buscarCep(formatado);
+  }
+
+  private async buscarCep(zipCode: string): Promise<void> {
+    const requestId = ++this.cepRequestId;
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const cepLimpo = zipCode.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) {
+      this.cepLoading.set(false);
+      return;
+    }
+
+    const valoresIniciais = {
+      state: this.form.controls.state.value,
+      city: this.form.controls.city.value,
+      neighborhood: this.form.controls.neighborhood.value,
+    };
+    this.cepLoading.set(true);
+    try {
+      const endereco = await this.locationService.getCep(cepLimpo);
+      if (requestId !== this.cepRequestId || this.form.controls.zipCode.value.replace(/\D/g, '') !== cepLimpo) {
+        return;
+      }
+      if (endereco?.state && this.form.controls.state.value === valoresIniciais.state) {
+        this.form.controls.state.setValue(endereco.state);
+      }
+      if (endereco?.city && this.form.controls.city.value === valoresIniciais.city) {
+        this.form.controls.city.setValue(endereco.city);
+      }
+      if (endereco?.neighborhood && this.form.controls.neighborhood.value === valoresIniciais.neighborhood) {
+        this.form.controls.neighborhood.setValue(endereco.neighborhood);
+      }
+    } finally {
+      if (requestId === this.cepRequestId) {
+        this.cepLoading.set(false);
+      }
+    }
   }
 
   protected readonly skillsConcat = computed(() => this.experienciasAdicionadas().flatMap(e => e.skills));

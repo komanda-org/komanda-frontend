@@ -43,6 +43,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'mensagens/:jobId',
     renderMode: RenderMode.Client,
   },
+  // Slug dinamico: o build nao sabe quais restaurantes pre-renderizar.
+  {
+    path: 'restaurantes/:slug',
+    renderMode: RenderMode.Client,
+  },
   {
     path: 'mensagens/:jobId/:professionalId',
     renderMode: RenderMode.Client,
