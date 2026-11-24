@@ -542,6 +542,29 @@
                 formControlName="neighborhood"
               />
             </app-campo>
+
+            <app-campo
+              rotulo="Mobilidade"
+              para="mobility"
+              [controle]="form.controls.mobility"
+              [opcional]="true"
+              dica="Até onde você topa trabalhar."
+            >
+              <fieldset class="pills" aria-label="Mobilidade">
+                @for (option of mobilities; track option) {
+                  <label class="pill" [class.pill--ativo]="form.controls.mobility.value === option">
+                    <input
+                      type="radio"
+                      name="mobility"
+                      [value]="option"
+                      class="pill__radio"
+                      formControlName="mobility"
+                    />
+                    <span class="pill__texto">{{ mobilityLabel(option) }}</span>
+                  </label>
+                }
+              </fieldset>
+            </app-campo>
             </div>
           </section>
         }

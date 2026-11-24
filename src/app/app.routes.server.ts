@@ -32,6 +32,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'restaurant-profile/edit',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'mensagens',
     renderMode: RenderMode.Client,
   },

@@ -4,14 +4,16 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { isApiError } from '../../../core/models/api-error.model';
 import { ApplicationStatus } from '../../../core/models/applications.model';
 import { PublicProfessionalProfile, Review } from '../../../core/models/profile.model';
-import { ApplicantProfessional } from '../../../core/models/restaurant-jobs.model';
+import { ApplicantProfessional, RestaurantJob } from '../../../core/models/restaurant-jobs.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfessionalsService } from '../../../core/services/professionals.service';
 import { RestaurantJobsService } from '../../../core/services/restaurant-jobs.service';
 import { apiMessage } from '../../../core/utils/describe-error';
+import { shiftsLabel } from '../../../core/utils/job-labels';
 import { formatRating, starFills } from '../../../core/utils/rating';
 import { relativeTime } from '../../../core/utils/relative-time';
 import { initials } from '../../../core/utils/text';
+import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 import { mobilityLabel, workModelLabel } from '../../profile/profile-labels';
 import { describeRestaurantError } from '../../restaurant/restaurant-errors';
 
@@ -87,7 +89,7 @@ export function describeProfileError(error: unknown): string {
 
 @Component({
   selector: 'app-candidate-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, ReviewButton],
   templateUrl: './candidate-profile.html',
   styleUrl: './candidate-profile.scss',
 })
@@ -107,6 +109,9 @@ export class CandidateProfile {
   protected readonly workModelLabel = workModelLabel;
   protected readonly mobilityLabel = mobilityLabel;
   protected readonly statusLabels = APPLICATION_STATUS_LABELS;
+  protected readonly shiftsLabel = shiftsLabel;
+  /** Vagas deste restaurante em que o profissional foi aprovado; sem elas nao ha avaliacao. */
+  protected readonly hiredJobs = signal<RestaurantJob[]>([]);
 
   protected readonly summary = signal<ApplicantProfessional | null>(null);
   protected readonly application = signal<{ id: string; status: ApplicationStatus } | null>(null);
@@ -176,6 +181,20 @@ export class CandidateProfile {
     if (!this.application() && this.jobId && this.isRestaurant) {
       this.loadApplication(this.jobId);
     }
+    if (this.isRestaurant) {
+      this.loadHiredJobs();
+    }
+  }
+
+  // Falha aqui so esconde o botao de avaliar; o resto do perfil segue normal.
+  private loadHiredJobs(): void {
+    this.jobsService
+      .approvedJobsWith(this.professionalId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (jobs) => this.hiredJobs.set(jobs),
+        error: () => this.hiredJobs.set([]),
+      });
   }
 
   protected loadReviews(): void {
@@ -233,6 +252,9 @@ export class CandidateProfile {
         next: () => {
           this.deciding.set(false);
           this.application.set({ ...application, status });
+          if (status === 'APROVADA') {
+            this.loadHiredJobs();
+          }
         },
         error: (error: unknown) => {
           this.deciding.set(false);

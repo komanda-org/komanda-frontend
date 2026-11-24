@@ -159,3 +159,36 @@ select.input {
     flex-direction: column;
   }
 }
+
+.photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-s-4);
+}
+
+.photo__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+
+  &--initials {
+    display: grid;
+    place-items: center;
+    font-family: var(--k-serif);
+    font-size: 1.5rem;
+    color: var(--k-ouro);
+    background: var(--k-ouro-fosco);
+  }
+}
+
+.photo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--k-s-2);
+}
+
+.photo__file {
+  display: none;
+}

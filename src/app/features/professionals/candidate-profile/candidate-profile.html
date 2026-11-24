@@ -157,6 +157,27 @@
               </section>
             }
 
+            @if (hiredJobs().length > 0) {
+              <section class="card rate" aria-labelledby="rate-title" data-testid="rate-panel">
+                <h2 class="section__title" id="rate-title">Avaliar profissional</h2>
+                <ul class="rate__list">
+                  @for (job of hiredJobs(); track job.id) {
+                    <li class="rate__item" data-testid="rate-item">
+                      <span class="rate__job">{{ job.title }}</span>
+                      <app-review-button
+                        label="Avaliar"
+                        [jobId]="job.id"
+                        [jobTitle]="job.title"
+                        [shift]="shiftsLabel(job.shifts)"
+                        [receiverId]="p.id"
+                        [receiverName]="p.fullName"
+                      />
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+
             <section class="card reviews" aria-labelledby="reviews-title">
               <h2 class="section__title" id="reviews-title">Avaliações recebidas</h2>
               @switch (reviewsState()) {

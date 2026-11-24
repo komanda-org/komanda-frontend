@@ -134,7 +134,11 @@ describe('RestaurantProfile', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  // A busca de contratacoes aprovadas roda em todo perfil; os testes que nao tratam dela a descartam.
+  afterEach(() => {
+    http.match((r) => r.url === '/api/users/me/applications');
+    http.verify();
+  });
 
   it('renders the restaurant data from a single GET', async () => {
     await render();
@@ -202,6 +206,18 @@ describe('RestaurantProfile', () => {
     await settle();
 
     expect(TestBed.inject(Router).url).toBe('/my-jobs/job-1/preview');
+  });
+
+  it('the owner sees the "Editar perfil" link', async () => {
+    user = { id: ID, role: 'RESTAURANTE' };
+    await render();
+    expect((node('edit-profile-link') as HTMLAnchorElement).getAttribute('href')).toBe('/restaurant-profile/edit');
+  });
+
+  it('another account does not see the "Editar perfil" link', async () => {
+    user = { id: 'r-9', role: 'RESTAURANTE' };
+    await render();
+    expect(node('edit-profile-link')).toBeNull();
   });
 
   it('another restaurant sees the jobs without a link it could not open', async () => {
@@ -279,5 +295,56 @@ describe('RestaurantProfile', () => {
     await settle();
 
     expect(text('restaurant-name')).toBe('Cantina Bella Massa');
+  });
+
+  describe('rating the restaurant', () => {
+    const myApplications = (status: string, restaurantId = ID) => ({
+      data: [
+        {
+          applicationId: 'a1',
+          status,
+          applicationDate: '2026-11-18T12:00:00.000Z',
+          job: { id: 'job-1', title: 'Cozinheiro(a) de massas' },
+          restaurant: { id: restaurantId, name: 'Cantina Bella Massa' },
+        },
+      ],
+      total: 1,
+      skip: 0,
+      take: 50,
+    });
+
+    async function flushHires(page: ReturnType<typeof myApplications>): Promise<void> {
+      http.expectOne((r) => r.url === '/api/users/me/applications').flush(page);
+      await settle();
+    }
+
+    it('a professional approved by this restaurant sees the review button', async () => {
+      await render();
+      await flushHires(myApplications('APROVADA'));
+
+      expect(node('rate-panel')).not.toBeNull();
+      expect(text('rate-item')).toContain('Cozinheiro(a) de massas');
+      expect(text('review-btn')).toContain('Avaliar');
+    });
+
+    it('hides the button without an approval', async () => {
+      await render();
+      await flushHires(myApplications('PENDENTE'));
+      expect(node('rate-panel')).toBeNull();
+    });
+
+    it('hides the button for an approval at another restaurant', async () => {
+      await render();
+      await flushHires(myApplications('APROVADA', 'outro-restaurante'));
+      expect(node('rate-panel')).toBeNull();
+    });
+
+    it('a restaurant never sees the review button nor looks up applications', async () => {
+      user = { id: 'r-9', role: 'RESTAURANTE' };
+      await render();
+
+      http.expectNone((r) => r.url === '/api/users/me/applications');
+      expect(node('rate-panel')).toBeNull();
+    });
   });
 });

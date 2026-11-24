@@ -47,6 +47,11 @@
   &--featured {
     border-color: var(--k-ouro-claro);
   }
+
+  &--selected {
+    border-color: var(--k-ouro);
+    box-shadow: 0 0 0 2px var(--k-ouro);
+  }
 }
 
 .plan__badge {
@@ -129,6 +134,14 @@
 
 .plan__cta {
   margin-top: auto;
+}
+
+.selection {
+  max-width: 60ch;
+  margin: var(--k-s-6) auto 0;
+  color: var(--k-texto);
+  font-size: var(--k-t-sm);
+  text-align: center;
 }
 
 .footnote {

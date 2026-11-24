@@ -101,6 +101,9 @@ describe('RegistroProfissional — CEP', () => {
     expect(request.request.body).not.toHaveProperty('state');
     expect(request.request.body).not.toHaveProperty('city');
     request.flush({ id: 'p1' });
+    http.expectOne('/api/auth/login').flush({ access_token: 't', user: { id: 'p1', role: 'PROFISSIONAL' } });
+    http.expectOne({ method: 'GET', url: '/api/users/me' }).flush(profile());
+    http.expectOne({ method: 'PUT', url: '/api/users/me' }).flush({ userId: 'p1', role: 'PROFISSIONAL', profile: profile() });
   });
 
   it('ignores stale CEP responses and keeps loading until the latest lookup finishes', async () => {
@@ -142,6 +145,119 @@ describe('RegistroProfissional — CEP', () => {
     expect(cityInput.value).toBe('Cidade informada');
     expect(el().querySelector<HTMLInputElement>('#state')?.value).toBe('SP');
     expect(el().querySelector<HTMLInputElement>('#neighborhood')?.value).toBe('Sé');
+  });
+});
+
+function profile() {
+  return {
+    role: 'PROFISSIONAL',
+    id: 'p1',
+    fullName: 'Ana Souza',
+    mainRole: 'Cozinheira',
+    profilePhoto: null,
+    experienceSummary: null,
+    specialties: [],
+    neighborhood: null,
+    city: 'São Paulo',
+    state: 'SP',
+    experiences: [],
+    availability: null,
+  };
+}
+
+describe('RegistroProfissional — trajectory and availability', () => {
+  let fixture: ComponentFixture<RegistroProfissional>;
+  let http: HttpTestingController;
+  let navigate: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [RegistroProfissional],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([apiErrorInterceptor])),
+        provideHttpClientTesting(),
+        { provide: ProfessionalPreferencesService, useValue: { saveForEmail: vi.fn() } },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    fixture = TestBed.createComponent(RegistroProfissional);
+    const component = fixture.componentInstance as unknown as {
+      form: { patchValue(value: object): void };
+      etapa: { set(value: number): void };
+      experienciasAdicionadas: { set(value: object[]): void };
+    };
+    component.form.patchValue({
+      email: 'ana@example.com',
+      password: 'senha-forte-1',
+      confirmPassword: 'senha-forte-1',
+      fullName: 'Ana Souza',
+      mainRole: 'Cozinheira',
+      contractType: 'Freelancer',
+      acceptedTerms: true,
+      zipCode: '01001-000',
+      mobility: 'REGIONAL',
+    });
+    component.experienciasAdicionadas.set([
+      {
+        id: 1,
+        workPlace: 'Bistrô Maison',
+        role: 'Auxiliar',
+        startDate: '05/2026',
+        endDate: '09/2026',
+        currentJob: false,
+        experienceDescription: 'Praça fria.',
+        skills: ['Confeitaria'],
+      },
+    ]);
+    component.etapa.set(3);
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('button[type="submit"]')!
+      .click();
+  });
+
+  afterEach(() => http.verify());
+
+  it('saves experiences in the trajectory and the contract type as availability', () => {
+    const register = http.expectOne('/api/professionals');
+    expect(register.request.body).not.toHaveProperty('experienceSummary');
+    register.flush({ id: 'p1' });
+    http.expectOne('/api/auth/login').flush({ access_token: 't', user: { id: 'p1', role: 'PROFISSIONAL' } });
+    http.expectOne({ method: 'GET', url: '/api/users/me' }).flush(profile());
+
+    const update = http.expectOne({ method: 'PUT', url: '/api/users/me' });
+    expect(update.request.body).toMatchObject({
+      experienceSummary: null,
+      city: 'São Paulo',
+      workModels: ['FREELANCER'],
+      mobility: 'REGIONAL',
+      specialties: ['Confeitaria'],
+      experiences: [
+        {
+          company: 'Bistrô Maison',
+          role: 'Auxiliar',
+          startDate: '2026-05-01',
+          endDate: '2026-09-01',
+          description: 'Praça fria.',
+        },
+      ],
+    });
+    update.flush({ userId: 'p1', role: 'PROFISSIONAL', profile: profile() });
+
+    expect(navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it('sends the person to login when the account exists but the profile could not be saved', () => {
+    http.expectOne('/api/professionals').flush({ id: 'p1' });
+    http.expectOne('/api/auth/login').flush({ access_token: 't', user: { id: 'p1', role: 'PROFISSIONAL' } });
+    http
+      .expectOne({ method: 'GET', url: '/api/users/me' })
+      .flush({ message: 'erro' }, { status: 500, statusText: 'Server Error' });
+
+    expect(navigate).toHaveBeenCalledWith(['/login'], expect.anything());
   });
 });
 

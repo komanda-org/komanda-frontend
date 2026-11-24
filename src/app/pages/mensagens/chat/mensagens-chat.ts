@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { JobsService } from '../../../core/services/jobs.service';
 import { MessagingService } from '../../../core/services/messaging/messaging.service';
 import { MessageResponse } from '../../../core/models/messaging/message.model';
 import { ChatRef, isSameChat } from '../../../core/models/messaging/chat.model';
@@ -19,6 +20,7 @@ export class MensagensChat implements OnInit, OnDestroy {
   readonly professionalId = signal<string>('');
   private readonly chatRef = computed<ChatRef>(() => ({ jobId: this.jobId(), professionalId: this.professionalId() }));
   private readonly destroyRef = inject(DestroyRef);
+  private readonly jobsService = inject(JobsService);
   readonly sending = signal(false);
   readonly newMessage = signal('');
 
@@ -37,6 +39,14 @@ export class MensagensChat implements OnInit, OnDestroy {
   readonly isInChat = computed(() => isSameChat(this.currentChat(), this.chatRef()));
   readonly titulo = computed(() => this.chatItem()?.otherPartyName ?? '');
   readonly subtitulo = computed(() => this.chatItem()?.jobTitle ?? '');
+  private readonly restaurantId = signal<string | null>(null);
+  readonly profileLink = computed<string[] | null>(() => {
+    if (this.currentUser()?.role === 'RESTAURANTE') {
+      return this.professionalId() ? ['/profissionais', this.professionalId()] : null;
+    }
+    const restaurantId = this.restaurantId();
+    return restaurantId ? ['/restaurantes', restaurantId] : null;
+  });
 
   readonly chatMessages = computed(() => this.messages().filter((m) => {
     if (m.professionalId === '') return true; // mensagem do restaurante: exibe em toda conversa da vaga
@@ -100,6 +110,7 @@ export class MensagensChat implements OnInit, OnDestroy {
       this.jobId.set(jobId);
       this.professionalId.set(professionalId);
       this.newMessage.set('');
+      this.loadRestaurantId(jobId);
       this.loadChat(jobId, professionalId);
     });
   }
@@ -108,6 +119,32 @@ export class MensagensChat implements OnInit, OnDestroy {
     if (this.jobId()) {
       this.messagingService.leaveChat(this.jobId(), this.professionalId());
     }
+  }
+
+  openProfile(): void {
+    const link = this.profileLink();
+    if (link) {
+      void this.router.navigate(link);
+    }
+  }
+
+  // A conversa so traz o id do profissional; o do restaurante vem da vaga.
+  private loadRestaurantId(jobId: string): void {
+    this.restaurantId.set(null);
+    if (this.currentUser()?.role !== 'PROFISSIONAL') {
+      return;
+    }
+    this.jobsService
+      .getById(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (job) => {
+          if (job.id === this.jobId()) {
+            this.restaurantId.set(job.restaurantId);
+          }
+        },
+        error: () => this.restaurantId.set(null),
+      });
   }
 
   private async loadChat(jobId: string, professionalId: string): Promise<void> {

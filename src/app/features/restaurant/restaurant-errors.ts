@@ -25,6 +25,10 @@ export function describeRestaurantError(error: unknown, action: RestaurantAction
     case 401:
       return 'Sua sessão expirou. Entre novamente para continuar.';
     case 403:
+      // Na criação, 403 = limite de vagas ativas do plano; o back explica o limite.
+      if (action === 'create') {
+        return apiMessage(error) ?? 'Você atingiu o limite de vagas ativas do seu plano.';
+      }
       return 'Esta conta não tem permissão para isso. Entre com a conta do restaurante dono da vaga.';
     case 404:
       return 'Esta vaga não existe mais. Atualize a página.';

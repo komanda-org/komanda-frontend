@@ -11,7 +11,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'registro',
+    redirectTo: 'login',
   },
   {
     path: 'registro',
@@ -185,11 +185,20 @@ export const routes: Routes = [
         canActivate: restaurantOnly,
         loadComponent: () => import('./features/restaurant/plans/plans').then((m) => m.Plans),
       },
+      {
+        path: 'restaurant-profile/edit',
+        title: 'Editar perfil · Komanda',
+        canActivate: restaurantOnly,
+        loadComponent: () =>
+          import('./features/restaurant/profile-edit/restaurant-profile-edit').then(
+            (m) => m.RestaurantProfileEdit,
+          ),
+      },
       { path: '', redirectTo: 'vagas', pathMatch: 'full' },
     ],
   },
   {
     path: '**',
-    redirectTo: 'registro',
+    redirectTo: 'login',
   },
 ];

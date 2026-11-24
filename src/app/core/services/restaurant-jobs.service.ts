@@ -70,4 +70,20 @@ export class RestaurantJobsService {
       ),
     );
   }
+
+  /** Vagas em que o profissional foi aprovado: e o vinculo que libera a avaliacao. */
+  approvedJobsWith(professionalId: string): Observable<RestaurantJob[]> {
+    return this.overview().pipe(
+      map((overview) =>
+        overview
+          .filter(({ applicants }) =>
+            applicants.some(
+              (applicant) =>
+                applicant.professional.id === professionalId && applicant.status === 'APROVADA',
+            ),
+          )
+          .map(({ job }) => job),
+      ),
+    );
+  }
 }

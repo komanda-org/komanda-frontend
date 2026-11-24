@@ -102,7 +102,11 @@ describe('CandidateProfile', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  // A busca de contratacoes aprovadas roda em todo perfil; os testes que nao tratam dela a descartam.
+  afterEach(() => {
+    http.match((r) => r.url === '/api/users/me/jobs');
+    http.verify();
+  });
 
   async function open(state: CandidateProfileState | null, query: Record<string, string> = { job: 'j1' }) {
     harness = await RouterTestingHarness.create();
@@ -249,5 +253,51 @@ describe('CandidateProfile', () => {
 
     expect(q('application-status')?.textContent).toContain('Aprovado');
     expect(q('back-link')?.getAttribute('href')).toBe('/pipeline?job=j1');
+  });
+
+  describe('rating the professional', () => {
+    const JOB = {
+      id: 'j1',
+      title: 'Sushiman',
+      description: '',
+      requirements: null,
+      salary: null,
+      contractType: 'CLT',
+      shifts: ['NOITE'],
+      status: 'ABERTA',
+      urgent: false,
+      createdAt: '2026-11-18T12:00:00.000Z',
+    };
+    const applicants = (status: string) => ({
+      data: [{ applicationId: 'a1', status, applicationDate: '2026-11-18T12:00:00.000Z', professional: SUMMARY }],
+      total: 1,
+      skip: 0,
+      take: 50,
+    });
+
+    function flushHires(status: string): void {
+      http.expectOne((r) => r.url === '/api/users/me/jobs').flush({ data: [JOB], total: 1, skip: 0, take: 50 });
+      http.expectOne((r) => r.url === '/api/jobs/j1/applications').flush(applicants(status));
+      harness.detectChanges();
+    }
+
+    it('shows the review button only for jobs where the professional was approved', async () => {
+      await open(null, {});
+      flush(PROFILE, reviewsPage([], 0, 0, null));
+      flushHires('APROVADA');
+
+      expect(q('rate-panel')).not.toBeNull();
+      expect(q('rate-item')?.textContent).toContain('Sushiman');
+      expect(q('review-btn')?.textContent).toContain('Avaliar');
+    });
+
+    it('hides the review button without an approval', async () => {
+      await open(null, {});
+      flush(PROFILE, reviewsPage([], 0, 0, null));
+      flushHires('PENDENTE');
+
+      expect(q('rate-panel')).toBeNull();
+      expect(q('review-btn')).toBeNull();
+    });
   });
 });

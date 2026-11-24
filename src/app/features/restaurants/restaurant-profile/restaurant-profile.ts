@@ -4,8 +4,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { homeFor } from '../../../core/guards/role.guard';
 import { isApiError } from '../../../core/models/api-error.model';
+import { MyApplicationJob } from '../../../core/models/applications.model';
 import { Review } from '../../../core/models/profile.model';
 import { OpenJob, RestaurantPublicProfile } from '../../../core/models/restaurant.model';
+import { ApplicationsService } from '../../../core/services/applications.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import { RestaurantsService } from '../../../core/services/restaurants.service';
@@ -13,6 +15,7 @@ import { describeError } from '../../../core/utils/http-error';
 import { contractLabel, formatSalary, shiftsLabel } from '../../../core/utils/job-labels';
 import { formatRating, starFills } from '../../../core/utils/rating';
 import { initials } from '../../../core/utils/text';
+import { ReviewButton } from '../../../shared/ui/review-dialog/review-button';
 
 type PageState = 'loading' | 'error' | 'not-found' | 'ready';
 type SectionState = 'loading' | 'error' | 'ready';
@@ -33,7 +36,7 @@ export function jobMetaLine(job: OpenJob): string {
 
 @Component({
   selector: 'app-restaurant-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, ReviewButton],
   templateUrl: './restaurant-profile.html',
   styleUrl: './restaurant-profile.scss',
 })
@@ -41,6 +44,7 @@ export class RestaurantProfile {
   private readonly route = inject(ActivatedRoute);
   private readonly restaurants = inject(RestaurantsService);
   private readonly profiles = inject(ProfileService);
+  private readonly applications = inject(ApplicationsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly user = inject(AuthService).getUser();
 
@@ -56,7 +60,7 @@ export class RestaurantProfile {
 
   protected readonly backLink = homeFor(this.user?.role);
 
-  private readonly restaurantId = signal('');
+  protected readonly restaurantId = signal('');
 
   protected readonly state = signal<PageState>('loading');
   protected readonly errorMessage = signal('');
@@ -64,6 +68,8 @@ export class RestaurantProfile {
 
   protected readonly reviewsState = signal<SectionState>('loading');
   protected readonly reviews = signal<Review[]>([]);
+  /** Vagas deste restaurante em que o profissional logado foi aprovado; sem elas nao ha avaliacao. */
+  protected readonly hiredJobs = signal<MyApplicationJob[]>([]);
 
   protected readonly isOwner = computed(
     () => !!this.user && this.user.role === 'RESTAURANTE' && this.user.id === this.restaurantId(),
@@ -107,6 +113,7 @@ export class RestaurantProfile {
           this.restaurant.set(restaurant);
           this.state.set('ready');
           this.loadReviews();
+          this.loadHiredJobs();
         },
         error: (error: unknown) => {
           // 400 = id que nao e UUID: para quem abriu o link, e o mesmo que nao existir.
@@ -137,6 +144,21 @@ export class RestaurantProfile {
           this.reviewsState.set('ready');
         },
         error: () => this.reviewsState.set('error'),
+      });
+  }
+
+  // Falha aqui so esconde o botao de avaliar; o resto do perfil segue normal.
+  private loadHiredJobs(): void {
+    this.hiredJobs.set([]);
+    if (this.user?.role !== 'PROFISSIONAL') {
+      return;
+    }
+    this.applications
+      .approvedJobsWith(this.restaurantId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (jobs) => this.hiredJobs.set(jobs),
+        error: () => this.hiredJobs.set([]),
       });
   }
 }

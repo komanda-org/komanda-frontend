@@ -75,12 +75,37 @@ export interface RestaurantMe {
   plan: RestaurantPlan;
 }
 
+/** PUT /users/me do restaurante. CNPJ e e-mail nao mudam por aqui; o logo tem rota propria. */
+export interface UpdateRestaurantPayload {
+  restaurantName: string;
+  cuisineType: string;
+  description: string;
+  address: string;
+  phone: string;
+  /** `null` apaga o CEP: restaurante itinerante. */
+  zipCode: string | null;
+}
+
+export interface UpdateRestaurantResponse {
+  userId: string;
+  role: 'RESTAURANTE';
+  profile: UpdateRestaurantPayload & { logoUrl: string | null };
+}
+
 /** GET /users/me responde os dois papeis; `role` diferencia. */
 export type Me = ProfessionalMe | RestaurantMe;
 
 /** Para telas so do profissional: um restaurante vira o mesmo 403 que a API daria. */
 export function requireProfessional(me: Me): ProfessionalMe {
   if (me.role !== 'PROFISSIONAL') {
+    throw { status: 403, messages: [] } satisfies ApiError;
+  }
+  return me;
+}
+
+/** Para telas so do restaurante: um profissional vira o mesmo 403 que a API daria. */
+export function requireRestaurant(me: Me): RestaurantMe {
+  if (me.role !== 'RESTAURANTE') {
     throw { status: 403, messages: [] } satisfies ApiError;
   }
   return me;
@@ -98,7 +123,6 @@ export interface ExperiencePayload {
 export interface UpdateProfilePayload {
   fullName: string;
   mainRole: string;
-  profilePhoto: string | null;
   experienceSummary: string | null;
   neighborhood: string | null;
   city: string | null;

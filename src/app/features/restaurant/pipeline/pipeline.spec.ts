@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, UrlTree, convertToParamMap, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Applicant, RestaurantJob } from '../../../core/models/restaurant-jobs.model';
-import { Pipeline, appliedAtLabel, ratingBadge } from './pipeline';
+import { Pipeline, appliedAtLabel, jobOptionLabel, ratingBadge } from './pipeline';
 
 const job = (id: string, status: RestaurantJob['status'] = 'ABERTA'): RestaurantJob => ({
   id,
@@ -50,6 +50,14 @@ describe('ratingBadge', () => {
   });
 });
 
+describe('jobOptionLabel', () => {
+  it('adds the pending count in parentheses once it is known', () => {
+    expect(jobOptionLabel(job('j1'))).toBe('Vaga j1 · Noite');
+    expect(jobOptionLabel(job('j1'), 3)).toBe('Vaga j1 · Noite (3)');
+    expect(jobOptionLabel(job('j0', 'ENCERRADA'), 0)).toBe('Vaga j0 · Noite (0) (encerrada)');
+  });
+});
+
 describe('Pipeline', () => {
   let fixture: ComponentFixture<Pipeline>;
   let http: HttpTestingController;
@@ -81,7 +89,11 @@ describe('Pipeline', () => {
     http.expectOne((r) => r.url === '/api/users/me/jobs').flush(page([job('j0', 'ENCERRADA'), job('j1'), job('j2')]));
   }
 
-  afterEach(() => http.verify());
+  // As contagens das outras vagas sao pedidas em paralelo; os testes que nao tratam delas as descartam.
+  afterEach(() => {
+    http.match((r) => r.method === 'GET' && r.url.endsWith('/applications'));
+    http.verify();
+  });
 
   it('opens the first open job and lists pending applicants with their counts', async () => {
     await render(null);
@@ -182,5 +194,27 @@ describe('Pipeline', () => {
     await settle();
 
     expect(el().querySelector('[data-testid="applicant-rating"]')?.textContent).toBe('Novo');
+  });
+
+  it('shows the pending count of every job in the selector and keeps it in sync', async () => {
+    await render('j1');
+    http
+      .expectOne((r) => r.url === '/api/jobs/j1/applications')
+      .flush(page([applicant('a1', 'PENDENTE'), applicant('a2', 'PENDENTE')]));
+    http.expectOne((r) => r.url === '/api/jobs/j0/applications').flush(page([applicant('a3', 'APROVADA')]));
+    http.expectOne((r) => r.url === '/api/jobs/j2/applications').flush(page([applicant('a4', 'PENDENTE')]));
+    await settle();
+
+    const options = () => Array.from(el().querySelectorAll('option')).map((o) => o.textContent?.trim());
+    expect(options()).toEqual([
+      'Vaga j0 · Noite (0) (encerrada)',
+      'Vaga j1 · Noite (2)',
+      'Vaga j2 · Noite (1)',
+    ]);
+
+    (el().querySelector('[data-testid="approve-btn"]') as HTMLButtonElement).click();
+    http.expectOne('/api/jobs/j1/applications/a1/status').flush({});
+    await settle();
+    expect(options()[1]).toBe('Vaga j1 · Noite (1)');
   });
 });

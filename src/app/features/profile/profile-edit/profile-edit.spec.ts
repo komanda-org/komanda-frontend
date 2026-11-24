@@ -2,6 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { ProfessionalMe } from '../../../core/models/profile.model';
@@ -10,11 +11,12 @@ import {
   ProfileEdit,
   describeSaveError,
   experienceDates,
-  httpUrl,
+  describePhotoError,
   toFormValue,
   toPayload,
   trimmedLength,
 } from './profile-edit';
+import { PhotoCropper } from '../../../shared/ui/photo-cropper/photo-cropper';
 
 const ME: ProfessionalMe = {
   role: 'PROFISSIONAL',
@@ -55,7 +57,6 @@ describe('ProfileEdit — pure functions', () => {
     expect(payload).toEqual({
       fullName: 'Jose Ravani',
       mainRole: 'Sushiman',
-      profilePhoto: null,
       experienceSummary: 'Dez anos de balcão.',
       neighborhood: null,
       city: 'São Paulo',
@@ -79,14 +80,12 @@ describe('ProfileEdit — pure functions', () => {
 
   it('sends null (never "") for cleared optional text and endDate null for the current job', () => {
     const value = toFormValue(ME);
-    value.profilePhoto = '   ';
     value.city = '';
     value.state = '';
     value.experiences[1].current = true;
 
     const payload = toPayload(value);
 
-    expect(payload.profilePhoto).toBeNull();
     expect(payload.city).toBeNull();
     expect(payload.state).toBeNull();
     expect(payload.experiences[1].endDate).toBeNull();
@@ -105,13 +104,6 @@ describe('ProfileEdit — pure functions', () => {
     expect(validator(new FormControl('    '))).toEqual({ required: true });
     expect(validator(new FormControl(' ab '))).toEqual({ length: { min: 3, max: 100 } });
     expect(validator(new FormControl('Jose'))).toBeNull();
-  });
-
-  it('accepts only http(s) photo links', () => {
-    expect(httpUrl(new FormControl(''))).toBeNull();
-    expect(httpUrl(new FormControl('https://cdn.komanda.dev/a.jpg'))).toBeNull();
-    expect(httpUrl(new FormControl('foto.jpg'))).toEqual({ url: true });
-    expect(httpUrl(new FormControl('javascript:alert(1)'))).toEqual({ url: true });
   });
 
   it('rejects an end date before the start, and a missing end without "Emprego atual"', () => {
@@ -138,6 +130,16 @@ describe('ProfileEdit — pure functions', () => {
         messages: ['Experiência em X: endDate não pode ser anterior a startDate'],
       }),
     ).toBe('Experiência em X: data de fim não pode ser anterior a data de início');
+  });
+
+  it('turns photo upload failures into actionable copy, without the HTTP status', () => {
+    const apiError = (status: number, messages: string[] = []) => ({ status, messages, fieldErrors: null });
+    expect(describePhotoError(apiError(400, ['Formato inválido. Use JPG, PNG ou WEBP']))).toBe(
+      'Formato inválido. Use JPG, PNG ou WEBP.',
+    );
+    expect(describePhotoError(apiError(413))).toContain('5 MB');
+    expect(describePhotoError(apiError(429))).toContain('Muitas tentativas');
+    expect(describePhotoError(apiError(500))).not.toMatch(/500/);
   });
 });
 
@@ -182,7 +184,7 @@ describe('ProfileEdit', () => {
         provideRouter([]),
         provideHttpClient(withInterceptors([apiErrorInterceptor])),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: { logout } },
+        { provide: AuthService, useValue: { logout, getUser: () => ({ id: 'u1', role: 'PROFISSIONAL' }) } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -306,5 +308,108 @@ describe('ProfileEdit', () => {
 
     expect(logout).toHaveBeenCalled();
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+
+  describe('profile photo', () => {
+    beforeEach(() => {
+      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:photo'), revokeObjectURL: vi.fn() }));
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    function pick(file: File): void {
+      const input = q<HTMLInputElement>('photo-input')!;
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+      input.dispatchEvent(new Event('change'));
+    }
+
+    const image = (type = 'image/png', size = 1024) => new File([new Uint8Array(size)], 'foto.png', { type });
+
+    function cropper(): PhotoCropper {
+      return fixture.debugElement.query(By.directive(PhotoCropper)).componentInstance as PhotoCropper;
+    }
+
+    it('shows the initials without a photo and no URL field anymore', async () => {
+      await render();
+
+      expect(q('photo-initials')!.textContent?.trim()).toBe('JR');
+      expect(q('photo-remove')).toBeNull();
+      expect(el().querySelector('input[type="url"]')).toBeNull();
+    });
+
+    it('refuses a file that is too big or not an image before opening the editor', async () => {
+      await render();
+
+      pick(image('image/gif'));
+      await settle();
+      expect(q('photo-error')!.textContent).toContain('JPG, PNG ou WEBP');
+      expect(q('photo-cropper')).toBeNull();
+
+      pick(image('image/jpeg', 5 * 1024 * 1024 + 1));
+      await settle();
+      expect(q('photo-error')!.textContent).toContain('5 MB');
+      expect(q('photo-cropper')).toBeNull();
+    });
+
+    it('uploads the cropped image as multipart and swaps the avatar without reloading', async () => {
+      await render();
+      pick(image());
+      await settle();
+      expect(q('photo-cropper')).not.toBeNull();
+
+      cropper().saved.emit(new Blob(['x'], { type: 'image/webp' }));
+      await settle();
+      expect(q('cropper-save')!.textContent).toContain('Enviando');
+
+      const request = http.expectOne('/api/users/me/photo');
+      expect(request.request.method).toBe('POST');
+      const body = request.request.body as FormData;
+      expect(body).toBeInstanceOf(FormData);
+      expect((body.get('file') as File).name).toBe('foto.webp');
+      expect(request.request.headers.has('Content-Type')).toBe(false);
+      request.flush({ url: 'http://cdn/uploads/profile-photos/1.webp' });
+      await settle();
+
+      expect(q('photo-cropper')).toBeNull();
+      expect(q('photo-avatar')!.getAttribute('src')).toBe('http://cdn/uploads/profile-photos/1.webp');
+    });
+
+    it('keeps the editor open with the API message when the upload fails', async () => {
+      await render();
+      pick(image());
+      await settle();
+
+      cropper().saved.emit(new Blob(['x'], { type: 'image/jpeg' }));
+      http
+        .expectOne('/api/users/me/photo')
+        .flush({ message: 'A imagem deve ter no máximo 5 MB' }, { status: 400, statusText: 'Bad Request' });
+      await settle();
+
+      expect(q('cropper-error')!.textContent).toContain('A imagem deve ter no máximo 5 MB.');
+      expect(q('cropper-save')!.textContent).toContain('Salvar foto');
+    });
+
+    it('removes the photo and goes back to the initials', async () => {
+      await render({ ...ME, profilePhoto: 'http://cdn/a.webp' });
+      expect(q('photo-avatar')!.getAttribute('src')).toBe('http://cdn/a.webp');
+
+      q('photo-remove')!.click();
+      const request = http.expectOne('/api/users/me/photo');
+      expect(request.request.method).toBe('DELETE');
+      request.flush(null, { status: 204, statusText: 'No Content' });
+      await settle();
+
+      expect(q('photo-avatar')).toBeNull();
+      expect(q('photo-initials')).not.toBeNull();
+    });
+
+    it('never sends the photo in the profile PUT', async () => {
+      await render({ ...ME, profilePhoto: 'http://cdn/a.webp' });
+      save();
+      const request = http.expectOne({ method: 'PUT', url: '/api/users/me' });
+      expect('profilePhoto' in request.request.body).toBe(false);
+      request.flush({ userId: 'u1', role: 'PROFISSIONAL', profile: ME });
+      await settle();
+    });
   });
 });

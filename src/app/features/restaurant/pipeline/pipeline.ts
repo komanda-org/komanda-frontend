@@ -29,6 +29,13 @@ export function appliedAtLabel(iso: string, now: Date): string {
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date);
 }
 
+export function jobOptionLabel(job: RestaurantJob, pending?: number): string {
+  const shift = shiftsLabel(job.shifts);
+  const count = pending === undefined ? '' : ` (${pending})`;
+  const closed = job.status === 'ENCERRADA' ? ' (encerrada)' : '';
+  return `${job.title}${shift ? ' · ' + shift : ''}${count}${closed}`;
+}
+
 @Component({
   selector: 'app-pipeline',
   imports: [RouterLink, ReviewButton],
@@ -56,6 +63,8 @@ export class Pipeline {
   protected readonly busyId = signal<string | null>(null);
   protected readonly rowError = signal<{ id: string; message: string } | null>(null);
   protected readonly expandedId = signal<string | null>(null);
+  /** Candidatos pendentes por vaga, para o seletor; vaga sem numero ainda nao carregou. */
+  protected readonly pendingByJob = signal<Record<string, number>>({});
   private readonly now = new Date();
 
   protected readonly selectedJob = computed(
@@ -102,6 +111,7 @@ export class Pipeline {
           if (initial) {
             this.selectJob(initial.id);
           }
+          this.loadPendingCounts(jobs.filter((job) => job.id !== initial?.id));
         },
         error: (error: unknown) => {
           this.loadingJobs.set(false);
@@ -131,6 +141,7 @@ export class Pipeline {
         next: (applicants) => {
           this.applicants.set(applicants);
           this.loadingApplicants.set(false);
+          this.syncPendingCount(jobId);
         },
         error: (error: unknown) => {
           this.applicants.set([]);
@@ -158,6 +169,7 @@ export class Pipeline {
               item.applicationId === applicant.applicationId ? { ...item, status } : item,
             ),
           );
+          this.syncPendingCount(jobId);
         },
         error: (error: unknown) => {
           this.busyId.set(null);
@@ -187,8 +199,27 @@ export class Pipeline {
   }
 
   protected jobOptionLabel(job: RestaurantJob): string {
-    const shift = shiftsLabel(job.shifts);
-    const closed = job.status === 'ENCERRADA' ? ' (encerrada)' : '';
-    return `${job.title}${shift ? ' · ' + shift : ''}${closed}`;
+    return jobOptionLabel(job, this.pendingByJob()[job.id]);
+  }
+
+  private syncPendingCount(jobId: string): void {
+    this.pendingByJob.update((counts) => ({ ...counts, [jobId]: this.count('PENDENTE') }));
+  }
+
+  // A API nao tem contagem por vaga; falha numa vaga so deixa o seletor sem o numero dela.
+  private loadPendingCounts(jobs: RestaurantJob[]): void {
+    for (const job of jobs) {
+      this.jobsService
+        .listApplicants(job.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (applicants) =>
+            this.pendingByJob.update((counts) => ({
+              ...counts,
+              [job.id]: applicants.filter((applicant) => applicant.status === 'PENDENTE').length,
+            })),
+          error: () => undefined,
+        });
+    }
   }
 }

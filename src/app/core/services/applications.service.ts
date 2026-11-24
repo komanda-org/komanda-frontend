@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { MyApplicationsPage } from '../models/applications.model';
+import { MyApplicationJob, MyApplicationsPage } from '../models/applications.model';
 import { Application } from '../models/jobs.model';
 
 /** Maior pagina que a API aceita (ListMyApplicationsQueryDto: @Max(50)). */
@@ -21,5 +21,16 @@ export class ApplicationsService {
     return this.http.get<MyApplicationsPage>(`${this.base}/users/me/applications`, {
       params: { skip, take },
     });
+  }
+
+  /** Vagas deste restaurante em que fui aprovado: e o vinculo que libera a avaliacao. */
+  approvedJobsWith(restaurantId: string): Observable<MyApplicationJob[]> {
+    return this.list().pipe(
+      map((page) =>
+        page.data
+          .filter((app) => app.status === 'APROVADA' && app.restaurant.id === restaurantId)
+          .map((app) => app.job),
+      ),
+    );
   }
 }

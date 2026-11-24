@@ -101,6 +101,23 @@ blockquote {
   line-height: 1.2;
 }
 
+.edit-link {
+  padding: 0.5rem 1rem;
+  color: var(--k-ouro);
+  border: 1px solid rgb(242 202 80 / 50%);
+  border-radius: var(--k-raio);
+  font-size: var(--k-t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  &:hover,
+  &:focus-visible {
+    background: rgb(242 202 80 / 8%);
+  }
+}
+
 .rating {
   display: flex;
   flex-wrap: wrap;
@@ -184,6 +201,32 @@ blockquote {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.rate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rate-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rate-job {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .section-head {
