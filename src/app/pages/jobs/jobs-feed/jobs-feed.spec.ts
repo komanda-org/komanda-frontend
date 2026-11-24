@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpParams, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
@@ -7,9 +7,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiErrorInterceptor } from '../../../core/http/api-error.interceptor';
 import { Application, Job, JobsResponse } from '../../../core/models/jobs.model';
-import { LocationService } from '../../../core/services/location.service';
+import { LocationService, UserLocation } from '../../../core/services/location.service';
 import { ProfessionalPreferencesService } from '../../../core/services/professional-preferences.service';
-import { DISTANCE_NO_LIMIT, JobsFeed, applyDistanceFilter, toMaxDistance } from './jobs-feed';
+import { DISTANCE_NO_LIMIT, JobsFeed, LOCATION_WAIT_MS, toMaxDistance } from './jobs-feed';
 
 const restaurant = (restaurantName: string, zipCode = '01001-000') => ({
   restaurantName,
@@ -64,21 +64,6 @@ const jobs: Job[] = [
   },
 ];
 
-describe('applyDistanceFilter', () => {
-  const at = (id: string, distanceKm: number | null | undefined): Job => ({ ...jobs[1], id, distanceKm });
-
-  it('keeps jobs within the radius nearest first, then jobs without distance, and counts the hidden', () => {
-    const view = applyDistanceFilter(
-      [at('far', 80), at('unknown', null), at('near', 2), at('mid', 9), at('calculating', undefined)],
-      10,
-    );
-
-    expect(view.jobs.map((job) => job.id)).toEqual(['near', 'mid', 'unknown', 'calculating']);
-    expect(view.hidden).toBe(1);
-    expect(view.unknown).toBe(2);
-  });
-});
-
 describe('toMaxDistance', () => {
   it('maps the slider from 5 to 100 km, with the last stop meaning no limit', () => {
     expect(toMaxDistance('5')).toBe(5);
@@ -92,20 +77,8 @@ describe('toMaxDistance', () => {
 describe('JobsFeed', () => {
   let fixture: ComponentFixture<JobsFeed>;
   let http: HttpTestingController;
-  // Nos testes a "latitude" do restaurante ja e a distancia em km, para ler facil.
-  const DISTANCE_BY_ZIP: Record<string, number | null> = {
-    '01001-000': 3,
-    '20000-000': 60,
-    '99999-999': null,
-  };
-  const location = {
-    getUserLocation: vi.fn(),
-    getRestaurantCoordinates: vi.fn(async (zipCode: string) => {
-      const distance = DISTANCE_BY_ZIP[zipCode];
-      return distance === null || distance === undefined ? null : { lat: distance, lng: 0 };
-    }),
-    calculateDistanceKm: vi.fn((_origin: unknown, destination: { lat: number }) => destination.lat),
-  };
+  const location = { getUserLocation: vi.fn() };
+  const GRANTED: UserLocation = { status: 'granted', coordinates: { lat: -12.97, lng: -38.5 } };
 
   const response: JobsResponse = { data: jobs, total: 12, skip: 0, take: 20 };
 
@@ -130,12 +103,11 @@ describe('JobsFeed', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(JobsFeed);
     http = TestBed.inject(HttpTestingController);
-    fixture.detectChanges();
   });
 
   afterEach(() => {
+    http.expectNone((request) => request.url.includes('brasilapi') || request.url.includes('nominatim'));
     http.verify();
     vi.unstubAllGlobals();
   });
@@ -155,23 +127,40 @@ describe('JobsFeed', () => {
     };
   }
 
-  function loadJobs(data: JobsResponse = response): void {
-    const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
-    expect(jobsRequest.request.method).toBe('GET');
-    expect(jobsRequest.request.params.get('take')).toBe('20');
-    expect(jobsRequest.request.params.get('skip')).toBe('0');
-    const applicationsRequest = http.expectOne(
-      (request) => request.url === '/api/users/me/applications',
-    );
-    expect(applicationsRequest.request.method).toBe('GET');
-    jobsRequest.flush(data);
-    applicationsRequest.flush(applicationsPage('job-applied'));
-    fixture.detectChanges();
-  }
-
   async function settle(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
+  }
+
+  /** O feed pede a localizacao ao nascer e so depois busca as vagas. */
+  async function createFeed(userLocation: UserLocation = { status: 'unavailable' }): Promise<void> {
+    location.getUserLocation.mockResolvedValue(userLocation);
+    fixture = TestBed.createComponent(JobsFeed);
+    fixture.detectChanges();
+    await settle();
+  }
+
+  /** Responde a proxima busca e devolve os parametros que ela mandou. */
+  function flushSearch(data: JobsResponse, applied: string[] = []): HttpParams {
+    const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
+    expect(jobsRequest.request.method).toBe('GET');
+    http
+      .expectOne((request) => request.url === '/api/users/me/applications')
+      .flush(applicationsPage(...applied));
+    jobsRequest.flush(data);
+    fixture.detectChanges();
+    return jobsRequest.request.params;
+  }
+
+  async function loadJobs(
+    data: JobsResponse = response,
+    userLocation?: UserLocation,
+  ): Promise<HttpParams> {
+    await createFeed(userLocation);
+    const params = flushSearch(data, ['job-applied']);
+    expect(params.get('take')).toBe('20');
+    expect(params.get('skip')).toBe('0');
+    return params;
   }
 
   const el = () => fixture.nativeElement as HTMLElement;
@@ -179,156 +168,173 @@ describe('JobsFeed', () => {
   const cardTitles = () =>
     Array.from(el().querySelectorAll('.job-card__title')).map((node) => node.textContent?.trim());
 
-  function setMaxDistance(km: string): void {
+  /** Arrastar dispara `input`; soltar dispara `change`. */
+  function dragDistance(km: string): void {
     const input = q('distance-input') as HTMLInputElement;
     input.value = km;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
   }
 
-  const located = (id: string, title: string, zipCode: string): Job => ({
-    ...jobs[1],
-    id,
-    title,
-    restaurant: restaurant('Cantina Bella Massa', zipCode),
-  });
-  const nearbyPage = [
-    located('near', 'Pizzaiolo', '01001-000'),
-    located('far', 'Garçom', '20000-000'),
-    located('unknown', 'Sommelier', '99999-999'),
-  ];
-
-  function grantLocation(): void {
-    location.getUserLocation.mockResolvedValue({
-      status: 'granted',
-      coordinates: { lat: -23.55, lng: -46.63 },
-    });
+  function releaseDistance(km: string): void {
+    dragDistance(km);
+    (q('distance-input') as HTMLInputElement).dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
   }
 
-  it('shows the distance in km and keeps jobs inside a large radius', async () => {
-    grantLocation();
-    loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 });
-    await settle();
+  const at = (id: string, title: string, distanceKm?: number | null): Job => {
+    const job: Job = { ...jobs[1], id, title, restaurant: restaurant('Cantina Bella Massa') };
+    return distanceKm === undefined ? job : { ...job, distanceKm };
+  };
+  const nearbyPage = [at('near', 'Pizzaiolo', 3), at('far', 'Garçom', 60), at('unknown', 'Sommelier', null)];
 
-    expect(q('distance-badge')?.textContent).toContain('3.0 KM');
-    expect(q('distance-value')?.textContent).toBe('Sem limite');
-    setMaxDistance('100');
-    http.expectOne((request) => request.url === '/api/jobs/search').flush({
-      data: nearbyPage,
-      total: 3,
-      skip: 0,
-      take: 20,
+  describe('distance', () => {
+    it('sends no location params when the location is not available', async () => {
+      const params = await loadJobs(response, { status: 'unavailable' });
+
+      expect(params.has('lat')).toBe(false);
+      expect(params.has('lng')).toBe(false);
+      expect(params.has('maxDistanceKm')).toBe(false);
     });
-    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
-      applicationsPage(),
-    );
-    await settle();
 
-    expect(q('distance-value')?.textContent).toBe('até 100 km');
+    it('sends lat/lng without a radius when the location is granted and there is no limit', async () => {
+      const params = await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
 
-    expect(cardTitles()).toEqual(['Pizzaiolo', 'Garçom', 'Sommelier']);
-    expect(q('distance-note')?.textContent).toContain('entre as 3 carregadas');
-  });
-
-  it('hides jobs outside a small radius with an explanation, keeping unknown ones last', async () => {
-    grantLocation();
-    loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 });
-    await settle();
-    setMaxDistance('10');
-    http.expectOne((request) => request.url === '/api/jobs/search').flush({
-      data: nearbyPage,
-      total: 3,
-      skip: 0,
-      take: 20,
+      expect(params.get('lat')).toBe('-12.97');
+      expect(params.get('lng')).toBe('-38.5');
+      expect(params.has('maxDistanceKm')).toBe(false);
+      expect(q('jobs-total')?.textContent).toContain('3 vagas perto de você');
     });
-    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
-      applicationsPage(),
-    );
-    await settle();
 
-    expect(cardTitles()).toEqual(['Pizzaiolo', 'Sommelier']);
-    expect(q('distance-note')?.textContent).toContain('1 vaga fora do raio foi ocultada');
-    expect(q('distance-note')?.textContent).toContain('sem distância calculada aparecem no fim');
-    const lastCard = Array.from(el().querySelectorAll('.job-card')).at(-1);
-    expect(lastCard?.querySelector('[data-testid="distance-unavailable"]')?.textContent).toContain(
-      'Distância indisponível',
-    );
-  });
+    it('shows the API distance, "Distância indisponível" for null and nothing when absent', async () => {
+      await loadJobs(
+        { data: [...nearbyPage, at('no-field', 'Barman')], total: 4, skip: 0, take: 20 },
+        GRANTED,
+      );
 
-  it('explains an empty list caused only by the distance filter', async () => {
-    grantLocation();
-    loadJobs({ data: [nearbyPage[1]], total: 1, skip: 0, take: 20 });
-    await settle();
-    setMaxDistance('10');
-    http.expectOne((request) => request.url === '/api/jobs/search').flush({
-      data: [nearbyPage[1]],
-      total: 1,
-      skip: 0,
-      take: 20,
+      const badgesOf = (title: string) => {
+        const card = Array.from(el().querySelectorAll('.job-card')).find(
+          (node) => node.querySelector('.job-card__title')?.textContent?.trim() === title,
+        );
+        return {
+          distance: card?.querySelector('[data-testid="distance-badge"]')?.textContent?.trim(),
+          unavailable: card?.querySelector('[data-testid="distance-unavailable"]')?.textContent?.trim(),
+        };
+      };
+      expect(badgesOf('Pizzaiolo')).toEqual({ distance: '3.0 KM', unavailable: undefined });
+      expect(badgesOf('Sommelier')).toEqual({ distance: undefined, unavailable: 'Distância indisponível' });
+      expect(badgesOf('Barman')).toEqual({ distance: undefined, unavailable: undefined });
     });
-    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
-      applicationsPage(),
-    );
-    await settle();
 
-    expect(q('distance-empty')?.textContent).toContain('Nenhuma das vagas carregadas fica a até 10 km');
-  });
+    it('does not search while the slider is dragged, only when it is released', async () => {
+      await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
 
-  it('shows a loading hint while distances are being calculated, without emptying the list', async () => {
-    let release: (value: unknown) => void = () => undefined;
-    location.getUserLocation.mockReturnValue(new Promise((resolve) => (release = resolve)));
-    loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 });
-    await settle();
+      dragDistance('10');
+      dragDistance('25');
+      expect(q('distance-value')?.textContent).toBe('até 25 km');
+      http.expectNone((request) => request.url === '/api/jobs/search');
 
-    expect(q('distance-hint')?.textContent).toContain('Calculando distâncias');
-    expect(cardTitles()).toHaveLength(3);
-
-    release({ status: 'granted', coordinates: { lat: 0, lng: 0 } });
-    await settle();
-    expect(q('distance-hint')?.textContent?.trim()).toBe('');
-  });
-
-  it('disables the distance filter and explains why when location is denied', async () => {
-    location.getUserLocation.mockResolvedValue({ status: 'denied' });
-    loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 });
-    await settle();
-
-    expect((q('distance-input') as HTMLInputElement).disabled).toBe(true);
-    expect(q('distance-hint')?.textContent).toContain('Ative a localização');
-    expect(cardTitles()).toHaveLength(3);
-    expect(q('distance-unavailable')).toBeNull();
-  });
-
-  it('applies the distance filter to jobs from "load more" too', async () => {
-    grantLocation();
-    loadJobs({ data: [nearbyPage[0]], total: 2, skip: 0, take: 20 });
-    await settle();
-    setMaxDistance('10');
-    http.expectOne((request) => request.url === '/api/jobs/search').flush({
-      data: [nearbyPage[0]],
-      total: 2,
-      skip: 0,
-      take: 20,
+      releaseDistance('10');
+      const params = flushSearch({ data: [nearbyPage[0]], total: 1, skip: 0, take: 20 });
+      expect(params.get('maxDistanceKm')).toBe('10');
+      expect(params.get('skip')).toBe('0');
+      expect(params.get('lat')).toBe('-12.97');
     });
-    http.expectOne((request) => request.url === '/api/users/me/applications').flush(
-      applicationsPage(),
-    );
-    await settle();
 
-    (el().querySelector('.load-more') as HTMLButtonElement).click();
-    http
-      .expectOne((r) => r.url === '/api/jobs/search' && r.params.get('skip') === '1')
-      .flush({ data: [nearbyPage[1]], total: 2, skip: 1, take: 20 });
-    http.expectOne((r) => r.url === '/api/users/me/applications').flush(applicationsPage());
-    await settle();
+    it('keeps the current list on screen while the new radius is being searched', async () => {
+      await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
 
-    expect(cardTitles()).toEqual(['Pizzaiolo']);
-    expect(q('distance-note')?.textContent).toContain('entre as 2 carregadas');
-    expect(q('distance-note')?.textContent).toContain('1 vaga fora do raio foi ocultada');
+      releaseDistance('10');
+
+      expect(el().querySelector('.status--loading')).toBeNull();
+      expect(cardTitles()).toEqual(['Pizzaiolo', 'Garçom', 'Sommelier']);
+      expect(el().querySelector('.jobs-grid')?.classList).toContain('is-refreshing');
+
+      flushSearch({ data: [nearbyPage[0]], total: 12, skip: 0, take: 20 });
+
+      expect(cardTitles()).toEqual(['Pizzaiolo']);
+      expect(el().querySelector('.jobs-grid')?.classList).not.toContain('is-refreshing');
+      expect(q('jobs-total')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('12 vagas até 10 km');
+    });
+
+    it('keeps the radius params when loading more', async () => {
+      await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
+      releaseDistance('10');
+      flushSearch({ data: [nearbyPage[0]], total: 2, skip: 0, take: 20 });
+
+      (el().querySelector('.load-more') as HTMLButtonElement).click();
+      const request = http.expectOne(
+        (r) => r.url === '/api/jobs/search' && r.params.get('skip') === '1',
+      );
+      http.expectOne((r) => r.url === '/api/users/me/applications').flush(applicationsPage());
+      expect(request.request.params.get('maxDistanceKm')).toBe('10');
+      expect(request.request.params.get('lat')).toBe('-12.97');
+      request.flush({ data: [at('mid', 'Barman', 8)], total: 2, skip: 1, take: 20 });
+      fixture.detectChanges();
+
+      expect(cardTitles()).toEqual(['Pizzaiolo', 'Barman']);
+    });
+
+    it('suggests a larger radius when nothing is inside it', async () => {
+      await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
+      releaseDistance('5');
+      flushSearch({ data: [], total: 0, skip: 0, take: 20 });
+
+      const text = q('distance-empty')?.textContent ?? '';
+      expect(text).toContain('Nenhuma vaga a até 5 km de você');
+      expect(text).toContain('Aumente a distância');
+      expect(text).not.toContain('carregue mais');
+    });
+
+    it('disables the distance filter and explains why when location is denied', async () => {
+      const params = await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, { status: 'denied' });
+
+      expect(params.has('lat')).toBe(false);
+      expect((q('distance-input') as HTMLInputElement).disabled).toBe(true);
+      expect(q('distance-hint')?.textContent).toContain('Ative a localização');
+      expect(q('distance-unavailable')).toBeNull();
+    });
+
+    it('loads without distance if the location takes long, then searches again with it', async () => {
+      vi.useFakeTimers();
+      try {
+        let release: (value: UserLocation) => void = () => undefined;
+        location.getUserLocation.mockReturnValue(new Promise((resolve) => (release = resolve)));
+        fixture = TestBed.createComponent(JobsFeed);
+        fixture.detectChanges();
+
+        await vi.advanceTimersByTimeAsync(LOCATION_WAIT_MS - 1);
+        http.expectNone((request) => request.url === '/api/jobs/search');
+        await vi.advanceTimersByTimeAsync(1);
+        expect(flushSearch(response).has('lat')).toBe(false);
+
+        release(GRANTED);
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+        expect(el().querySelector('.status--loading')).toBeNull();
+        expect(flushSearch(response).get('lat')).toBe('-12.97');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps the avatar color of a job when the list changes', async () => {
+      await loadJobs({ data: nearbyPage, total: 3, skip: 0, take: 20 }, GRANTED);
+      const avatarOf = (title: string) =>
+        Array.from(el().querySelectorAll('.job-card'))
+          .find((card) => card.querySelector('.job-card__title')?.textContent?.trim() === title)
+          ?.querySelector('.restaurant__initial')?.className;
+      const before = avatarOf('Sommelier');
+
+      releaseDistance('10');
+      flushSearch({ data: [nearbyPage[2]], total: 1, skip: 0, take: 20 });
+
+      expect(avatarOf('Sommelier')).toBe(before);
+    });
   });
 
-  it('renders the greeting and total returned by the API', () => {
-    loadJobs();
+  it('renders the greeting and total returned by the API', async () => {
+    await loadJobs();
 
     expect(fixture.nativeElement.textContent).toContain('Olá, João');
     expect(fixture.nativeElement.textContent).toContain('12 vagas perto de você');
@@ -337,8 +343,8 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.textContent).toContain('Urgente');
   });
 
-  it('shows the job shifts as a readable badge', () => {
-    loadJobs();
+  it('shows the job shifts as a readable badge', async () => {
+    await loadJobs();
 
     const badges = Array.from(el().querySelectorAll('.job-card')[0].querySelectorAll('.badge')).map(
       (badge) => badge.textContent?.trim(),
@@ -346,8 +352,8 @@ describe('JobsFeed', () => {
     expect(badges).toContain('Manhã e Tarde');
   });
 
-  it('filters by the Integral shift and no longer offers Madrugada', () => {
-    loadJobs();
+  it('filters by the Integral shift and no longer offers Madrugada', async () => {
+    await loadJobs();
 
     const select = el().querySelector<HTMLSelectElement>('select[name="jobShift"]')!;
     const options = Array.from(select.options).map((option) => option.value);
@@ -362,8 +368,8 @@ describe('JobsFeed', () => {
     jobsRequest.flush({ data: [], total: 0, skip: 0, take: 20 });
   });
 
-  it('links the restaurant name to its public profile', () => {
-    loadJobs();
+  it('links the restaurant name to its public profile', async () => {
+    await loadJobs();
 
     const hrefs = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="restaurant-link"]'),
@@ -372,12 +378,12 @@ describe('JobsFeed', () => {
     expect(hrefs).toHaveLength(3);
   });
 
-  it('loads the next server page and appends its jobs', () => {
+  it('loads the next server page and appends its jobs', async () => {
     const firstPage = Array.from({ length: 20 }, (_, index) => ({
       ...jobs[index % jobs.length],
       id: `page-${index}`,
     }));
-    loadJobs({ data: firstPage, total: 25, skip: 0, take: 20 });
+    await loadJobs({ data: firstPage, total: 25, skip: 0, take: 20 });
 
     fixture.nativeElement.querySelector('.load-more').click();
     const jobsRequest = http.expectOne(
@@ -401,8 +407,8 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(25);
   });
 
-  it('filters by job title or restaurant after submitting the search', () => {
-    loadJobs();
+  it('filters by job title or restaurant after submitting the search', async () => {
+    await loadJobs();
 
     const input: HTMLInputElement = fixture.nativeElement.querySelector('input[type="search"]');
     input.value = 'napoli';
@@ -424,8 +430,8 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.textContent).toContain('Pizzaria Napoli');
   });
 
-  it('filters by CLT and clears the filter when the selected chip is clicked again', () => {
-    loadJobs();
+  it('filters by CLT and clears the filter when the selected chip is clicked again', async () => {
+    await loadJobs();
 
     const nativeElement = fixture.nativeElement as HTMLElement;
     const cltChip = Array.from(
@@ -461,7 +467,7 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(3);
   });
 
-  it('does not require a contract preference to match Para você', () => {
+  it('does not require a contract preference to match Para você', async () => {
     localStorage.setItem(
       'komanda.user',
       JSON.stringify({ id: 'professional-1', role: 'PROFISSIONAL', email: 'joao@example.com' }),
@@ -471,12 +477,12 @@ describe('JobsFeed', () => {
       interestedRoles: [],
     });
 
-    loadJobs({ ...response, data: [{ ...jobs[0], contractType: 'PJ' }] });
+    await loadJobs({ ...response, data: [{ ...jobs[0], contractType: 'PJ' }] });
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
   });
 
-  it('filters Para você by the professional role and contract preference', () => {
+  it('filters Para você by the professional role and contract preference', async () => {
     localStorage.setItem(
       'komanda.user',
       JSON.stringify({ id: 'professional-1', role: 'PROFISSIONAL', email: 'joao@example.com' }),
@@ -492,14 +498,14 @@ describe('JobsFeed', () => {
       id: 'job-pj-cook',
       contractType: 'PJ',
     };
-    loadJobs({ ...response, data: [...jobs, sameRoleWithDifferentContract] });
+    await loadJobs({ ...response, data: [...jobs, sameRoleWithDifferentContract] });
 
     expect(fixture.nativeElement.querySelectorAll('.job-card')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('Cozinheiro de Linha');
   });
 
-  it('sends an application once and switches the action to the submitted state', () => {
-    loadJobs();
+  it('sends an application once and switches the action to the submitted state', async () => {
+    await loadJobs();
 
     const nativeElement = fixture.nativeElement as HTMLElement;
     const applyButton = Array.from(
@@ -534,8 +540,8 @@ describe('JobsFeed', () => {
     http.expectNone('/api/jobs/job-clt/applications');
   });
 
-  it('links each card to the full job page', () => {
-    loadJobs();
+  it('links each card to the full job page', async () => {
+    await loadJobs();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector(
       '.job-card [data-testid="job-details-link"]',
@@ -545,8 +551,8 @@ describe('JobsFeed', () => {
     expect(link?.getAttribute('href')).toBe('/vagas/job-clt');
   });
 
-  it('renders jobs already applied to as submitted', () => {
-    loadJobs();
+  it('renders jobs already applied to as submitted', async () => {
+    await loadJobs();
 
     const nativeElement = fixture.nativeElement as HTMLElement;
     const appliedCard = Array.from(
@@ -556,7 +562,8 @@ describe('JobsFeed', () => {
     expect(appliedCard?.querySelector('.apply-button--applied')).not.toBeNull();
   });
 
-  it('shows a retry action without exposing an HTTP status on load failure', () => {
+  it('shows a retry action without exposing an HTTP status on load failure', async () => {
+    await createFeed();
     const jobsRequest = http.expectOne((request) => request.url === '/api/jobs/search');
     const applicationsRequest = http.expectOne(
       (request) => request.url === '/api/users/me/applications',
@@ -576,8 +583,8 @@ describe('JobsFeed', () => {
     expect(fixture.nativeElement.querySelector('.retry-button')).not.toBeNull();
   });
 
-  it('keeps the filters when the feed is opened again after the detail', () => {
-    loadJobs();
+  it('keeps the filters when the feed is opened again after the detail', async () => {
+    await loadJobs();
 
     const chips = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.chip'));
     chips.find((chip) => chip.textContent?.trim() === 'CLT')?.click();
@@ -594,6 +601,7 @@ describe('JobsFeed', () => {
 
     const reopened = TestBed.createComponent(JobsFeed);
     reopened.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     http
       .expectOne((request) => request.url === '/api/jobs/search' && request.params.get('contractType') === 'CLT')
       .flush(response);

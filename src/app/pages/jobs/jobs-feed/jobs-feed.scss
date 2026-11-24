@@ -327,12 +327,15 @@
   justify-content: space-between;
 }
 
-.distance-note {
-  margin: 1rem 0 0;
-  padding: 0.7rem 0.9rem;
-  color: var(--k-texto-muted);
-  border-left: 3px solid var(--k-ouro);
-  font-size: var(--k-t-xs);
+.jobs-grid,
+.status--empty {
+  transition: opacity 200ms ease;
+}
+
+// Troca de raio: a lista atual fica na tela, apagada, ate a resposta chegar.
+.is-refreshing {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .details-link {

@@ -87,7 +87,7 @@ describe('MessagingService', () => {
   describe('as a restaurant', () => {
     beforeEach(() => setup({ id: 'r1', role: 'RESTAURANTE' }));
 
-    it('sends only the jobId in join, send, history and leave', async () => {
+    it('sends the professionalId in join, send, history and leave', async () => {
       await service.joinChat('j1', 'p2');
       socket.ackWith = (event) =>
         event === 'chat:send' ? { ok: true, message: message('m1', 'j1', 'p2', 'r1') } : { ok: true, messages: [] };
@@ -95,10 +95,10 @@ describe('MessagingService', () => {
       await service.loadHistory('j1', 'p2', new Date('2026-11-20T12:00:00.000Z'));
       await service.leaveChat('j1', 'p2');
 
-      expect(lastEmit('chat:join')).toEqual({ jobId: 'j1', take: 20 });
-      expect(lastEmit('chat:send')).toEqual({ jobId: 'j1', content: 'Olá' });
-      expect(lastEmit('chat:history')).toMatchObject({ jobId: 'j1' });
-      expect(lastEmit('chat:leave')).toEqual({ jobId: 'j1' });
+      expect(lastEmit('chat:join')).toEqual({ jobId: 'j1', professionalId: 'p2', take: 20 });
+      expect(lastEmit('chat:send')).toEqual({ jobId: 'j1', professionalId: 'p2', content: 'Olá' });
+      expect(lastEmit('chat:history')).toMatchObject({ jobId: 'j1', professionalId: 'p2' });
+      expect(lastEmit('chat:leave')).toEqual({ jobId: 'j1', professionalId: 'p2' });
     });
 
     it('keeps messages of the other professional of the same job out of the open chat', async () => {
@@ -150,6 +150,19 @@ describe('MessagingService', () => {
 
       expect(lastEmit('chat:join')).toEqual({ jobId: 'j1', take: 20 });
       expect(service.currentChat()).toEqual({ jobId: 'j1', professionalId: 'p9' });
+    });
+
+    it('sends only the jobId in send, history and leave', async () => {
+      await service.joinChat('j1', 'qualquer');
+      socket.ackWith = (event) =>
+        event === 'chat:send' ? { ok: true, message: message('m1', 'j1', 'p9', 'p9') } : { ok: true, messages: [] };
+      await service.sendMessage('j1', 'qualquer', 'Oi');
+      await service.loadHistory('j1', 'qualquer', new Date('2026-11-20T12:00:00.000Z'));
+      await service.leaveChat('j1', 'qualquer');
+
+      expect(lastEmit('chat:send')).toEqual({ jobId: 'j1', content: 'Oi' });
+      expect(lastEmit('chat:history')).not.toHaveProperty('professionalId');
+      expect(lastEmit('chat:leave')).toEqual({ jobId: 'j1' });
     });
   });
 });

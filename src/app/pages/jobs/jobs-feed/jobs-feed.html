@@ -1,9 +1,7 @@
 <section class="feed" aria-labelledby="greeting">
   <header class="feed__header">
     <h1 id="greeting">Olá, João</h1>
-    <p>
-      {{ totalJobs() }} {{ totalJobs() === 1 ? 'vaga' : 'vagas' }} perto de você
-    </p>
+    <p data-testid="jobs-total">{{ totalLabel() }}</p>
   </header>
 
   <div class="search-row">
@@ -119,8 +117,9 @@
             [min]="distanceMin"
             [max]="noLimit"
             [step]="distanceStep"
-            [ngModel]="maxDistanceKm() ?? noLimit"
-            (ngModelChange)="setMaxDistance($event)"
+            [ngModel]="draftDistanceKm() ?? noLimit"
+            (ngModelChange)="previewDistance($event)"
+            (change)="commitDistance()"
             [disabled]="locationBlocked()"
             [attr.aria-valuetext]="distanceLabel()"
             aria-describedby="distance-hint"
@@ -134,29 +133,11 @@
           <span id="distance-hint" class="filter-hint" data-testid="distance-hint">
             @if (locationBlocked()) {
               Ative a localização do navegador para filtrar por distância.
-            } @else if (pendingDistances() > 0) {
-              Calculando distâncias…
             }
           </span>
         </label>
       </div>
     </nav>
-  }
-
-  @if (!loading() && !loadError() && distanceActive()) {
-    <p class="distance-note" role="status" data-testid="distance-note">
-      Mostrando vagas até {{ maxDistanceKm() }} km entre as {{ jobs().length }} carregadas.
-      @if (distanceView().hidden > 0) {
-        {{ distanceView().hidden }}
-        {{ distanceView().hidden === 1 ? 'vaga fora do raio foi ocultada.' : 'vagas fora do raio foram ocultadas.' }}
-      }
-      @if (distanceView().unknown > 0 && pendingDistances() === 0) {
-        As vagas sem distância calculada aparecem no fim.
-      }
-      @if (jobs().length < totalJobs()) {
-        Carregue mais vagas para ampliar a busca.
-      }
-    </p>
   }
 
   @if (loading()) {
@@ -170,7 +151,12 @@
       <button type="button" class="retry-button" (click)="load()">Tentar novamente</button>
     </div>
   } @else if (visibleJobs().length === 0) {
-    <div class="status status--empty" role="status">
+    <div
+      class="status status--empty"
+      role="status"
+      [class.is-refreshing]="refreshing()"
+      [attr.aria-busy]="refreshing()"
+    >
       <span class="empty-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <circle cx="10.8" cy="10.8" r="6.3"></circle>
@@ -178,9 +164,9 @@
         </svg>
       </span>
       <h2>Nenhuma vaga encontrada</h2>
-      @if (distanceActive() && distanceView().hidden > 0) {
+      @if (distanceActive()) {
         <p data-testid="distance-empty">
-          Nenhuma das vagas carregadas fica a até {{ maxDistanceKm() }} km. Aumente a distância ou carregue mais vagas.
+          Nenhuma vaga a até {{ maxDistanceKm() }} km de você. Aumente a distância para ver mais oportunidades.
         </p>
       } @else {
         <p>Tente ajustar a busca ou os filtros para ver mais oportunidades.</p>
@@ -212,16 +198,16 @@
       }
     </div>
   } @else {
-    <div class="jobs-grid">
-      @for (job of visibleJobs(); track job.id; let index = $index) {
+    <div class="jobs-grid" [class.is-refreshing]="refreshing()" [attr.aria-busy]="refreshing()">
+      @for (job of visibleJobs(); track job.id) {
         <article class="job-card">
           <div class="job-card__topline">
             <div class="restaurant">
               <a
                 class="restaurant__initial"
-                [class.restaurant__initial--1]="index % 4 === 1"
-                [class.restaurant__initial--2]="index % 4 === 2"
-                [class.restaurant__initial--3]="index % 4 === 3"
+                [class.restaurant__initial--1]="avatarVariant(job) === 1"
+                [class.restaurant__initial--2]="avatarVariant(job) === 2"
+                [class.restaurant__initial--3]="avatarVariant(job) === 3"
                 [routerLink]="['/restaurantes', job.restaurantId]"
                 tabindex="-1"
                 aria-hidden="true"

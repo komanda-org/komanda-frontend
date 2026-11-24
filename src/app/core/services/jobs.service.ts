@@ -22,6 +22,9 @@ export class JobsService {
     contractType?: string;
     shift?: string;
     minSalary?: number;
+    lat?: number;
+    lng?: number;
+    maxDistanceKm?: number;
     skip?: number;
     take?: number;
   }): Observable<JobsResponse> {

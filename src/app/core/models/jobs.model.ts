@@ -27,7 +27,7 @@ export interface Job {
   createdAt: string;
   /** Lista vazia = turno nao informado. */
   shifts: JobShift[];
-  /** Calculada no navegador: `undefined` = ainda calculando; `null` = nao foi possivel. */
+  /** Vem da API quando a busca manda lat/lng; `null` = restaurante sem coordenadas. */
   distanceKm?: number | null;
   urgent?: boolean;
   hasApplied?: boolean;

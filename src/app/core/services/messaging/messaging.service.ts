@@ -217,7 +217,7 @@ export class MessagingService {
       this.resetConversation();
       this._currentChat.set(chat);
 
-      this.socket.emit('chat:join', { jobId: chat.jobId, take }, (response: JoinResponse) => {
+      this.socket.emit('chat:join', { ...this.toPayload(chat), take }, (response: JoinResponse) => {
         // A pessoa pode ter trocado de conversa antes do ack chegar.
         if (!isSameChat(chat, this._currentChat())) {
           resolve({ messages: [], hasMore: false });
@@ -245,7 +245,7 @@ export class MessagingService {
         return;
       }
 
-      this.socket.emit('chat:leave', { jobId: chat.jobId }, (response) => {
+      this.socket.emit('chat:leave', this.toPayload(chat), (response) => {
         if (response.ok) {
           if (isSameChat(chat, this._currentChat())) {
             this.resetConversation();
@@ -268,7 +268,7 @@ export class MessagingService {
         return;
       }
 
-      this.socket.emit('chat:send', { jobId: chat.jobId, content }, (response: SendResponse) => {
+      this.socket.emit('chat:send', { ...this.toPayload(chat), content }, (response: SendResponse) => {
         if (response.ok && response.message) {
           // O ack garante que o remetente veja a mensagem mesmo se o broadcast
           // da room chegar antes do join ou for perdido.
@@ -299,7 +299,7 @@ export class MessagingService {
 
       this.socket.emit(
         'chat:history',
-        { jobId: chat.jobId, before: before?.toISOString(), take },
+        { ...this.toPayload(chat), before: before?.toISOString(), take },
         (response: HistoryResponse) => {
           if (response.ok && response.messages) {
             if (isSameChat(chat, this._currentChat())) {
@@ -385,6 +385,13 @@ export class MessagingService {
   private toChatRef(jobId: string, professionalId: string): ChatRef {
     const user = this.authService.getUser();
     return { jobId, professionalId: user?.role === 'PROFISSIONAL' ? user.id : professionalId };
+  }
+
+  // A API exige professionalId do restaurante e, para o profissional, usa o id do token.
+  private toPayload(chat: ChatRef): ChatPayload {
+    return this.authService.getUser()?.role === 'PROFISSIONAL'
+      ? { jobId: chat.jobId }
+      : { jobId: chat.jobId, professionalId: chat.professionalId };
   }
 
   private resetConversation(): void {
